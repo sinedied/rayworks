@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-blue-50: oklch(0.97 0.014 254.6);
+  --color-blue-100: oklch(0.932 0.032 255.6);
+  --color-blue-500: oklch(0.623 0.214 259.1);
+  --color-blue-600: oklch(0.546 0.245 262.9);
+  --color-blue-700: oklch(0.488 0.243 264.4);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  /*
+   * Defaults for surfaces that are not themed by a room (the presenter console and dashboard),
+   * so themed components render correctly everywhere.
+   */
+  :root {
+    --ia-bg: #ffffff;
+    --ia-text: #0f172a;
+    --ia-accent: #2563eb;
+    --ia-surface: #ffffff;
+    --ia-surface-strong: #f8fafc;
+    --ia-muted: #6b7280;
+    --ia-border: #e5e7eb;
+    --ia-accent-soft: color-mix(in srgb, var(--ia-accent) 14%, #ffffff);
+    --ia-accent-contrast: var(--ia-accent);
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /*
+   * Themed surfaces: pages set --ia-bg / --ia-text / --ia-accent from the room's colours and
+   * everything else is mixed from those three, so a single triple produces a coherent palette
+   * for light and dark themes alike.
+   */
+  [data-ia-theme] {
+    --ia-surface: color-mix(in srgb, var(--ia-bg) 88%, var(--ia-text));
+    --ia-surface-strong: color-mix(in srgb, var(--ia-bg) 78%, var(--ia-text));
+    --ia-muted: color-mix(in srgb, var(--ia-text) 60%, var(--ia-bg));
+    --ia-border: color-mix(in srgb, var(--ia-text) 18%, var(--ia-bg));
+    --ia-accent-soft: color-mix(in srgb, var(--ia-accent) 28%, var(--ia-bg));
+    --ia-accent-contrast: color-mix(in srgb, var(--ia-accent) 88%, var(--ia-text));
+
+    background-color: var(--ia-bg);
+    color: var(--ia-text);
+  }
+}

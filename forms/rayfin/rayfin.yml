@@ -1,0 +1,30 @@
+id: forms
+name: forms
+version: 1.0.0
+services:
+  auth:
+    enabled: true
+    fabric:
+      enabled: true
+    password:
+      enabled: true
+    allowedRedirectUris:
+      - http://localhost:5173
+      - https://moral-glade-bbe34d8124-swedencentral.webapp.fabricapps.net
+    customClaims:
+      app_version: 1.0.0
+    scopes:
+      - read:data
+      - write:data
+  data:
+    enabled: true
+    dialect: mssql
+  staticHosting:
+    enabled: true
+    folder: dist
+    buildCommand: npm run build:fabric
+    indexDocument: index.html
+  storage:
+    enabled: false
+  functions:
+    enabled: false

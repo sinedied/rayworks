@@ -1,0 +1,136 @@
+/*
+ * Design tokens for the Forms app: a clean, professional, blue-led light theme.
+ *
+ * `:root:root` is deliberate. theme.css declares the same shadcn tokens on `:root` and is
+ * emitted after this file in the bundle, so a plain `:root` here loses the cascade and the
+ * stock palette wins. The doubled selector raises specificity so these tokens hold.
+ */
+
+:root:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-sunk: #f1f5f9;
+
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #64748b;
+
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --brand: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-tint: #eff6ff;
+
+  --success: #059669;
+  --danger: #dc2626;
+
+  /* shadcn token overrides — keeps every existing ui/* component on-palette */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-sunk);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-sunk);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--brand-tint);
+  --accent-foreground: var(--brand-hover);
+  --destructive: var(--danger);
+  --border: var(--border-subtle);
+  --input: var(--border-strong);
+  --ring: var(--brand);
+  --radius: 0.5rem;
+
+  --chart-1: var(--brand);
+  --chart-2: #0ea5e9;
+  --chart-3: #14b8a6;
+  --chart-4: #f59e0b;
+  --chart-5: #8b5cf6;
+
+  --font-sans:
+    'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings stay in the body face; weight and a slight negative tracking carry the hierarchy. */
+.font-heading {
+  font-weight: 600;
+  letter-spacing: -0.011em;
+}
+
+/* Mono is reserved for figures that benefit from aligning in columns. */
+.font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small uppercase label. Tracking stays modest so it remains legible at 12px. */
+.label-caps {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  box-shadow:
+    0 1px 2px 0 rgb(15 23 42 / 0.04),
+    0 1px 3px 0 rgb(15 23 42 / 0.06);
+}
+
+.card-interactive {
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.card-interactive:hover {
+  border-color: var(--border-strong);
+  box-shadow:
+    0 2px 4px -1px rgb(15 23 42 / 0.06),
+    0 4px 8px -2px rgb(15 23 42 / 0.08);
+}
+
+/* One restrained entrance; no staggered choreography. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fade-in {
+  animation: fade-in 240ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+
+  .card-interactive {
+    transition: none;
+  }
+}
