@@ -4,11 +4,12 @@
 
 Ray|Works is a collection of enterprise applications built on Microsoft Rayfin (Fabric Apps).
 
-- `forms/` contains Ray|Forms, an enterprise form builder and response-management app.
-- `live/` contains Ray|Live, a live Q&A, polling, and quiz app.
+- `rayforms/` contains Ray|Forms, an enterprise form builder and response-management app.
+- `raylive/` contains Ray|Live, a live Q&A, polling, and quiz app.
 - Shared brand assets and design guidance live at the repository root.
 
-Read and follow the app-specific `AGENTS.md` before changing files under `forms/` or `live/`.
+Read and follow the app-specific `AGENTS.md` before changing files under `rayforms/` or
+`raylive/`.
 
 ## Commits
 

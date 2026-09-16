@@ -109,7 +109,7 @@ again — see `src/hooks/useLiveRoom.ts`.
 > **Audience members do NOT sign in.** Anyone with the room code can ask and upvote.
 > Authentication is required only for presenters who create and moderate rooms.
 
-This depends on an **unsupported CLI feature flag**, exactly like the `forms` sample.
+This depends on an **unsupported CLI feature flag**, exactly like Ray|Forms.
 
 ### Anonymous access requires a feature flag
 
