@@ -1,4 +1,4 @@
-# Rayfin Forms
+# Ray|Forms
 
 A forms app in the spirit of Microsoft Forms / Google Forms, built on [Project Rayfin](http://aka.ms/rayfin/docs).
 

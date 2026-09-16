@@ -1,5 +1,5 @@
 /*
- * Design tokens for the Forms app: a clean, professional, blue-led light theme.
+ * Ray|Forms design tokens, aligned with the shared Ray|Works brand palette.
  *
  * `:root:root` is deliberate. theme.css declares the same shadcn tokens on `:root` and is
  * emitted after this file in the bundle, so a plain `:root` here loses the cascade and the
@@ -11,16 +11,17 @@
   --surface: #ffffff;
   --surface-sunk: #f1f5f9;
 
-  --text: #0f172a;
-  --text-muted: #475569;
-  --text-subtle: #64748b;
+  --brand-navy: #0b2a5b;
+  --text: #1f2937;
+  --text-muted: #4b5563;
+  --text-subtle: #6b7280;
 
-  --border-subtle: #e2e8f0;
+  --border-subtle: #e5e7eb;
   --border-strong: #cbd5e1;
 
-  --brand: #2563eb;
-  --brand-hover: #1d4ed8;
-  --brand-tint: #eff6ff;
+  --brand: #2f80ff;
+  --brand-hover: #246bdb;
+  --brand-tint: #edf5ff;
 
   --success: #059669;
   --danger: #dc2626;
@@ -47,10 +48,10 @@
   --radius: 0.5rem;
 
   --chart-1: var(--brand);
-  --chart-2: #0ea5e9;
-  --chart-3: #14b8a6;
-  --chart-4: #f59e0b;
-  --chart-5: #8b5cf6;
+  --chart-2: #00c2ab;
+  --chart-3: #7c3aed;
+  --chart-4: #ffc629;
+  --chart-5: #ff6b6b;
 
   --font-sans:
     'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { MockSignInDialog } from '@/components/MockSignInDialog';
+import { RayFormsWordmark } from '@/components/RayFormsWordmark';
 import { useAuth } from '@/hooks/AuthContext';
 
 export function AuthPage() {
@@ -67,17 +68,7 @@ export function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex h-14 items-center border-b border-[var(--border-subtle)] bg-[var(--surface)] px-4 sm:px-6">
-        <span className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="flex h-6 w-6 items-center justify-center rounded bg-[var(--brand)] text-[11px] font-semibold text-white"
-          >
-            R
-          </span>
-          <span className="font-heading text-[15px] text-[var(--text)]">
-            Rayfin Forms
-          </span>
-        </span>
+        <RayFormsWordmark className="text-[17px]" />
       </header>
 
       <div className="flex flex-1 items-center justify-center p-4">

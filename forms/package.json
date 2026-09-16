@@ -1,12 +1,12 @@
 {
-  "name": "forms",
+  "name": "rayforms",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "template": {
-    "name": "gettingstartedauth",
-    "displayName": "A Todo App with Auth and Getting Started Docs",
-    "description": "Todo app with Fabric authentication, Tailwind CSS, and production-first workflow"
+    "name": "rayforms",
+    "displayName": "Ray|Forms",
+    "description": "Enterprise form building and response collection on Microsoft Rayfin"
   },
   "scripts": {
     "predev": "rayfin env --framework vite",

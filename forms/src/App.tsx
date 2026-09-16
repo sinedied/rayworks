@@ -20,7 +20,7 @@ const FormResults = lazy(() =>
   import('@/pages/FormResults').then((m) => ({ default: m.FormResults }))
 );
 
-const REDIRECT_KEY = 'rayfin-forms:redirect-after-auth';
+const REDIRECT_KEY = 'rayforms:redirect-after-auth';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();

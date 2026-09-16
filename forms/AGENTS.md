@@ -4,7 +4,7 @@ This project ships agent context: skills under `.agents/skills/` and MCP servers
 
 ## Project
 
-React + TypeScript (Vite) forms app backed by **Project Rayfin** with Radix-based UI components styled with Tailwind CSS.
+Ray|Forms is a React + TypeScript (Vite) forms app backed by **Project Rayfin** with Radix-based UI components styled with Tailwind CSS.
 Admins create forms and share a unique link; recipients open the link and submit a response.
 Auth is fully integrated: local dev uses a mock email/password flow, production uses Fabric Entra SSO.
 
@@ -112,9 +112,10 @@ Key config/files:
 
 ## Design system
 
-A clean, professional, blue-led light theme. White surfaces on a soft grey canvas, cool neutral
-text, one brand blue (`#2563EB`). IBM Plex Sans throughout; IBM Plex Mono only for tabular
-figures. Tokens in `src/styles/design.css`.
+A clean, professional light theme aligned with the root `DESIGN.md`. White surfaces sit on a soft
+grey canvas, with Ray|Works navy (`#0B2A5B`) and blue (`#2F80FF`) as the brand anchors. IBM Plex
+Sans is used throughout; IBM Plex Mono is reserved for tabular figures. Tokens live in
+`src/styles/design.css`.
 
 - Use the semantic tokens (`--surface`, `--text`, `--text-muted`, `--border-subtle`, `--brand`)
   and the `.card` / `.card-interactive` / `.font-heading` / `.font-data` / `.label-caps` /
