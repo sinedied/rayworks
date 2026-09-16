@@ -1,4 +1,4 @@
-# interask — Specification
+# Ray|Live — Specification
 
 Live audience interaction for presentations: **Q&A**, **live polls**, and **interactive quizzes**.
 A focused, self-hostable Slido alternative built on Rayfin.
@@ -131,7 +131,7 @@ three surfaces behave identically. Quizzes are prepared before they start.
 
 ## 5d. Room branding and join info
 
-`Room.brandTitle` replaces the interask wordmark on the audience and projected views.
+`Room.brandTitle` replaces the Ray|Live wordmark on the audience and projected views.
 `Room.showJoinInfo` hides the join link, QR, and code live — stored on the room so the projector,
 console, and remote agree.
 

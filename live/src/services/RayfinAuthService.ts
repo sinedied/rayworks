@@ -5,7 +5,7 @@ import {
 } from '@microsoft/rayfin-auth-provider-fabric';
 import type { RayfinClient } from '@microsoft/rayfin-client';
 
-import type { InteraskSchema } from '../../rayfin/data/schema';
+import type { RayLiveSchema } from '../../rayfin/data/schema';
 
 import { type AuthUser, type IAuthService, toAuthUser } from './IAuthService';
 
@@ -21,7 +21,7 @@ export class RayfinAuthService implements IAuthService {
   readonly fabricAuthEnabled = true;
 
   constructor(
-    private readonly client: RayfinClient<InteraskSchema>,
+    private readonly client: RayfinClient<RayLiveSchema>,
     private readonly fabricOptions: FabricAuthOptions
   ) {}
 

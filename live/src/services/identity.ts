@@ -1,7 +1,7 @@
-const PARTICIPANT_KEY_STORAGE = 'interask:participant-key';
-const PARTICIPANT_NAME_STORAGE = 'interask:participant-name';
-const VOTED_STORAGE = 'interask:voted';
-const ANSWERED_STORAGE = 'interask:answered';
+const PARTICIPANT_KEY_STORAGE = 'raylive:participant-key';
+const PARTICIPANT_NAME_STORAGE = 'raylive:participant-name';
+const VOTED_STORAGE = 'raylive:voted';
+const ANSWERED_STORAGE = 'raylive:answered';
 
 /**
  * Storage can be unavailable when the live view is embedded in a third-party

@@ -79,7 +79,7 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
           value={brandTitle}
           onChange={(event) => setBrandTitle(event.target.value)}
           maxLength={60}
-          placeholder="interask"
+          placeholder="Ray|Live"
           className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
         />
       </label>
@@ -149,7 +149,7 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
         className="mt-4 rounded-xl border border-[var(--ia-border)] p-4"
       >
         <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ia-accent)]">
-          {brandTitle.trim() || 'interask'}
+          {brandTitle.trim() || 'Ray|Live'}
         </p>
         <p className="mt-2 text-lg font-bold text-[var(--ia-text)]">
           {room.title}

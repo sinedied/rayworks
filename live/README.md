@@ -1,4 +1,4 @@
-# interask
+# Ray|Live
 
 A live audience interaction app — a Slido-style replacement built on [Rayfin](http://aka.ms/rayfin/docs).
 
@@ -80,7 +80,7 @@ than in the portal itself — if it gives you trouble, use the on-screen control
 
 ### Branding
 
-Each room can carry its own **title** in place of the interask wordmark, alongside its colours —
+Each room can carry its own **title** in place of the Ray|Live wordmark, alongside its colours —
 both live in the console under "Branding & theme". The join link, QR, and code can be hidden live
 (`j`) once everyone is in the room.
 

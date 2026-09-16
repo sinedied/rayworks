@@ -1,6 +1,6 @@
 import { RayfinClient } from '@microsoft/rayfin-client';
 
-import type { InteraskSchema } from '../../rayfin/data/schema';
+import type { RayLiveSchema } from '../../rayfin/data/schema';
 
 export interface RayfinClientConfig {
   baseUrl: string;
@@ -9,16 +9,16 @@ export interface RayfinClientConfig {
   localDev: boolean;
 }
 
-let client: RayfinClient<InteraskSchema> | null = null;
+let client: RayfinClient<RayLiveSchema> | null = null;
 let localDev = false;
 
 export function initRayfinClient(
   config: RayfinClientConfig
-): RayfinClient<InteraskSchema> {
+): RayfinClient<RayLiveSchema> {
   if (client) {
     throw new Error('Rayfin client is already initialized.');
   }
-  client = new RayfinClient<InteraskSchema>({
+  client = new RayfinClient<RayLiveSchema>({
     baseUrl: config.baseUrl,
     publishableKey: config.publishableKey,
     useProxy: false,
@@ -28,7 +28,7 @@ export function initRayfinClient(
   return client;
 }
 
-export function getRayfinClient(): RayfinClient<InteraskSchema> {
+export function getRayfinClient(): RayfinClient<RayLiveSchema> {
   if (!client) {
     throw new Error(
       'Rayfin client not initialized. Call bootstrapAuth() first.'

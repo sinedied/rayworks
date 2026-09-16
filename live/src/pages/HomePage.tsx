@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { Room } from '../../rayfin/data/Room';
 
 import { useAuth } from '@/hooks/AuthContext';
+import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 import { createRoom, deleteRoom, listMyRooms } from '@/services/rooms';
 
 export function HomePage() {
@@ -58,8 +59,8 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">
-        <h1 className="text-xl font-bold text-gray-900">
-          inter<span className="text-blue-600">ask</span>
+        <h1>
+          <RayLiveWordmark className="text-xl" />
         </h1>
         <div className="flex items-center gap-4">
           {user?.email && (

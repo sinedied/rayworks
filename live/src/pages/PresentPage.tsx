@@ -5,6 +5,7 @@ import { ActivityResults } from '@/components/ActivityResults';
 import { ControlBar } from '@/components/ControlBar';
 import { Leaderboard } from '@/components/Leaderboard';
 import { QrCode } from '@/components/QrCode';
+import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 import { useFlipList } from '@/hooks/useFlipList';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { useRoomControls } from '@/hooks/useRoomControls';
@@ -114,9 +115,7 @@ export function PresentPage() {
               {room.brandTitle ? (
                 room.brandTitle
               ) : (
-                <>
-                  inter<span className="text-[var(--ia-muted)]">ask</span>
-                </>
+                <RayLiveWordmark themed className="tracking-normal" />
               )}
             </p>
           )}

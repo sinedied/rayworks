@@ -1,5 +1,5 @@
-id: interask
-name: interask
+id: raylive
+name: raylive
 version: 1.0.0
 services:
   auth:

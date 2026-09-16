@@ -5,7 +5,7 @@ import { Question } from './Question.js';
 import { Room } from './Room.js';
 import { Vote } from './Vote.js';
 
-export type InteraskSchema = {
+export type RayLiveSchema = {
   Room: Room;
   Question: Question;
   Vote: Vote;

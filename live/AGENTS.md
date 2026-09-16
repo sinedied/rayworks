@@ -12,7 +12,7 @@ Use `discover_packages` or `rayfin docs discover <topic>` when installed docs do
 
 ## Project
 
-React + TypeScript (Vite) live audience interaction app ("Slido replacement") backed by **Rayfin**,
+Ray|Live is a React + TypeScript (Vite) live audience interaction app ("Slido replacement") backed by **Rayfin**,
 styled with Tailwind CSS v4. Presenters create rooms, run polls and quizzes, and moderate Q&A;
 the audience answers from a share link; live results are projected or embedded in a slide deck.
 Auth is presenter-only: local dev uses a mock email/password flow, production uses Fabric Entra SSO.
@@ -55,7 +55,7 @@ hardcoded `gray-*`/`blue-*`.
 
 New columns added to existing tables must be `optional` (old rows have no value) — read them
 defensively, e.g. `room.qnaEnabled !== false` and `room.showJoinInfo !== false`.
-`room.brandTitle` falls back to the interask wordmark.
+`room.brandTitle` falls back to the Ray|Live wordmark.
 
 Keep the audience and projected views responsive: no horizontal overflow at 390 / 768 / 1280 px,
 44 px minimum tap targets, and `clamp()` for stage typography so it reads on a laptop and a
@@ -130,4 +130,3 @@ follow the presenter with no extra coordination state. See `SPEC.md`.
 - Data services always use the real backend; do not reintroduce the template's in-memory fallback,
   which would break multi-device sync (the whole point of the app).
 - Schema changes need `npm run rayfin:up` to reach the deployed app.
-

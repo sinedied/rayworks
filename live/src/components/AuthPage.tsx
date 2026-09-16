@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useAuth } from '@/hooks/AuthContext';
+import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 
 const msLogo = (
   <svg
@@ -42,17 +43,16 @@ export function AuthPage() {
     : 'Sign in with Microsoft';
 
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Decorative background shapes */}
-      <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-blue-100/50 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-indigo-100/40 blur-3xl" />
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#f7f9fc]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[var(--brand-blue)]" />
+      <div className="pointer-events-none absolute -top-24 -right-24 h-80 w-80 rounded-full bg-[#2f80ff]/10 blur-3xl" />
 
       <div className="relative flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-sm">
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-xl backdrop-blur-sm">
+          <div className="rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-[0_24px_70px_-36px_rgba(11,42,91,0.38)]">
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-gray-900">
-                inter<span className="text-blue-600">ask</span>
+              <h1>
+                <RayLiveWordmark className="text-2xl" />
               </h1>
               <p className="mt-2 text-sm text-gray-500">
                 Sign in to run live Q&amp;A, polls, and quizzes.
@@ -63,7 +63,7 @@ export function AuthPage() {
               type="button"
               onClick={handleSignIn}
               disabled={isLoading}
-              className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-medium text-white shadow-md shadow-blue-600/25 transition-all hover:shadow-lg hover:shadow-blue-600/30 hover:brightness-110 disabled:opacity-50 disabled:shadow-none"
+              className="flex w-full items-center justify-center rounded-xl bg-[var(--brand-blue)] px-4 py-3 text-sm font-medium text-white shadow-md shadow-blue-600/20 transition-all hover:bg-[#246bdb] hover:shadow-lg disabled:opacity-50 disabled:shadow-none"
             >
               {msLogo}
               {buttonLabel}

@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 
 import { ActivityAnswerForm } from '@/components/ActivityAnswerForm';
 import { ActivityResults, ResponseCount } from '@/components/ActivityResults';
-import { useLiveRoom } from '@/hooks/useLiveRoom';
+import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 import { useCountdown } from '@/hooks/useCountdown';
+import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { allowsMultipleSubmissions, hasAnswered } from '@/lib/aggregate';
 import { canAnswer, isPreparing } from '@/lib/quiz';
 import { resolveTheme, themeVars } from '@/lib/theme';
@@ -124,9 +125,7 @@ export function AudiencePage() {
             {room.brandTitle ? (
               room.brandTitle
             ) : (
-              <>
-                inter<span className="text-[var(--ia-muted)]">ask</span>
-              </>
+              <RayLiveWordmark themed className="tracking-normal" />
             )}
           </p>
           <h1 className="mt-1 text-lg font-bold text-[var(--ia-text)]">

@@ -1,12 +1,12 @@
 {
-  "name": "interask",
+  "name": "raylive",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "template": {
-    "name": "todoapp",
-    "displayName": "Basic Todo App",
-    "description": "End-to-end Fabric-authenticated todo CRUD with a Rayfin data model and per-user row-level security — a working starter that exercises the full data path"
+    "name": "raylive",
+    "displayName": "Ray|Live",
+    "description": "Live audience Q&A, polling, and quizzes on Microsoft Rayfin"
   },
   "scripts": {
     "predev": "rayfin env --framework vite",

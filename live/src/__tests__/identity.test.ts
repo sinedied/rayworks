@@ -27,7 +27,7 @@ describe('voter identity', () => {
   });
 
   it('ignores corrupted storage payloads', () => {
-    window.localStorage.setItem('interask:voted', 'not json');
+    window.localStorage.setItem('raylive:voted', 'not json');
 
     expect(getVotedQuestionIds().size).toBe(0);
   });

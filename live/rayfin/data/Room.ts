@@ -51,7 +51,7 @@ export class Room {
   @boolean({ optional: true, default: true }) qnaEnabled?: boolean;
   /** Named theme preset, or `custom` when the colours were hand-picked. */
   @text({ optional: true, max: 32 }) themePreset?: string;
-  /** Replaces the "interask" wordmark on the audience and projected views. */
+  /** Replaces the Ray|Live wordmark on the audience and projected views. */
   @text({ optional: true, max: 60 }) brandTitle?: string;
   /**
    * Whether the projected view shows the join link, QR, and code. Stored on the room so the

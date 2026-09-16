@@ -1,6 +1,6 @@
 import { AuthError, type RayfinClient } from '@microsoft/rayfin-client';
 
-import type { InteraskSchema } from '../../rayfin/data/schema';
+import type { RayLiveSchema } from '../../rayfin/data/schema';
 
 import { type AuthUser, type IAuthService, toAuthUser } from './IAuthService';
 
@@ -21,7 +21,7 @@ const MOCK_PASSWORD = 'LocalDev!Pass123';
 export class MockAuthService implements IAuthService {
   readonly fabricAuthEnabled = false;
 
-  constructor(private readonly client: RayfinClient<InteraskSchema>) {}
+  constructor(private readonly client: RayfinClient<RayLiveSchema>) {}
 
   async signIn(): Promise<AuthUser> {
     const auth = this.client.auth;

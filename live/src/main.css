@@ -3,11 +3,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-blue-50: oklch(0.97 0.014 254.6);
-  --color-blue-100: oklch(0.932 0.032 255.6);
-  --color-blue-500: oklch(0.623 0.214 259.1);
-  --color-blue-600: oklch(0.546 0.245 262.9);
-  --color-blue-700: oklch(0.488 0.243 264.4);
+  --color-blue-50: #edf5ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-500: #2f80ff;
+  --color-blue-600: #2f80ff;
+  --color-blue-700: #246bdb;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -17,9 +17,11 @@
    * so themed components render correctly everywhere.
    */
   :root {
+    --brand-navy: #0b2a5b;
+    --brand-blue: #2f80ff;
     --ia-bg: #ffffff;
-    --ia-text: #0f172a;
-    --ia-accent: #2563eb;
+    --ia-text: #1f2937;
+    --ia-accent: #2f80ff;
     --ia-surface: #ffffff;
     --ia-surface-strong: #f8fafc;
     --ia-muted: #6b7280;
