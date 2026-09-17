@@ -21,6 +21,7 @@ dist-ssr
 
 # Fabric / Rayfin generated artifacts
 .rayfin
+.azure
 rayfin/.temp
 *.tsbuildinfo
 
