@@ -53,14 +53,16 @@ owner-only update and delete access.
 
 ## Configure Azure Foundry
 
-The Rayfin function reads the full model inference URL from the
-`AZURE_FOUNDRY_ENDPOINT` deployment secret. The endpoint may be configured
-later, but report generation intentionally fails until it is present.
+The Rayfin function reads the OpenAI-compatible `/openai/v1/` base URL from the
+`AZURE_FOUNDRY_ENDPOINT` deployment secret and the deployment name from
+`AZURE_AI_MODEL_DEPLOYMENT_NAME`. Report generation intentionally fails until
+both are present.
 
 After the first Fabric deployment, set it with:
 
 ```bash
 npx -y @microsoft/rayfin-cli secret set AZURE_FOUNDRY_ENDPOINT
+npx -y @microsoft/rayfin-cli secret set AZURE_AI_MODEL_DEPLOYMENT_NAME
 ```
 
 The function declares an `AudienceType.AzureAI` connection and sends the

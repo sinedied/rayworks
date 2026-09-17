@@ -76,6 +76,14 @@ udf.func(
         'AZURE_FOUNDRY_ENDPOINT is not configured for this Rayfin deployment.'
       );
     }
+    const modelDeploymentName = ctx.getSecret(
+      'AZURE_AI_MODEL_DEPLOYMENT_NAME'
+    );
+    if (!modelDeploymentName) {
+      throw new Error(
+        'AZURE_AI_MODEL_DEPLOYMENT_NAME is not configured for this Rayfin deployment.'
+      );
+    }
 
     const data = ctx.getDataClient();
     const trips = await data.Trip.select([
@@ -128,24 +136,28 @@ udf.func(
     ].join('\n');
 
     const token = ctx.getToken(AudienceType.AzureAI);
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You create concise, factual business trip reports. Do not invent facts.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.2,
-      }),
-    });
+    const response = await fetch(
+      `${endpoint.replace(/\/+$/, '')}/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelDeploymentName,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You create concise, factual business trip reports. Do not invent facts.',
+            },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.2,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const details = await response.text();

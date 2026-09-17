@@ -29,9 +29,6 @@
     "modelDeploymentCapacity": {
       "value": "${AZURE_AI_DEPLOYMENT_CAPACITY=10}"
     },
-    "modelApiVersion": {
-      "value": "${AZURE_AI_API_VERSION=2025-04-01-preview}"
-    },
     "inferencePrincipalId": {
       "value": "${AZURE_AI_INFERENCE_PRINCIPAL_ID=}"
     },
