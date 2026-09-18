@@ -73,6 +73,9 @@ only when you're on the analytics path.
 
 - **Make the requested code changes only**, and keep the project building —
   prefer small, correct increments.
+- Use `src/assets/raytrip.svg` for product branding and `src/assets/favicon.svg` for browser tabs.
+  Do not pair the product logo with Ray|Works. Keep standard header logos at 32px desktop and 28px
+  mobile.
 - **Deploy to Fabric with `npm run rayfin:up`** (i.e. `rayfin up`) when you want
   to see the app running. `npm run preview` serves the base app locally with no
   backend for a quick look; `npm run dev` runs it against your deployment. A real

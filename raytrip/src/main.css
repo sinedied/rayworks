@@ -123,12 +123,12 @@ h3 {
 
 .raytrip-brand img {
   display: block;
-  height: 34px;
+  height: 40px;
   width: auto;
 }
 
 .raytrip-brand-compact img {
-  height: 25px;
+  height: 32px;
 }
 
 .user-menu {
@@ -1133,7 +1133,7 @@ select:focus {
   }
 
   .raytrip-brand-compact img {
-    height: 21px;
+    height: 28px;
   }
 
   .user-copy {
@@ -1186,7 +1186,7 @@ select:focus {
   }
 
   .raytrip-brand:not(.raytrip-brand-compact) img {
-    height: 26px;
+    height: 36px;
   }
 }
 
