@@ -18,6 +18,11 @@ Canonical app logos live in `docs/logos/`. Each product has a light-background S
    the product at compact header size without becoming a separate icon. Use the light/dark `Ray`
    color for the motif detail.
 
+Each app displays only its own product logo. Ray|Works is reserved for suite-level and portal
+surfaces; do not combine it with an app wordmark. App-local SVGs are deployment copies and must
+remain byte-identical to their canonical files. Select light/dark variants for background contrast
+rather than recoloring the SVG in application CSS.
+
 ## Product colors
 
 | Product | Light `Ray` | Dark `Ray` | Separator and suffix |
