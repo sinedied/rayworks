@@ -50,7 +50,6 @@ export class RayfinClientService {
       this._client = new RayfinClient<FormsAppSchema>({
         baseUrl: baseUrl,
         publishableKey: publishableKey,
-        useProxy: false,
         headers,
         authStorage: true,
       });
