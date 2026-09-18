@@ -11,8 +11,8 @@ Auth is fully integrated: local dev uses a mock email/password flow, production 
 **Anonymous data access is enabled** via the unsupported `anonymous-data-access` CLI feature flag, so
 respondents can fill in a shared form without signing in. All deploys must set
 `RAYFIN_FEATURE_FLAGS=anonymous-data-access` (the `rayfin:up` / `rayfin:db` npm scripts do this) or
-`db apply` will fail with `AnonymousAccessBlockedError`. `@anonymous()` is imported from
-`@microsoft/rayfin-core/experimental`. See "Security model" in `README.md` before changing permissions.
+`db apply` will fail with `AnonymousAccessBlockedError`. Import `@anonymous()` from
+`@microsoft/rayfin-core`. See "Security model" in `README.md` before changing permissions.
 
 ## Repo map
 

@@ -1,12 +1,12 @@
 import {
   entity,
   authenticated,
+  anonymous,
   uuid,
   text,
   date,
   one,
 } from '@microsoft/rayfin-core';
-import { anonymous } from '@microsoft/rayfin-core/experimental';
 import { Form } from './Form.js';
 
 /**

@@ -27,9 +27,8 @@ relying on the sample.
 ### Anonymous access requires an undocumented feature flag
 
 By default the Rayfin CLI **refuses** to apply any configuration that grants the `anonymous`
-role: `rayfin up db apply` throws `AnonymousAccessBlockedError`. The `@anonymous()` decorator
-is published only from `@microsoft/rayfin-core/experimental`, and the stable `role()` export is
-typed to accept `'authenticated'` only.
+role: `rayfin up db apply` throws `AnonymousAccessBlockedError`. Import the stable
+`@anonymous()` decorator from `@microsoft/rayfin-core`.
 
 The block is skipped when the `anonymous-data-access` feature flag is set:
 
