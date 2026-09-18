@@ -3,7 +3,7 @@
      role="img" aria-labelledby="raydeck-dark-title" aria-describedby="raydeck-dark-desc"
      focusable="false">
   <title id="raydeck-dark-title">Ray|Deck - Dark-background variant</title>
-  <desc id="raydeck-dark-desc">The Ray|Deck wordmark for dark backgrounds: near-white Ray lettering with a purple vertical separator and purple Deck lettering. The background and letter counters are transparent.</desc>
+  <desc id="raydeck-dark-desc">The Ray|Deck wordmark for dark backgrounds: near-white Ray lettering with a purple vertical separator and purple Deck lettering. Two short rounded near-white presentation-content lines sit inside the uppercase D counter. The background and remaining counter space are transparent.</desc>
 
   <g fill="#F8FAFC" fill-rule="evenodd">
     <path d="
@@ -99,4 +99,7 @@
       Q 781.4 435.7 781.4 433 V 316
       Q 781.4 313.3 784.1 313.3 Z"/>
   </g>
+
+  <path id="deck-content" d="M 496 367.5 H 524 M 496 381.5 H 515"
+        fill="none" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
 </svg>

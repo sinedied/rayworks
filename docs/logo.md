@@ -14,6 +14,9 @@ Canonical app logos live in `docs/logos/`. Each product has a light-background S
    external fonts, scripts, or external styles.
 6. Add product-specific `<title>` and `<desc>` metadata. App-local runtime copies must remain exact
    copies of the canonical files.
+7. Give each product one subtle motif integrated into an existing suffix letter. It must communicate
+   the product at compact header size without becoming a separate icon. Use the light/dark `Ray`
+   color for the motif detail.
 
 ## Product colors
 
@@ -27,3 +30,13 @@ Canonical app logos live in `docs/logos/`. Each product has a light-background S
 
 Yellow `#FFC629` is currently unused. Check its contrast before assigning it as lettering on a
 light background.
+
+## Product motifs
+
+| Product | Integrated motif |
+| --- | --- |
+| Ray\|Works | Smile inside the `o` |
+| Ray\|Forms | Checkmark inside the first `o` |
+| Ray\|Live | Broadcast beacon as the `i` dot |
+| Ray\|Trip | Location pin as the `i` dot |
+| Ray\|Deck | Slide-content lines inside the `D` |

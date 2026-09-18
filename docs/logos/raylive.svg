@@ -3,7 +3,7 @@
      role="img" aria-labelledby="raylive-light-title" aria-describedby="raylive-light-desc"
      focusable="false">
   <title id="raylive-light-title">Ray|Live - Light-background variant</title>
-  <desc id="raylive-light-desc">The Ray|Live wordmark for light backgrounds: navy Ray lettering with a teal vertical separator and teal Live lettering. The background and letter counters are transparent.</desc>
+  <desc id="raylive-light-desc">The Ray|Live wordmark for light backgrounds: navy Ray lettering with a teal vertical separator and teal Live lettering. The lowercase i dot forms a compact teal live-broadcast beacon with rounded navy signal arcs. The background and letter counters are transparent.</desc>
 
   <g fill="#0B2A5B" fill-rule="evenodd">
     <path d="
@@ -57,7 +57,11 @@
       Q 534.1 435.7 531.4 435.7 H 458.4
       Q 455.6 435.7 455.6 433 V 316
       Q 455.6 313.3 458.4 313.3 Z"/>
-    <circle cx="555.7" cy="324.5" r="11.2"/>
+    <circle id="live-beacon-dot" cx="555.7" cy="324.5" r="5.5"/>
+    <path id="live-beacon-signals" d="
+      M 546.5 315.3 A 13 13 0 0 0 546.5 333.7
+      M 564.9 315.3 A 13 13 0 0 1 564.9 333.7"
+      fill="none" stroke="#0B2A5B" stroke-width="4" stroke-linecap="round"/>
     <path d="
       M 545.9 343.7 H 565.5
       Q 568.2 343.7 568.2 346.4 V 433

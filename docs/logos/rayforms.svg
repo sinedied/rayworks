@@ -3,7 +3,7 @@
      role="img" aria-labelledby="rayforms-light-title" aria-describedby="rayforms-light-desc"
      focusable="false">
   <title id="rayforms-light-title">Ray|Forms - Light-background variant</title>
-  <desc id="rayforms-light-desc">The Ray|Forms wordmark for light backgrounds: navy Ray lettering with a blue vertical separator and blue Forms lettering. The background and letter counters are transparent.</desc>
+  <desc id="rayforms-light-desc">The Ray|Forms wordmark for light backgrounds: navy Ray lettering with a blue vertical separator and blue Forms lettering. A compact rounded navy checkmark is centered inside the first lowercase o counter. The background and remaining counter space are transparent.</desc>
 
   <g fill="#0B2A5B" fill-rule="evenodd">
     <path d="
@@ -118,4 +118,8 @@
       C 866.2 353.9 880.7 341.6 903 341.6
       C 917.6 341.6 930.2 346.5 939 354.6 Z"/>
   </g>
+
+  <path id="forms-check" d="M 581.7 389.8 L 590.7 398.8 L 607.7 380.8"
+        fill="none" stroke="#0B2A5B" stroke-width="7"
+        stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
