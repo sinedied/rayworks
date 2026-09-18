@@ -1,4 +1,4 @@
-import rayworksLogo from '@/assets/rayworks-logo.svg';
+import raytripLogo from '@/assets/raytrip.svg';
 
 export function RayTripBrand({
   compact = false,
@@ -7,8 +7,7 @@ export function RayTripBrand({
 }) {
   return (
     <span className={`raytrip-brand${compact ? ' raytrip-brand-compact' : ''}`}>
-      <img src={rayworksLogo} alt="Ray|Works" />
-      <span className="raytrip-product">Ray|Trip</span>
+      <img src={raytripLogo} alt="Ray|Trip" />
     </span>
   );
 }

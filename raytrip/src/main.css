@@ -119,7 +119,6 @@ h3 {
 .raytrip-brand {
   align-items: center;
   display: inline-flex;
-  gap: 18px;
 }
 
 .raytrip-brand img {
@@ -130,20 +129,6 @@ h3 {
 
 .raytrip-brand-compact img {
   height: 25px;
-}
-
-.raytrip-product {
-  border-left: 2px solid var(--brand-blue);
-  color: var(--brand-navy);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.25;
-  padding-left: 18px;
-}
-
-.raytrip-brand-compact .raytrip-product {
-  font-size: 17px;
-  padding-left: 14px;
 }
 
 .user-menu {
@@ -1151,11 +1136,6 @@ select:focus {
     height: 21px;
   }
 
-  .raytrip-brand-compact .raytrip-product {
-    font-size: 15px;
-    padding-left: 10px;
-  }
-
   .user-copy {
     display: none;
   }
@@ -1205,17 +1185,8 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
-  .raytrip-brand:not(.raytrip-brand-compact) {
-    gap: 12px;
-  }
-
   .raytrip-brand:not(.raytrip-brand-compact) img {
     height: 26px;
-  }
-
-  .raytrip-brand:not(.raytrip-brand-compact) .raytrip-product {
-    font-size: 17px;
-    padding-left: 12px;
   }
 }
 
