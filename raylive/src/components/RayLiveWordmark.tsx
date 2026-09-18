@@ -1,29 +1,22 @@
+import rayLiveDarkLogo from '@/assets/raylive-dark.svg';
+import rayLiveLogo from '@/assets/raylive.svg';
+
+export type RayLiveLogoVariant = 'light' | 'dark';
+
 type RayLiveWordmarkProps = {
   className?: string;
-  themed?: boolean;
+  variant?: RayLiveLogoVariant;
 };
 
 export function RayLiveWordmark({
   className = '',
-  themed = false,
+  variant = 'light',
 }: RayLiveWordmarkProps) {
   return (
-    <span
-      aria-label="Ray Live"
-      className={`inline-flex items-center font-bold tracking-[-0.035em] ${
-        themed ? 'text-[var(--ia-text)]' : 'text-[var(--brand-navy)]'
-      } ${className}`}
-    >
-      Ray
-      <span
-        aria-hidden
-        className={`px-[0.08em] ${
-          themed ? 'text-[var(--ia-accent)]' : 'text-[var(--brand-blue)]'
-        }`}
-      >
-        |
-      </span>
-      Live
-    </span>
+    <img
+      src={variant === 'dark' ? rayLiveDarkLogo : rayLiveLogo}
+      alt="Ray|Live"
+      className={`block h-6 w-auto max-w-full ${className}`}
+    />
   );
 }

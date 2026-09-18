@@ -5,6 +5,7 @@ import {
   THEME_PRESETS,
   contrastRatio,
   isHexColor,
+  logoVariantForBackground,
   rateContrast,
   resolveTheme,
   themeVars,
@@ -92,6 +93,22 @@ describe('rateContrast', () => {
     expect(rateContrast(7)).toBe('AAA');
     expect(rateContrast(4.5)).toBe('AA');
     expect(rateContrast(3)).toBe('Low');
+  });
+
+  describe('logoVariantForBackground', () => {
+    it('uses the navy logo on light backgrounds', () => {
+      expect(logoVariantForBackground('#ffffff')).toBe('light');
+      expect(logoVariantForBackground('#f8fafc')).toBe('light');
+    });
+
+    it('uses the near-white logo on dark backgrounds', () => {
+      expect(logoVariantForBackground('#000000')).toBe('dark');
+      expect(logoVariantForBackground('#082f49')).toBe('dark');
+    });
+
+    it('degrades safely for an invalid background', () => {
+      expect(logoVariantForBackground('not-a-colour')).toBe('light');
+    });
   });
 });
 

@@ -60,7 +60,7 @@ export function HomePage() {
     <div className="min-h-screen bg-gray-50">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">
         <h1>
-          <RayLiveWordmark className="text-xl" />
+          <RayLiveWordmark />
         </h1>
         <div className="flex items-center gap-4">
           {user?.email && (

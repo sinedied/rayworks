@@ -8,7 +8,11 @@ import { useCountdown } from '@/hooks/useCountdown';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { allowsMultipleSubmissions, hasAnswered } from '@/lib/aggregate';
 import { canAnswer, isPreparing } from '@/lib/quiz';
-import { resolveTheme, themeVars } from '@/lib/theme';
+import {
+  logoVariantForBackground,
+  resolveTheme,
+  themeVars,
+} from '@/lib/theme';
 import {
   getAnsweredActivityIds,
   getParticipantKey,
@@ -121,13 +125,16 @@ export function AudiencePage() {
     <div data-ia-theme style={themeVars(theme)} className="min-h-screen">
       <header className="border-b border-[var(--ia-border)] bg-[var(--ia-surface)] px-4 py-5">
         <div className="mx-auto max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ia-accent)]">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[var(--ia-accent)]">
             {room.brandTitle ? (
               room.brandTitle
             ) : (
-              <RayLiveWordmark themed className="tracking-normal" />
+              <RayLiveWordmark
+                variant={logoVariantForBackground(theme.background)}
+                className="h-5"
+              />
             )}
-          </p>
+          </div>
           <h1 className="mt-1 text-lg font-bold text-[var(--ia-text)]">
             {room.title}
           </h1>

@@ -2,11 +2,13 @@ import { useState } from 'react';
 
 import type { Room } from '../../rayfin/data/Room';
 
+import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 import {
   CUSTOM_PRESET_ID,
   THEME_PRESETS,
   contrastRatio,
   isHexColor,
+  logoVariantForBackground,
   rateContrast,
   resolveTheme,
   themeVars,
@@ -148,9 +150,16 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
         style={themeVars(theme)}
         className="mt-4 rounded-xl border border-[var(--ia-border)] p-4"
       >
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ia-accent)]">
-          {brandTitle.trim() || 'Ray|Live'}
-        </p>
+        {brandTitle.trim() ? (
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ia-accent)]">
+            {brandTitle.trim()}
+          </p>
+        ) : (
+          <RayLiveWordmark
+            variant={logoVariantForBackground(theme.background)}
+            className="h-5"
+          />
+        )}
         <p className="mt-2 text-lg font-bold text-[var(--ia-text)]">
           {room.title}
         </p>

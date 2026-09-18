@@ -127,6 +127,20 @@ export function contrastRatio(foreground: string, background: string): number {
 }
 
 export type ContrastRating = 'AAA' | 'AA' | 'Low';
+export type LogoVariant = 'light' | 'dark';
+
+const LIGHT_LOGO_RAY = '#0B2A5B';
+const DARK_LOGO_RAY = '#F8FAFC';
+
+/** Selects the logo whose Ray lettering has stronger contrast with the background. */
+export function logoVariantForBackground(background: string): LogoVariant {
+  if (!isHexColor(background)) return 'light';
+
+  return contrastRatio(DARK_LOGO_RAY, background) >
+    contrastRatio(LIGHT_LOGO_RAY, background)
+    ? 'dark'
+    : 'light';
+}
 
 /**
  * Rates text legibility. Large projected text only needs 3:1, but attendees read the same

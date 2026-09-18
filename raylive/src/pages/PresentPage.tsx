@@ -14,7 +14,11 @@ import { currentUserIdOrNull } from '@/services/rooms';
 import type { QuestionWithVotes } from '@/services/questions';
 import { buildLeaderboard, countParticipants, tallyAnswers } from '@/lib/aggregate';
 import { isPreparing } from '@/lib/quiz';
-import { resolveTheme, themeVars } from '@/lib/theme';
+import {
+  logoVariantForBackground,
+  resolveTheme,
+  themeVars,
+} from '@/lib/theme';
 
 const TOP_QUESTIONS = 6;
 
@@ -111,13 +115,16 @@ export function PresentPage() {
       <header className="mb-6 flex flex-col items-start gap-4 sm:mb-8 sm:flex-row sm:justify-between sm:gap-8">
         <div className="min-w-0">
           {!embed && (
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--ia-accent)]">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--ia-accent)]">
               {room.brandTitle ? (
                 room.brandTitle
               ) : (
-                <RayLiveWordmark themed className="tracking-normal" />
+                <RayLiveWordmark
+                  variant={logoVariantForBackground(theme.background)}
+                  className="h-6"
+                />
               )}
-            </p>
+            </div>
           )}
           <h1 className="mt-2 truncate text-[clamp(1.75rem,4vw,3rem)] font-bold">
             {liveActivity && !preparing ? liveActivity.prompt : room.title}
