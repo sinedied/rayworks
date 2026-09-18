@@ -2,8 +2,9 @@
 
 ## Brand
 
-- Use `rayworks-logo.svg` on light backgrounds and `rayworks-logo-dark.svg` on dark backgrounds.
-  Keep their proportions, clear space, and colors intact; do not recreate them with a font.
+- Use `docs/logos/rayworks.svg` on light backgrounds and `docs/logos/rayworks-dark.svg` on dark
+  backgrounds. Keep their proportions, clear space, and colors intact; do not recreate them with a
+  font.
 - Product names follow the `Ray|Name` pattern, including Ray|Forms and Ray|Live.
 - Prefer the full wordmark on primary brand surfaces. Use a compact text treatment only where the
   full mark would not fit.

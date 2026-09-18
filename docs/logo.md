@@ -5,8 +5,8 @@ Canonical app logos live in `docs/logos/`. Each product has a light-background S
 
 ## Creating a logo
 
-1. Copy the `Ray` path geometry and separator dimensions exactly from the existing root Ray|Works
-   SVGs. Never redraw or typeset `Ray`.
+1. Copy the `Ray` path geometry and separator dimensions exactly from `rayworks.svg` and
+   `rayworks-dark.svg` in this directory. Never redraw or typeset `Ray`.
 2. Draw the product suffix as paths in the same rounded, bold style, baseline, spacing, and weight.
 3. Use navy `#0B2A5B` for `Ray` on light backgrounds and near-white `#F8FAFC` on dark backgrounds.
 4. Give the separator and complete suffix one unused product color from the brand palette.
@@ -19,6 +19,7 @@ Canonical app logos live in `docs/logos/`. Each product has a light-background S
 
 | Product | Light `Ray` | Dark `Ray` | Separator and suffix |
 | --- | --- | --- | --- |
+| Ray\|Works | `#0B2A5B` | `#F8FAFC` | Brand blue `#2F80FF` |
 | Ray\|Forms | `#0B2A5B` | `#F8FAFC` | Blue `#2F80FF` |
 | Ray\|Live | `#0B2A5B` | `#F8FAFC` | Teal `#00C2AB` |
 | Ray\|Trip | `#0B2A5B` | `#F8FAFC` | Coral `#FF6B6B` |
