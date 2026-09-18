@@ -157,7 +157,7 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
         ) : (
           <RayLiveWordmark
             variant={logoVariantForBackground(theme.background)}
-            className="h-5"
+            className="h-6"
           />
         )}
         <p className="mt-2 text-lg font-bold text-[var(--ia-text)]">

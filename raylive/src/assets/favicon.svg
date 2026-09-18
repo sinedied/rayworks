@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="raylive-favicon-title" aria-describedby="raylive-favicon-desc" focusable="false">
+  <title id="raylive-favicon-title">Ray|Live favicon</title>
+  <desc id="raylive-favicon-desc">A near-white L framing a navy center dot and two bold, widely spaced outer signal marks on a teal rounded tile. The outer canvas is transparent.</desc>
+  <path fill="#00C2AB" d="M16 2H48A14 14 0 0 1 62 16V48A14 14 0 0 1 48 62H16A14 14 0 0 1 2 48V16A14 14 0 0 1 16 2Z"/>
+  <path fill="#F8FAFC" d="M13.5 12H20.5Q22 12 22 13.5V44H46.5Q48 44 48 45.5V52.5Q48 54 46.5 54H13.5Q12 54 12 52.5V13.5Q12 12 13.5 12Z"/>
+  <path fill="#0B2A5B" d="M48 26A4 4 0 1 0 40 26A4 4 0 1 0 48 26ZM35 13C25.7 19 25.7 33 35 39L39 33C33.7 29.5 33.7 22.5 39 19ZM53 13C62.3 19 62.3 33 53 39L49 33C54.3 29.5 54.3 22.5 49 19Z"/>
+</svg>

@@ -16,7 +16,7 @@ export function RayLiveWordmark({
     <img
       src={variant === 'dark' ? rayLiveDarkLogo : rayLiveLogo}
       alt="Ray|Live"
-      className={`block h-6 w-auto max-w-full ${className}`}
+      className={`block h-7 w-auto max-w-full sm:h-8 ${className}`}
     />
   );
 }

@@ -131,7 +131,7 @@ export function AudiencePage() {
             ) : (
               <RayLiveWordmark
                 variant={logoVariantForBackground(theme.background)}
-                className="h-5"
+                className="h-7 sm:h-8"
               />
             )}
           </div>

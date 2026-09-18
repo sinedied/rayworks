@@ -52,7 +52,7 @@ export function AuthPage() {
           <div className="rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-[0_24px_70px_-36px_rgba(11,42,91,0.38)]">
             <div className="mb-8 text-center">
               <h1>
-                <RayLiveWordmark className="h-8" />
+                <RayLiveWordmark className="h-9 sm:h-10" />
               </h1>
               <p className="mt-2 text-sm text-gray-500">
                 Sign in to run live Q&amp;A, polls, and quizzes.

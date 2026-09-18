@@ -58,6 +58,7 @@ defensively, e.g. `room.qnaEnabled !== false` and `room.showJoinInfo !== false`.
 `room.brandTitle` falls back to the Ray|Live wordmark.
 Use the app-local Ray|Live SVG assets for that fallback, selecting the light/dark variant through
 `logoVariantForBackground`; do not reconstruct the wordmark with text or pair it with Ray|Works.
+Keep standard header logos at 32px desktop and 28px mobile.
 
 Keep the audience and projected views responsive: no horizontal overflow at 390 / 768 / 1280 px,
 44 px minimum tap targets, and `clamp()` for stage typography so it reads on a laptop and a
