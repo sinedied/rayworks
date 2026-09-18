@@ -1,19 +1,15 @@
 import { cn } from '@/lib/utils';
+import rayFormsLogo from '@/assets/rayforms.svg';
 
 export function RayFormsWordmark({ className }: { className?: string }) {
   return (
-    <span
-      aria-label="Ray Forms"
+    <img
+      src={rayFormsLogo}
+      alt="Ray|Forms"
       className={cn(
-        'font-heading inline-flex items-center text-[var(--brand-navy)]',
+        'block h-5 w-auto max-w-full',
         className
       )}
-    >
-      Ray
-      <span aria-hidden className="px-[0.08em] text-[var(--brand)]">
-        |
-      </span>
-      Forms
-    </span>
+    />
   );
 }

@@ -117,6 +117,8 @@ grey canvas, with Ray|Works navy (`#0B2A5B`) and blue (`#2F80FF`) as the brand a
 Sans is used throughout; IBM Plex Mono is reserved for tabular figures. Tokens live in
 `src/styles/design.css`.
 
+- Use `src/assets/rayforms.svg` for product branding; do not reconstruct the wordmark with text or
+  pair it with Ray|Works.
 - Use the semantic tokens (`--surface`, `--text`, `--text-muted`, `--border-subtle`, `--brand`)
   and the `.card` / `.card-interactive` / `.font-heading` / `.font-data` / `.label-caps` /
   `.fade-in` primitives. Prefer shadcn utilities (`bg-card`, `text-muted-foreground`) where they

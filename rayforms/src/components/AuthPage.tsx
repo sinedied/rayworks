@@ -68,7 +68,7 @@ export function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex h-14 items-center border-b border-[var(--border-subtle)] bg-[var(--surface)] px-4 sm:px-6">
-        <RayFormsWordmark className="text-[17px]" />
+        <RayFormsWordmark />
       </header>
 
       <div className="flex flex-1 items-center justify-center p-4">
