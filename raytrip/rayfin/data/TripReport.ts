@@ -31,6 +31,6 @@ export class TripReport {
   @date() generatedAt!: Date;
   @date({ optional: true }) finalizedAt?: Date;
   @uuid() trip_id!: string;
-  @one(() => Trip) trip!: Trip;
+  @one(() => Trip, { optional: true }) trip?: Trip;
   @text({ max: 200 }) owner_id!: string;
 }

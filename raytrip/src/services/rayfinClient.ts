@@ -40,7 +40,6 @@ export function initRayfinClient(
   client = new RaytripClient({
     baseUrl: config.baseUrl,
     publishableKey: config.publishableKey,
-    useProxy: false,
     authStorage: true,
     functionsBaseUrl: config.functionsBaseUrl,
   });

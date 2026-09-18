@@ -21,7 +21,7 @@ export class TripPhoto {
   @text({ optional: true, max: 500 }) caption?: string;
   @date() createdAt!: Date;
   @uuid() trip_id!: string;
-  @one(() => Trip) trip!: Trip;
+  @one(() => Trip, { optional: true }) trip?: Trip;
   @uuid({ optional: true }) tripDay_id?: string;
   @one(() => TripDay, { optional: true }) tripDay?: TripDay;
   @text({ max: 200 }) owner_id!: string;

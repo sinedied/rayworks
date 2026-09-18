@@ -154,7 +154,6 @@ udf.func(
             },
             { role: 'user', content: prompt },
           ],
-          temperature: 0.2,
         }),
       }
     );
@@ -209,7 +208,6 @@ udf.func(
       shareId,
       generatedAt,
       trip_id: tripId,
-      trip: { id: tripId },
       owner_id: trip.owner_id,
     });
 

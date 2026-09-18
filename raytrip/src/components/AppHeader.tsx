@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+import { RayTripBrand } from '@/components/RayTripBrand';
 import { useAuth } from '@/hooks/AuthContext';
 
 export function AppHeader() {
@@ -7,12 +8,8 @@ export function AppHeader() {
 
   return (
     <header className="app-header">
-      <Link className="brand" to="/">
-        <span className="brand-mark">R|T</span>
-        <span>
-          <strong>Ray|Trip</strong>
-          <small>Field notes to final report</small>
-        </span>
+      <Link className="app-brand-link" to="/">
+        <RayTripBrand compact />
       </Link>
       <div className="user-menu">
         <span className="user-avatar">
@@ -22,7 +19,7 @@ export function AppHeader() {
           <strong>{user?.name}</strong>
           <small>{user?.email}</small>
         </span>
-        <button className="text-button" onClick={() => void signOut()}>
+        <button className="button button-quiet" onClick={() => void signOut()}>
           Sign out
         </button>
       </div>

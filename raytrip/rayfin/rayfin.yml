@@ -10,6 +10,8 @@ services:
       enabled: true
     allowedRedirectUris:
       - http://localhost:5173
+      - http://127.0.0.1:5173
+      - https://neat-zeal-769b109b39-swedencentral.webapp.fabricapps.net
   data:
     enabled: true
     dialect: mssql

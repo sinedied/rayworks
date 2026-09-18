@@ -1,5 +1,12 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
 
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { AuthPage } from '@/components/AuthPage';
 import { useAuth } from '@/hooks/AuthContext';
 import { HomePage } from '@/pages/HomePage';
@@ -15,15 +22,25 @@ function AuthGuard({
 }) {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) return <div className="loading-page">Preparing your travel log…</div>;
+  if (loading) {
+    return (
+      <main className="page-state">
+        <div className="spinner" aria-hidden="true" />
+        <h1>Preparing Ray|Trip</h1>
+        <p>Connecting securely to your Fabric workspace.</p>
+      </main>
+    );
+  }
   if (requireAuth && !isAuthenticated) return <Navigate to="/auth" replace />;
   if (!requireAuth && isAuthenticated) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
-function App() {
+function AppRoutes() {
+  const location = useLocation();
+
   return (
-    <BrowserRouter>
+    <AppErrorBoundary resetKey={location.pathname}>
       <Routes>
         <Route
           path="/auth"
@@ -59,6 +76,14 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </AppErrorBoundary>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

@@ -5,11 +5,8 @@ import type { Trip } from '../../rayfin/data/Trip';
 
 import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/hooks/AuthContext';
+import { formatDate } from '@/lib/dates';
 import { createTrip, listTrips } from '@/services/trips';
-
-function dateValue(date: Date): string {
-  return new Date(date).toISOString().slice(0, 10);
-}
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -54,6 +51,9 @@ export function HomePage() {
         },
         user.id
       );
+      if (!trip.id) {
+        throw new Error('The trip was created without a valid identifier.');
+      }
       navigate(`/trips/${trip.id}`);
     } catch (reason) {
       setError(
@@ -68,16 +68,16 @@ export function HomePage() {
       <main className="dashboard">
         <section className="dashboard-intro">
           <div>
-            <p className="eyebrow">Travel intelligence, captured daily</p>
-            <h1>Keep the signal.<br />Lose the paperwork.</h1>
+            <p className="eyebrow">Trip reporting</p>
+            <h1>Your trips and reports</h1>
           </div>
           <div className="intro-aside">
             <p>
-              Record the moments that matter while they are fresh. Ray|Trip
-              turns the trail into a polished report when you return.
+              Capture daily notes and photos, then prepare a concise report for
+              review and sharing.
             </p>
             <button className="primary-button" onClick={() => setCreating(true)}>
-              Start a trip
+              Create trip
             </button>
           </div>
         </section>
@@ -89,11 +89,11 @@ export function HomePage() {
             className="next-trip"
             onClick={() => navigate(`/trips/${nextTrip.id}`)}
           >
-            <span className="next-label">Continue your field notes</span>
+            <span className="next-label">Current trip</span>
             <strong>{nextTrip.title}</strong>
             <span>
-              {nextTrip.destination} · {dateValue(nextTrip.startDate)} —{' '}
-              {dateValue(nextTrip.endDate)}
+              {nextTrip.destination} · {formatDate(nextTrip.startDate)} —{' '}
+              {formatDate(nextTrip.endDate)}
             </span>
             <i aria-hidden="true">↗</i>
           </button>
@@ -103,7 +103,7 @@ export function HomePage() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">Your archive</p>
-              <h2>Trips and reports</h2>
+              <h2>All trips</h2>
             </div>
             <span className="count-chip">{trips.length} total</span>
           </div>
@@ -112,9 +112,9 @@ export function HomePage() {
             <div className="empty-state">Loading your travel log…</div>
           ) : trips.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-index">01</span>
-              <h3>Your first report starts with one note.</h3>
-              <p>Create a trip, then add daily observations and photos.</p>
+              <span className="empty-index">+</span>
+              <h3>No trips yet</h3>
+              <p>Create a trip to start capturing daily notes and photos.</p>
               <button className="secondary-button" onClick={() => setCreating(true)}>
                 Create your first trip
               </button>
@@ -136,7 +136,7 @@ export function HomePage() {
                   <h3>{trip.title}</h3>
                   <p>{trip.destination}</p>
                   <time>
-                    {dateValue(trip.startDate)} — {dateValue(trip.endDate)}
+                    {formatDate(trip.startDate)} — {formatDate(trip.endDate)}
                   </time>
                   <span className="card-arrow">Open trip ↗</span>
                 </button>
@@ -156,8 +156,8 @@ export function HomePage() {
             >
               ×
             </button>
-            <p className="eyebrow">New assignment</p>
-            <h2>Where are you headed?</h2>
+            <p className="eyebrow">New trip</p>
+            <h2>Create a trip</h2>
             <form className="form-stack" onSubmit={(event) => void handleCreate(event)}>
               <label>
                 Trip title

@@ -21,6 +21,6 @@ export class TripDay {
   @date() createdAt!: Date;
   @date() updatedAt!: Date;
   @uuid() trip_id!: string;
-  @one(() => Trip) trip!: Trip;
+  @one(() => Trip, { optional: true }) trip?: Trip;
   @text({ max: 200 }) owner_id!: string;
 }

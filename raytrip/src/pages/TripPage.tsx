@@ -1,11 +1,13 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 
 import type { Trip } from '../../rayfin/data/Trip';
 import type { TripDay } from '../../rayfin/data/TripDay';
@@ -14,6 +16,7 @@ import type { TripReport } from '../../rayfin/data/TripReport';
 
 import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/hooks/AuthContext';
+import { formatDate, toDateInputValue, toValidDate } from '@/lib/dates';
 import {
   deleteTripDay,
   deleteTripPhoto,
@@ -30,17 +33,7 @@ import {
   uploadTripPhoto,
 } from '@/services/trips';
 
-function formatDate(value: Date): string {
-  return new Intl.DateTimeFormat('en', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(value));
-}
-
-function inputDate(value: Date): string {
-  return new Date(value).toISOString().slice(0, 10);
-}
+type PageState = 'loading' | 'ready' | 'not-found' | 'error';
 
 function PhotoTile({
   photo,
@@ -50,13 +43,17 @@ function PhotoTile({
   onDelete: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let objectUrl: string | null = null;
-    getTripPhotoUrl(photo).then((loaded) => {
-      objectUrl = loaded;
-      setUrl(loaded);
-    });
+    setLoadFailed(false);
+    getTripPhotoUrl(photo)
+      .then((loaded) => {
+        objectUrl = loaded;
+        setUrl(loaded);
+      })
+      .catch(() => setLoadFailed(true));
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
@@ -64,7 +61,13 @@ function PhotoTile({
 
   return (
     <figure className="photo-tile">
-      {url ? <img src={url} alt={photo.caption || 'Trip attachment'} /> : <div />}
+      {url ? (
+        <img src={url} alt={photo.caption || 'Trip attachment'} />
+      ) : (
+        <div className="photo-placeholder">
+          {loadFailed ? 'Preview unavailable' : 'Loading image…'}
+        </div>
+      )}
       <figcaption>
         <span>{photo.caption || 'Untitled field photo'}</span>
         <button className="text-button danger" onClick={onDelete}>
@@ -77,6 +80,7 @@ function PhotoTile({
 
 export function TripPage() {
   const { tripId = '' } = useParams();
+  const { key: routeKey } = useLocation();
   const { user } = useAuth();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [days, setDays] = useState<TripDay[]>([]);
@@ -86,30 +90,133 @@ export function TripPage() {
   const [addingDay, setAddingDay] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageState, setPageState] = useState<PageState>('loading');
+  const loadRequest = useRef(0);
+  const activeRoute = useRef({ tripId, routeKey, generation: 0 });
 
-  const refresh = useCallback(async () => {
-    const [nextTrip, nextDays, nextPhotos, nextReport] = await Promise.all([
-      getTrip(tripId),
-      listTripDays(tripId),
-      listTripPhotos(tripId),
-      getTripReport(tripId),
-    ]);
-    setTrip(nextTrip);
-    setDays(nextDays);
-    setPhotos(nextPhotos);
-    setReport(nextReport);
-  }, [tripId]);
+  useLayoutEffect(() => {
+    activeRoute.current = {
+      tripId,
+      routeKey,
+      generation: activeRoute.current.generation + 1,
+    };
+  }, [routeKey, tripId]);
+
+  function isCurrentRoute(
+    routeTripId: string,
+    expectedRouteKey: string,
+    expectedGeneration: number
+  ) {
+    return (
+      activeRoute.current.tripId === routeTripId &&
+      activeRoute.current.routeKey === expectedRouteKey &&
+      activeRoute.current.generation === expectedGeneration
+    );
+  }
+
+  const refresh = useCallback(async (showLoading = false) => {
+    const requestId = ++loadRequest.current;
+    const requestedTripId = tripId;
+    const requestedRouteKey = routeKey;
+    const requestedGeneration = activeRoute.current.generation;
+    if (showLoading) {
+      setPageState('loading');
+      setTrip(null);
+      setDays([]);
+      setPhotos([]);
+      setReport(null);
+    }
+    setError(null);
+
+    try {
+      const nextTrip = await getTrip(requestedTripId);
+      if (
+        requestId !== loadRequest.current ||
+        !isCurrentRoute(
+          requestedTripId,
+          requestedRouteKey,
+          requestedGeneration
+        )
+      ) {
+        return;
+      }
+      if (!nextTrip) {
+        setTrip(null);
+        setPageState('not-found');
+        return;
+      }
+
+      setTrip(nextTrip);
+
+      const [daysResult, photosResult, reportResult] = await Promise.allSettled([
+        listTripDays(requestedTripId),
+        listTripPhotos(requestedTripId),
+        getTripReport(requestedTripId),
+      ]);
+      if (
+        requestId !== loadRequest.current ||
+        !isCurrentRoute(
+          requestedTripId,
+          requestedRouteKey,
+          requestedGeneration
+        )
+      ) {
+        return;
+      }
+      const sectionFailures: string[] = [];
+
+      if (daysResult.status === 'fulfilled') {
+        setDays(daysResult.value);
+      } else {
+        setDays([]);
+        sectionFailures.push('Daily notes could not be loaded.');
+      }
+      if (photosResult.status === 'fulfilled') {
+        setPhotos(photosResult.value);
+      } else {
+        setPhotos([]);
+        sectionFailures.push('Photos could not be loaded.');
+      }
+      if (reportResult.status === 'fulfilled') {
+        setReport(reportResult.value);
+      } else {
+        setReport(null);
+        sectionFailures.push('The report draft could not be loaded.');
+      }
+
+      if (sectionFailures.length) setError(sectionFailures.join(' '));
+      setPageState('ready');
+    } catch (reason) {
+      if (
+        requestId !== loadRequest.current ||
+        !isCurrentRoute(
+          requestedTripId,
+          requestedRouteKey,
+          requestedGeneration
+        )
+      ) {
+        return;
+      }
+      setTrip(null);
+      setError(
+        reason instanceof Error ? reason.message : 'Could not load this trip.'
+      );
+      setPageState('error');
+    }
+  }, [routeKey, tripId]);
 
   useEffect(() => {
-    refresh().catch((reason: unknown) =>
-      setError(reason instanceof Error ? reason.message : 'Could not load trip.')
-    );
+    setBusy(false);
+    setAddingDay(false);
+    setEditingDay(null);
+    void refresh(true);
   }, [refresh]);
 
   const tripProgress = useMemo(() => {
     if (!trip) return 0;
-    const start = new Date(trip.startDate).getTime();
-    const end = new Date(trip.endDate).getTime();
+    const start = toValidDate(trip.startDate)?.getTime();
+    const end = toValidDate(trip.endDate)?.getTime();
+    if (start === undefined || end === undefined) return 0;
     return Math.max(
       0,
       Math.min(100, Math.round(((Date.now() - start) / (end - start || 1)) * 100))
@@ -119,6 +226,9 @@ export function TripPage() {
   async function handleDay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user) return;
+    const mutationTripId = tripId;
+    const mutationRouteKey = routeKey;
+    const mutationGeneration = activeRoute.current.generation;
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setError(null);
@@ -133,19 +243,48 @@ export function TripPage() {
         },
         editingDay?.id
       );
-      setAddingDay(false);
-      setEditingDay(null);
-      await refresh();
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setAddingDay(false);
+        setEditingDay(null);
+        await refresh();
+      }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not save note.');
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setError(
+          reason instanceof Error ? reason.message : 'Could not save note.'
+        );
+      }
     } finally {
-      setBusy(false);
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setBusy(false);
+      }
     }
   }
 
   async function handlePhoto(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user) return;
+    const mutationTripId = tripId;
+    const mutationRouteKey = routeKey;
+    const mutationGeneration = activeRoute.current.generation;
     const form = new FormData(event.currentTarget);
     const file = form.get('photo');
     if (!(file instanceof File) || !file.size) return;
@@ -159,37 +298,91 @@ export function TripPage() {
         String(form.get('caption')) || undefined,
         String(form.get('tripDayId')) || undefined
       );
-      event.currentTarget.reset();
-      await refresh();
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        event.currentTarget.reset();
+        await refresh();
+      }
     } catch (reason) {
-      setError(
-        reason instanceof Error ? reason.message : 'Could not upload photo.'
-      );
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setError(
+          reason instanceof Error ? reason.message : 'Could not upload photo.'
+        );
+      }
     } finally {
-      setBusy(false);
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setBusy(false);
+      }
     }
   }
 
   async function handleGenerate() {
+    const mutationTripId = tripId;
+    const mutationRouteKey = routeKey;
+    const mutationGeneration = activeRoute.current.generation;
     setBusy(true);
     setError(null);
     try {
       await generateTripReport(tripId);
-      await refresh();
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        await refresh();
+      }
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : 'Could not generate the report.'
-      );
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : 'Could not generate the report.'
+        );
+      }
     } finally {
-      setBusy(false);
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setBusy(false);
+      }
     }
   }
 
   async function handleReportSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!report) return;
+    const mutationTripId = tripId;
+    const mutationRouteKey = routeKey;
+    const mutationGeneration = activeRoute.current.generation;
     const form = new FormData(event.currentTarget);
     setBusy(true);
     try {
@@ -197,17 +390,130 @@ export function TripPage() {
         summary: String(form.get('summary')),
         keyTakeaways: String(form.get('keyTakeaways')),
       });
-      await refresh();
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        await refresh();
+      }
+    } catch (reason) {
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setError(
+          reason instanceof Error ? reason.message : 'Could not save the report.'
+        );
+      }
     } finally {
-      setBusy(false);
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setBusy(false);
+      }
     }
   }
 
-  if (!trip) {
+  async function runMutation(
+    action: () => Promise<void>,
+    failureMessage: string
+  ) {
+    const mutationTripId = tripId;
+    const mutationRouteKey = routeKey;
+    const mutationGeneration = activeRoute.current.generation;
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        await refresh();
+      }
+    } catch (reason) {
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setError(reason instanceof Error ? reason.message : failureMessage);
+      }
+    } finally {
+      if (
+        isCurrentRoute(
+          mutationTripId,
+          mutationRouteKey,
+          mutationGeneration
+        )
+      ) {
+        setBusy(false);
+      }
+    }
+  }
+
+  if (pageState === 'loading') {
     return (
       <div className="app-frame">
         <AppHeader />
-        <main className="loading-page">{error || 'Loading field notes…'}</main>
+        <main className="page-state">
+          <div className="spinner" aria-hidden="true" />
+          <h1>Loading trip</h1>
+          <p>Retrieving your notes, photos, and report.</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (pageState === 'error') {
+    return (
+      <div className="app-frame">
+        <AppHeader />
+        <main className="page-state" role="alert">
+          <h1>We could not load this trip.</h1>
+          <p>{error}</p>
+          <div className="button-row">
+            <button
+              className="button button-primary"
+              onClick={() => void refresh(true)}
+            >
+              Try again
+            </button>
+            <Link className="button button-secondary" to="/">
+              Back to trips
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (pageState === 'not-found' || !trip) {
+    return (
+      <div className="app-frame">
+        <AppHeader />
+        <main className="page-state">
+          <h1>Trip not found</h1>
+          <p>This trip may have been removed or belongs to another user.</p>
+          <Link className="button button-primary" to="/">
+            Back to trips
+          </Link>
+        </main>
       </div>
     );
   }
@@ -264,7 +570,10 @@ export function TripPage() {
                       <button
                         className="text-button danger"
                         onClick={() =>
-                          void deleteTripDay(entry.id).then(refresh)
+                          void runMutation(
+                            () => deleteTripDay(entry.id),
+                            'Could not delete the daily note.'
+                          )
                         }
                       >
                         Delete
@@ -285,9 +594,13 @@ export function TripPage() {
                 <select
                   value={trip.status}
                   onChange={(event) =>
-                    void updateTrip(trip.id, {
-                      status: event.target.value as Trip['status'],
-                    }).then(refresh)
+                    void runMutation(
+                      () =>
+                        updateTrip(trip.id, {
+                          status: event.target.value as Trip['status'],
+                        }),
+                      'Could not update the trip status.'
+                    )
                   }
                 >
                   <option value="draft">Draft</option>
@@ -307,7 +620,7 @@ export function TripPage() {
                   <option value="">General trip photo</option>
                   {days.map((entry) => (
                     <option key={entry.id} value={entry.id}>
-                      {inputDate(entry.day)} — {entry.title || 'Daily notes'}
+                      {toDateInputValue(entry.day)} — {entry.title || 'Daily notes'}
                     </option>
                   ))}
                 </select>
@@ -332,7 +645,12 @@ export function TripPage() {
                 <PhotoTile
                   key={photo.id}
                   photo={photo}
-                  onDelete={() => void deleteTripPhoto(photo).then(refresh)}
+                  onDelete={() =>
+                    void runMutation(
+                      () => deleteTripPhoto(photo),
+                      'Could not remove the photo.'
+                    )
+                  }
                 />
               ))}
             </div>
@@ -395,7 +713,12 @@ export function TripPage() {
                       className="primary-button"
                       disabled={busy}
                       type="button"
-                      onClick={() => void finalizeTripReport(report.id).then(refresh)}
+                      onClick={() =>
+                        void runMutation(
+                          () => finalizeTripReport(report.id),
+                          'Could not finalize the report.'
+                        )
+                      }
                     >
                       Finalize & share
                     </button>
@@ -453,7 +776,9 @@ export function TripPage() {
                     type="date"
                     required
                     defaultValue={
-                      editingDay ? inputDate(editingDay.day) : inputDate(trip.startDate)
+                      editingDay
+                        ? toDateInputValue(editingDay.day)
+                        : toDateInputValue(trip.startDate)
                     }
                   />
                 </label>

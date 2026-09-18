@@ -29,7 +29,22 @@ export async function listTrips(): Promise<Trip[]> {
 }
 
 export async function getTrip(id: string): Promise<Trip | null> {
-  return getRayfinClient().data.Trip.findById(id);
+  const trips = await getRayfinClient().data.Trip.select([
+    'id',
+    'title',
+    'destination',
+    'purpose',
+    'startDate',
+    'endDate',
+    'status',
+    'createdAt',
+    'updatedAt',
+    'owner_id',
+  ])
+    .where({ id: { eq: id } })
+    .first(1)
+    .execute();
+  return trips[0] ?? null;
 }
 
 export async function createTrip(
@@ -96,7 +111,6 @@ export async function saveTripDay(
     createdAt: now,
     updatedAt: now,
     trip_id: tripId,
-    trip: { id: tripId },
     owner_id: ownerId,
   });
 }
@@ -143,9 +157,7 @@ export async function uploadTripPhoto(
       caption: caption?.trim() || undefined,
       createdAt: new Date(),
       trip_id: tripId,
-      trip: { id: tripId },
       tripDay_id: tripDayId,
-      tripDay: tripDayId ? { id: tripDayId } : undefined,
       owner_id: ownerId,
     });
   } catch (error) {

@@ -4,16 +4,23 @@ import { Link, useParams } from 'react-router-dom';
 import type { TripReport } from '../../rayfin/data/TripReport';
 
 import { AppHeader } from '@/components/AppHeader';
+import { formatDate } from '@/lib/dates';
 import { getSharedReport } from '@/services/trips';
 
 export function SharedReportPage() {
   const { shareId = '' } = useParams();
   const [report, setReport] = useState<TripReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getSharedReport(shareId)
       .then(setReport)
+      .catch((reason: unknown) =>
+        setError(
+          reason instanceof Error ? reason.message : 'Could not open the report.'
+        )
+      )
       .finally(() => setLoading(false));
   }, [shareId]);
 
@@ -23,17 +30,24 @@ export function SharedReportPage() {
       <main>
         <Link className="back-link" to="/">← Ray|Trip</Link>
         {loading ? (
-          <div className="loading-page">Opening report…</div>
+          <div className="page-state">Opening report…</div>
+        ) : error ? (
+          <div className="page-state" role="alert">
+            <h1>We could not open this report.</h1>
+            <p>{error}</p>
+            <Link className="button button-primary" to="/">
+              Back to trips
+            </Link>
+          </div>
         ) : report ? (
           <article className="shared-report">
             <header>
               <p className="eyebrow">Final trip report</p>
               <h1>{report.title}</h1>
               <p>
-                Finalized{' '}
-                {new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(
-                  new Date(report.finalizedAt || report.generatedAt)
-                )}
+                Finalized {formatDate(report.finalizedAt || report.generatedAt, {
+                  dateStyle: 'long',
+                })}
               </p>
             </header>
             <section>
