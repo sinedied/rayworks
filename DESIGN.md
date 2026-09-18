@@ -7,6 +7,7 @@
 - Product names follow the `Ray|Name` pattern, including Ray|Forms and Ray|Live.
 - Prefer the full wordmark on primary brand surfaces. Use a compact text treatment only where the
   full mark would not fit.
+- See [`docs/logo.md`](docs/logo.md) for app-logo construction rules and product color assignments.
 
 ## Color
 
