@@ -3,7 +3,7 @@
      role="img" aria-labelledby="raytrip-light-title" aria-describedby="raytrip-light-desc"
      focusable="false">
   <title id="raytrip-light-title">Ray|Trip - Light-background variant</title>
-  <desc id="raytrip-light-desc">The Ray|Trip wordmark for light backgrounds: navy Ray lettering with a coral vertical separator and coral Trip lettering. The background and letter counters are transparent.</desc>
+  <desc id="raytrip-light-desc">The Ray|Trip wordmark for light backgrounds: navy Ray lettering with a coral vertical separator and coral Trip lettering. A compact coral location pin with a navy circular counter replaces the lowercase i dot, aligned with its stem. The background and all other letter counters are transparent.</desc>
 
   <g fill="#0B2A5B" fill-rule="evenodd">
     <path d="
@@ -68,7 +68,14 @@
       V 433 Q 742.7 435.7 740 435.7 H 720.1
       Q 717.4 435.7 717.4 433 V 346.3
       Q 717.4 343.7 720.2 343.7 Z"/>
-    <circle cx="613" cy="324.5" r="11.2"/>
+    <path id="trip-pin" d="
+      M 613 313.3
+      C 606.8 313.3 601.8 318.3 601.8 324.5
+      C 601.8 329.6 608.1 335.4 611.6 338.5
+      Q 613 339.7 614.4 338.5
+      C 617.9 335.4 624.2 329.6 624.2 324.5
+      C 624.2 318.3 619.2 313.3 613 313.3 Z"/>
+    <circle id="trip-pin-counter" cx="613" cy="324.5" r="4.2" fill="#0B2A5B"/>
     <path d="
       M 603.2 343.7 H 622.8
       Q 625.5 343.7 625.5 346.4 V 433
