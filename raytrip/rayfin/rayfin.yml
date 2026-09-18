@@ -19,6 +19,7 @@ services:
     enabled: true
   staticHosting:
     enabled: true
+    assetAccess: protected
     folder: dist
     buildCommand: npm run build:fabric
     indexDocument: index.html

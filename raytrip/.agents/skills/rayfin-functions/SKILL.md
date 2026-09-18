@@ -163,6 +163,7 @@ class ContextTokenCredential implements TokenCredential {
 | `KeyVault` | Azure Key Vault | Vault URL (e.g. `https://my-vault.vault.azure.net/`) |
 | `CosmosDB` | Azure Cosmos DB | Account endpoint + database/container names |
 | `EventGrid` | Azure Event Grid | Topic endpoint |
+| `Kusto` | Azure Data Explorer (Kusto) | Cluster query URL (e.g. `https://<cluster>.<region>.kusto.windows.net`) |
 | `PowerBI` | Power BI APIs | _(scopes TBD — check with platform team)_ |
 
 ### SQL connections: shared requirements
@@ -303,11 +304,12 @@ Import `AppFunctionsSchema` from the functions project and pass it to `RayfinCli
 
 ```ts
 import { RayfinClient } from '@microsoft/rayfin-client';
+import { resolveRayfinFunctionsBaseUrl } from '@microsoft/rayfin-local-dev';
 import type { AppFunctionsSchema } from '../rayfin/functions/src/types.js';
 
 const client = new RayfinClient<AppSchema, AppFunctionsSchema>({
   publishableKey: import.meta.env.VITE_RAYFIN_PUBLISHABLE_KEY,
-  functionsBaseUrl: import.meta.env.VITE_RAYFIN_FUNCTIONS_URL,
+  functionsBaseUrl: resolveRayfinFunctionsBaseUrl(),
 });
 
 // Type-safe invocation — parameters and return type are checked
@@ -318,22 +320,37 @@ const entries = await client.functions.getEntries.invoke();
 ```
 
 - `invoke()` returns `Promise<TOutput>` directly (not an envelope).
-- `functionsBaseUrl` is optional — when unset, function invocation throws at call time.
-- `rayfin dev functions apply` auto-patches your client code on first run. See [Local Functions Debugging Setup](#local-functions-debugging-setup) if you need to configure manually.
+- `functionsBaseUrl` is optional — when unset, function invocation uses the deployed Rayfin backend route.
+- Bundled Vite templates include same-origin local routing already.
+- `rayfin dev functions apply` auto-patches recognized existing client code on first run.
+- See [Local Functions Debugging Setup](#local-functions-debugging-setup) if you need to configure a custom project manually.
 
 ## Local Functions Debugging Setup
 
-`rayfin dev functions apply` automatically:
+Bare `rayfin dev` automatically:
 
-1. Sets `VITE_RAYFIN_FUNCTIONS_URL` in `.env.local` pointing to `http://localhost:<port>`
-2. Patches `src/services/rayfinClient.ts` and `src/services/bootstrap.ts` to pass `functionsBaseUrl` to the `RayfinClient` constructor
+1. Selects an available Functions port and writes its URL to `VITE_RAYFIN_FUNCTIONS_URL` through `.env.local`.
+2. Starts the configured frontend and Functions host together.
+3. Routes bundled Vite templates through same-origin `/.rayfin/api/<name>` requests.
+4. Returns HTTP 502 if the local Functions host is unavailable instead of invoking deployed function code.
 
-If the auto-patch fails (custom code structure), manually ensure `functionsBaseUrl: import.meta.env.VITE_RAYFIN_FUNCTIONS_URL` reaches the `RayfinClient` config object — the same pattern shown in [Invoking Functions from Frontend](#invoking-functions-from-frontend).
-When `VITE_RAYFIN_FUNCTIONS_URL` is unset (production, or functions not running locally), `functionsBaseUrl` is `undefined` and function calls route through the normal backend path.
+`rayfin dev functions apply` remains available as a compatibility entrypoint and uses the same runtime primitives.
+When `VITE_RAYFIN_FUNCTIONS_URL` is unset or the application is built for production, `functionsBaseUrl` is `undefined` and function calls route through the deployed backend.
 
 ## Wiring `functionsBaseUrl` for Local Debug
 
-Shipped templates intentionally OMIT `functionsBaseUrl` from `RayfinClient` — it is a private/local-debug feature and would surface unused env wiring to apps that never run functions locally. When the user starts configuring functions (calling `udf.func()`, running `rayfin functions init`, or `rayfin dev functions apply`), the agent should wire the field into the existing two-file Vite-template split:
+Shipped Vite templates include `@microsoft/rayfin-local-dev`, register `rayfinLocalDev()` in `vite.config.ts`, and resolve `functionsBaseUrl` through the package's browser-safe entrypoint.
+For a custom Vite project, add the same plugin before wiring the client:
+
+```ts
+import { rayfinLocalDev } from '@microsoft/rayfin-local-dev/vite';
+
+export default defineConfig({
+  plugins: [rayfinLocalDev()],
+});
+```
+
+Then pass the same-origin base URL through the existing client configuration:
 
 `src/services/rayfinClient.ts` — accept the new optional config field and pass it to `new RayfinClient(...)`:
 
@@ -357,17 +374,19 @@ client = new RayfinClient<AppSchema>({
 `src/services/bootstrap.ts` — pass the env var through, gated on `localDev` so production/Fabric-hosted bootstraps leave it `undefined` and the SDK uses its default routing:
 
 ```ts
+import { resolveRayfinFunctionsBaseUrl } from '@microsoft/rayfin-local-dev';
+
 const client = initRayfinClient({
   baseUrl: apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`,
   publishableKey: publishableKey ?? 'local-dev-key',
   localDev,
-  functionsBaseUrl: localDev
-    ? import.meta.env.VITE_RAYFIN_FUNCTIONS_URL
-    : undefined,
+  functionsBaseUrl: resolveRayfinFunctionsBaseUrl(),
 });
 ```
 
-The env var `VITE_RAYFIN_FUNCTIONS_URL` is populated automatically when `rayfin dev functions apply` is running (the CLI writes `RAYFIN_PUBLIC_FUNCTIONS_URL` into `rayfin/.env` and the framework env-projector exposes it as the Vite-prefixed variant). For Next.js use `NEXT_PUBLIC_RAYFIN_FUNCTIONS_URL`; for other frameworks read the equivalent public-env-prefixed variable.
+The env var `VITE_RAYFIN_FUNCTIONS_URL` is populated automatically while `rayfin dev` runs local Functions.
+The CLI writes `RAYFIN_PUBLIC_FUNCTIONS_URL` into `rayfin/.env`, and the framework env projector exposes the Vite-prefixed variant.
+For Next.js use `NEXT_PUBLIC_RAYFIN_FUNCTIONS_URL`; for other frameworks read the equivalent public-env-prefixed variable directly during development.
 
 Idempotency: if `functionsBaseUrl` is already present in either file, leave it alone — the user (or a prior agent run) has already done the wiring.
 
@@ -385,7 +404,7 @@ Idempotency: if `functionsBaseUrl` is already present in either file, leave it a
 - Never import `RayfinContext` from `@microsoft/rayfin-functions` — it comes from `@microsoft/fabric-user-data-functions`.
 - Never hand-edit `rayfin/functions/src/types.ts` — it is regenerated by `rayfin functions init` (one-shot) and by the watcher inside `rayfin dev functions apply`.
 - Never use `import` (non-type) for data entities in function files — use `import type` to avoid pulling decorator runtime into the functions bundle.
-- Never call `client.functions.X.invoke()` without setting `functionsBaseUrl` on `RayfinClient` — it will throw.
+- Never expose a local Functions URL in a production build; leave `functionsBaseUrl` undefined so the SDK uses the deployed route.
 - Never make `process.env` your primary production secret source for functions.
 - Prefer secrets managed via `rayfin secret set <NAME>` and delegated auth connections via `udf.connection()`.
 - Use `process.env` fallback only for local debugging, typically by mirroring keys in `rayfin/functions/local.settings.json`.

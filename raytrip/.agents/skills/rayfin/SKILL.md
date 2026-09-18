@@ -3,88 +3,81 @@ name: rayfin
 description: "Use when doing ANY task involving Rayfin — scaffolding, data models, decorators, auth, deployment, CLI commands, or client setup. Triggers: rayfin, rayfin init, rayfin up, rayfin login, RayfinClient, @entity, @role, @anonymous, @authenticated, @text, @uuid, @int, @decimal, @boolean, @date, @email, @set, @one, @many, DAB, Data API Builder, rayfin.yml, publishableKey, signUp, signIn, signOut, sendMagicLink, handleMagicLinkCallback, ensureSignedInWithFabric, Fabric SSO, Entra ID, rayfin up db apply, rayfin up staticapp deploy, schema.ts, OpaqueSession, onSessionChange, GraphQL select, GraphQL create, GraphQL update, GraphQL delete, findById, executePaginated, RLS policy, row-level security, claims.sub, claims.email, TC39 decorators, config generation, dialect, mssql, postgresql"
 metadata:
   author: microsoft
-  version: 0.3.0
+  version: 0.4.0
 rayfin-managed: true
 ---
 # Rayfin
 
-## Rayfin Docs
+## Rayfin Docs — read them from `node_modules` first
 
-Rayfin's documentation is available via MCP tools and the `rayfin docs` CLI.
-Use these for code examples, API details, and troubleshooting — not this skill.
-Docs are version-locked to the Rayfin packages installed in the user's project.
-Run MCP and CLI lookups from the project root so local `node_modules` wins whether the CLI/MCP package is installed locally, globally, or through `npx`.
+Rayfin packages that **declare a `rayfinDocs` field in their `package.json`**
+ship their documentation **inside the installed package**. It describes the
+exact versions this project has, which this skill cannot — decorators, field
+options, client methods, and platform constraints all move between releases.
+Read the docs from disk before you write Rayfin code, and before you reach for
+a documentation lookup tool.
 
-**MCP tools** (if the `rayfin` MCP server is connected):
+1. Read `node_modules/@microsoft/<package>/package.json` and check for a
+   `rayfinDocs` field. If it is there, take the docs root from `rayfinDocs.dir`
+   (today, always `assets/docs`).
+2. Read `<docs-root>/index.md` and follow its links.
+3. Read the file that answers the question.
 
-- `search_docs(query: '<topic>', module: 'guide')` — builder guides and tutorials
-- `search_docs(query: '<topic>', module: 'ts-sdk')` — TypeScript SDK API reference
-- `get_doc(symbol: '<decorator or class>')` — resolve a symbol to its docs
-- `discover_packages(query: '<topic>')` — find missing or too-old Rayfin packages when installed docs do not cover the task
+| Your question is about… | Read |
+| --- | --- |
+| Decorators, field options, entity and permission metadata | `@microsoft/rayfin-core/assets/docs/` |
+| Client queries, mutations, paging, field nullability | `@microsoft/rayfin-data/assets/docs/` |
+| Guides, data modelling, permissions, auth, CLI workflows | `@microsoft/rayfin-guide/assets/docs/` |
+| Client composition and configuration | `@microsoft/rayfin-client/assets/docs/` |
 
-**CLI fallback** (when MCP is unavailable):
+Not every installed package carries docs. `@microsoft/rayfin-cli` has no
+`rayfinDocs` field — questions about the CLI, its commands, or deployment
+workflows are answered by `@microsoft/rayfin-guide`. Do not stop because a
+package has no docs root of its own; go to the guide.
 
-- `rayfin docs search '<topic>' --module guide` — builder guides and tutorials
-- `rayfin docs search '<topic>' --module ts-sdk` — TypeScript SDK API reference
-- `rayfin docs get --symbol '<decorator or class>'` — resolve a symbol to its docs
-- `rayfin docs discover '<topic>'` — find a Rayfin package when installed docs do not cover the task
+**Do not answer a Rayfin question from this skill when a package doc covers it.**
+This skill owns workflow, guardrails, and the CLI surface. The packages own their
+own behaviour.
 
-If `rayfin` is not on `PATH`, use `npx -y @microsoft/rayfin-cli docs ...` from the project root.
+Only two things justify a tool call, because a file read cannot do them. Reach
+for the CLI first — it is always available in a Rayfin project:
 
-Key doc topics:
+- **Ranked search**, when the index files do not tell you which file to open —
+  `rayfin docs search '<topic>'`, or `search_docs(query, module)` via MCP (if
+  already installed).
+- **Finding a package you do not have** — `rayfin docs discover '<topic>'`, or
+  `discover_packages(query)` via MCP (if already installed).
 
-- Known limitations — FK naming, constraint limits, relationship rules
-- Data permissions — `@role` decorator, policy DSL, field visibility
-- GraphQL data access — RayfinClient setup, query chain, mutations
-- Auth overview — auth methods, session handling
-- Fabric deployment — workspace and static app deployment workflow
+Run either from the project root so the project's own `node_modules` wins. If
+`rayfin` is not on `PATH`, use `npx -y @microsoft/rayfin-cli docs ...`.
 
-**Before creating entities or writing queries**, check known limitations:
+**Before creating entities or writing queries, read known limitations.** It is
+short, and it is where the platform states what it will not do:
 
 ```text
-search_docs(query: 'known limitations', module: 'guide')
-# or: npx -y @microsoft/rayfin-cli docs search 'known limitations' --module guide
+node_modules/@microsoft/rayfin-guide/assets/docs/known-limitations.md
 ```
 
 ## Rules
 
 ### Platform
 
-- Rayfin uses TC39 Stage 3 decorators — never enable `experimentalDecorators` or `emitDecoratorMetadata`.
-- Include `ESNext.Decorators` in the tsconfig `lib` array.
-- Two deployment targets: Rayfin Local (Docker, MSSQL or PostgreSQL) and Fabric Apps (managed, MSSQL only).
+- Rayfin uses TC39 Stage 3 decorators — never enable `experimentalDecorators` or `emitDecoratorMetadata`. This is an invariant, not a version detail; tsconfig specifics are in the guide's project-structure doc.
 - Prefer `npm create @microsoft/rayfin@latest` for new projects — it generates correct tsconfig and schema boilerplate.
 
 ### Security
 
-- Every entity must have an explicit permission decorator (`@role`, `@anonymous`, `@authenticated`) — entities without one are inaccessible.
-- Add `policy: (claims, item) => claims.sub.eq(item.user_id)` for row-level filtering on user-scoped data.
-- Use `exclude` in role options to hide sensitive fields (e.g., `exclude: ['secret']`).
+- **Every entity must carry an explicit permission decorator.** Omitting one silently grants full CRUD to any signed-in user, which is almost never what production data wants. The decorators, the row-level policy DSL, and field visibility options are documented in `rayfin-core/assets/docs/permissions.md` and the guide's `data/permissions.md` — read them rather than recalling them.
 - Publishable keys (`pk-*`) are safe for client-side code — never expose service secrets or connection strings.
 - Keep `allowedRedirectUris` in `rayfin.yml` tightly scoped to your app's origin.
 - Email/password auth is local development only — deployed Fabric apps support Fabric SSO (Entra ID) exclusively.
 - Fabric SSO only works inside the Fabric Portal — do not attempt it in local development.
 
-### Data Modeling
+### Project Layout
 
-- Define entities with `@entity()` in `rayfin/data/` and register them in `rayfin/data/schema.ts` as `type AppSchema = { Name: Name }`.
-- Every field needs exactly one decorator: `@uuid`, `@text`, `@int`, `@decimal`, `@boolean`, `@date`, `@email`, `@set`.
-- Fields are required by default — use `{ optional: true }` and `?` together for nullable fields.
-- `@text()` length option is `max` (not `maxLength`) — e.g., `@text({ max: 200 })`.
-- Use `@one(() => Target)` with lazy arrow functions for relationships — Rayfin auto-generates FK columns named `{property}_id`.
-- Use `import` (not `import type`) for entity classes referenced in `@one()`/`@many()` arrow functions — decorators need the runtime class value.
-- FK columns referencing another entity (`{property}_id`) must use `@uuid()` to match the PK type. Auth-based fields like `user_id` from `claims.sub` use `@text()`.
-- Many-to-many requires an explicit join entity with two `@one()` fields.
-- Use `@many(() => Target)` for the inverse side of relationships.
-
-### Querying
-
-- Query chain: `.select()` → `.where()` → `.orderBy()` → `.execute()`.
-- Single record by ID: `client.data.Entity.findById('uuid-here')` — not `findByPk`.
-- Filter by FK columns using `{property}_id` (e.g., `customer_id`), not dot-path (e.g., `customer.id`).
-- Dot-paths are for `.select()` only (e.g., `customer.companyName`).
-- Use `.first(n).executePaginated()` for cursor-based pagination.
-- Sort directions must be lowercase: `'asc'` or `'desc'`.
+- Entities live in `rayfin/data/`, one file per entity, and every one is registered in `rayfin/data/schema.ts`. An entity that is not registered does not exist as far as the client is concerned.
+- Configuration lives in `rayfin/rayfin.yml`. Enabling the data service requires a dialect.
+- **The decorator surface, field options, relationships, and the client query API are package-owned.** Read `rayfin-core/assets/docs/decorators.md`, the guide's `data/overview.md`, and `data/graphql.md`. Do not write entities or queries from memory — the option names and constraints have changed between releases, and the doc in `node_modules` is the version this project has.
 
 ### Schema
 
@@ -102,11 +95,11 @@ search_docs(query: 'known limitations', module: 'guide')
 
 ## Anti-Patterns
 
-- Never use raw `fetch()` or hand-built GraphQL for data operations — always use `client.data.<Entity>` (provides type-safe queries and automatic auth).
-- Never omit permission decorators on entities — always add an explicit `@permissions(...)`. Forgetting silently applies `authenticated: *` (full CRUD for any signed-in user), which is usually too permissive for production data.
-- Never use `@text()` without `max` on MSSQL — always set `@text({ max: N })` (e.g. `max: 200` for typical strings). `NVARCHAR(MAX)` breaks GraphQL schema generation and cannot be uniquely indexed.
-- Never use `@text()` for FK columns that reference another entity's `@uuid()` PK — use `@uuid()` to match types. (`user_id` from `claims.sub` is `@text()`, not a FK.)
-- Never skip `search_docs('known limitations')` before implementing entities — always run it first to surface platform constraints (text length caps, supported scalar types, MSSQL-specific gotchas) that affect entity design.
+- **Never answer a Rayfin API question from memory or from this skill.** Read the installed package's docs. A remembered decorator option or client method is a guess about a version you did not check.
+- Never use raw `fetch()` or hand-built GraphQL for data operations — always use the typed client, which provides type-safe queries and automatic auth.
+- Never leave an entity without an explicit permission decorator. Forgetting silently applies full CRUD for any signed-in user.
+- Never design entities before reading the guide's `known-limitations.md`. Text length caps, supported scalar types, relationship rules, and MSSQL-specific constraints all shape entity design, and all of them change independently of this skill.
+- Never enable `experimentalDecorators` or `emitDecoratorMetadata` to make a decorator error go away — it breaks Rayfin's metadata entirely.
 
 ## CLI Quick Reference
 
