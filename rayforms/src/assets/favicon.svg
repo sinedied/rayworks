@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="rayforms-favicon-title" aria-describedby="rayforms-favicon-desc" focusable="false">
+  <title id="rayforms-favicon-title">Ray|Forms favicon</title>
+  <desc id="rayforms-favicon-desc">A near-white F with one large, broad navy checkmark and open, separated arms in its lower opening on a blue rounded tile. The outer canvas is transparent.</desc>
+  <path fill="#2F80FF" d="M16 2H48A14 14 0 0 1 62 16V48A14 14 0 0 1 48 62H16A14 14 0 0 1 2 48V16A14 14 0 0 1 16 2Z"/>
+  <path fill="#F8FAFC" d="M17.5 12H46.5Q48 12 48 13.5V20.5Q48 22 46.5 22H26V29H41.5Q43 29 43 30.5V36.5Q43 38 41.5 38H26V50.5Q26 52 24.5 52H17.5Q16 52 16 50.5V13.5Q16 12 17.5 12Z"/>
+  <path fill="#0B2A5B" d="M30 44L36 40L42 46L53 32L59 37L42 58Z"/>
+</svg>

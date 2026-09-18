@@ -118,7 +118,7 @@ Sans is used throughout; IBM Plex Mono is reserved for tabular figures. Tokens l
 `src/styles/design.css`.
 
 - Use `src/assets/rayforms.svg` for product branding; do not reconstruct the wordmark with text or
-  pair it with Ray|Works.
+  pair it with Ray|Works. Keep standard header logos at 32px desktop and 28px mobile.
 - Use the semantic tokens (`--surface`, `--text`, `--text-muted`, `--border-subtle`, `--brand`)
   and the `.card` / `.card-interactive` / `.font-heading` / `.font-data` / `.label-caps` /
   `.fade-in` primitives. Prefer shadcn utilities (`bg-card`, `text-muted-foreground`) where they

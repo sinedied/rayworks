@@ -7,7 +7,7 @@ export function RayFormsWordmark({ className }: { className?: string }) {
       src={rayFormsLogo}
       alt="Ray|Forms"
       className={cn(
-        'block h-5 w-auto max-w-full',
+        'block h-7 w-auto max-w-full sm:h-8',
         className
       )}
     />
