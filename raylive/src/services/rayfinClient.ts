@@ -21,7 +21,6 @@ export function initRayfinClient(
   client = new RayfinClient<RayLiveSchema>({
     baseUrl: config.baseUrl,
     publishableKey: config.publishableKey,
-    useProxy: false,
     authStorage: true,
   });
   localDev = config.localDev;
