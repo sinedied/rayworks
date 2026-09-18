@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="raytrip-favicon-title" aria-describedby="raytrip-favicon-desc" focusable="false">
+  <title id="raytrip-favicon-title">Ray|Trip favicon</title>
+  <desc id="raytrip-favicon-desc">A near-white T beside a large navy location pin with a coral center and a pointed lower tip on a coral rounded tile. The outer canvas is transparent.</desc>
+  <path fill="#FF6B6B" d="M16 2H48A14 14 0 0 1 62 16V48A14 14 0 0 1 48 62H16A14 14 0 0 1 2 48V16A14 14 0 0 1 16 2Z"/>
+  <path fill="#F8FAFC" d="M10.5 12H45.5Q47 12 47 13.5V20.5Q47 22 45.5 22H33V50.5Q33 52 31.5 52H24.5Q23 52 23 50.5V22H10.5Q9 22 9 20.5V13.5Q9 12 10.5 12Z"/>
+  <path fill="#0B2A5B" fill-rule="evenodd" d="M48 28C41.4 28 36 33.4 36 40C36 47 42 53 48 59C54 53 60 47 60 40C60 33.4 54.6 28 48 28ZM53 40A5 5 0 1 0 43 40A5 5 0 1 0 53 40Z"/>
+</svg>

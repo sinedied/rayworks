@@ -23,6 +23,10 @@ surfaces; do not combine it with an app wordmark. App-local SVGs are deployment 
 remain byte-identical to their canonical files. Select light/dark variants for background contrast
 rather than recoloring the SVG in application CSS.
 
+Use a 32px wordmark height in standard desktop app headers and 28px on mobile. Auth or hero
+placements may use 36–40px. Avoid rendering motif-bearing wordmarks below 28px; use the product
+favicon when only a compact square is available.
+
 ## Product colors
 
 | Product | Light `Ray` | Dark `Ray` | Separator and suffix |
@@ -45,3 +49,19 @@ light background.
 | Ray\|Live | Broadcast beacon as the `i` dot |
 | Ray\|Trip | Location pin as the `i` dot |
 | Ray\|Deck | Slide-content lines inside the `D` |
+
+## Favicons
+
+Canonical favicons live in `docs/favicons/`. Full wordmarks are not legible at browser-tab size, so
+each favicon uses a product-color rounded tile, a near-white product initial, and a simplified navy
+motif.
+
+| Product | Initial | Tile | Motif |
+| --- | --- | --- | --- |
+| Ray\|Works | `W` | Blue | Smile |
+| Ray\|Forms | `F` | Blue | Checkmark |
+| Ray\|Live | `L` | Teal | Broadcast beacon |
+| Ray\|Trip | `T` | Coral | Location pin |
+| Ray\|Deck | `D` | Purple | Slide-content lines |
+
+App-local `favicon.svg` files must be exact copies of these canonical assets.

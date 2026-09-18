@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="raydeck-favicon-title" aria-describedby="raydeck-favicon-desc" focusable="false">
+  <title id="raydeck-favicon-title">Ray|Deck favicon</title>
+  <desc id="raydeck-favicon-desc">A near-white D with two broad navy slide-content lines separated by a generous vertical gap in its counter on a purple rounded tile. The outer canvas is transparent.</desc>
+  <path fill="#7C3AED" d="M16 2H48A14 14 0 0 1 62 16V48A14 14 0 0 1 48 62H16A14 14 0 0 1 2 48V16A14 14 0 0 1 16 2Z"/>
+  <path fill="#F8FAFC" fill-rule="evenodd" d="M13.5 10H32C47 10 56 18 56 32S47 54 32 54H13.5Q12 54 12 52.5V11.5Q12 10 13.5 10ZM22 20V44H32C40.8 44 46 39.8 46 32S40.8 20 32 20Z"/>
+  <path fill="#0B2A5B" d="M26 24H40V30H26ZM26 36H38V42H26Z"/>
+</svg>

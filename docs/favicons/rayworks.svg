@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="rayworks-favicon-title" aria-describedby="rayworks-favicon-desc" focusable="false">
+  <title id="rayworks-favicon-title">Ray|Works favicon</title>
+  <desc id="rayworks-favicon-desc">A near-white W above one broad navy smile arc on a blue rounded tile. The outer canvas is transparent.</desc>
+  <path fill="#2F80FF" d="M16 2H48A14 14 0 0 1 62 16V48A14 14 0 0 1 48 62H16A14 14 0 0 1 2 48V16A14 14 0 0 1 16 2Z"/>
+  <path fill="#F8FAFC" d="M11 12H17Q18.5 12 19 13.5L23.5 32.5L28.8 13.5Q29.2 12 30.7 12H33.3Q34.8 12 35.2 13.5L40.5 32.5L45 13.5Q45.5 12 47 12H53Q55 12 54.4 14L45.7 42.6Q45.3 44 43.7 44H38.2Q36.7 44 36.3 42.6L32 28.5L27.7 42.6Q27.3 44 25.8 44H20.3Q18.7 44 18.3 42.6L9.6 14Q9 12 11 12Z"/>
+  <path fill="#0B2A5B" d="M18 46Q32 58 46 46L50 52Q32 68 14 52Z"/>
+</svg>
