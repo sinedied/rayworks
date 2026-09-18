@@ -1,6 +1,7 @@
 import {
   entity,
   authenticated,
+  anonymous,
   uuid,
   text,
   boolean,
@@ -10,7 +11,6 @@ import {
   one,
   many,
 } from '@microsoft/rayfin-core';
-import { anonymous } from '@microsoft/rayfin-core/experimental';
 
 import { ActivityOption } from './ActivityOption.js';
 import { Room } from './Room.js';

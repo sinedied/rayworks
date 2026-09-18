@@ -16,6 +16,7 @@ services:
     dialect: mssql
   staticHosting:
     enabled: true
+    assetAccess: public
     folder: dist
     buildCommand: npm run build:fabric
     indexDocument: index.html

@@ -20,8 +20,8 @@ Auth is presenter-only: local dev uses a mock email/password flow, production us
 **Anonymous data access is enabled** via the unsupported `anonymous-data-access` CLI feature flag,
 so the audience participates without signing in. All `rayfin up` / `db apply` runs must set
 `RAYFIN_FEATURE_FLAGS=anonymous-data-access` (the `dev`, `rayfin:up`, and `rayfin:db` npm scripts do
-this) or the command fails with `AnonymousAccessBlockedError`. `@anonymous()` is imported from
-`@microsoft/rayfin-core/experimental`. See "Security model" in `README.md` before changing permissions.
+this) or the command fails with `AnonymousAccessBlockedError`. Import `@anonymous()` from
+`@microsoft/rayfin-core`. See "Security model" in `README.md` before changing permissions.
 
 ## Repo map
 

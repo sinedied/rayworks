@@ -114,9 +114,8 @@ This depends on an **unsupported CLI feature flag**, exactly like Ray|Forms.
 ### Anonymous access requires a feature flag
 
 By default the Rayfin CLI **refuses** to apply any configuration granting the `anonymous`
-role: `rayfin up db apply` throws `AnonymousAccessBlockedError`. The `@anonymous()` decorator
-ships only from `@microsoft/rayfin-core/experimental`, and the stable `role()` export accepts
-`'authenticated'` only.
+role: `rayfin up db apply` throws `AnonymousAccessBlockedError`. Import the stable
+`@anonymous()` decorator from `@microsoft/rayfin-core`.
 
 The block is skipped when the `anonymous-data-access` flag is set:
 
