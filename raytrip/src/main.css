@@ -6,9 +6,12 @@
   font-family: 'IBM Plex Sans', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   --brand-navy: #0b2a5b;
-  --brand-blue: #2f80ff;
-  --brand-blue-hover: #246bdb;
-  --brand-blue-tint: #edf5ff;
+  --accent: #ff6b6b;
+  --accent-hover: #f25555;
+  --accent-strong: #c43d3d;
+  --accent-tint: #fff0f0;
+  --accent-border: #ffc1c1;
+  --accent-contrast: #0b2a5b;
   --teal: #00c2ab;
   --purple: #7c3aed;
   --yellow: #ffc629;
@@ -73,7 +76,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgb(47 128 255 / 0.28);
+  outline: 3px solid rgb(255 107 107 / 0.3);
   outline-offset: 2px;
 }
 
@@ -139,8 +142,8 @@ h3 {
 
 .user-avatar {
   align-items: center;
-  background: var(--brand-blue-tint);
-  border: 1px solid #cfe2ff;
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-border);
   border-radius: 50%;
   color: var(--brand-navy);
   display: flex;
@@ -233,13 +236,13 @@ h3 {
 
 .button-primary,
 .primary-button {
-  background: var(--brand-blue);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .button-primary:hover,
 .primary-button:hover {
-  background: var(--brand-blue-hover);
+  background: var(--accent-hover);
   box-shadow: var(--shadow-sm);
 }
 
@@ -289,7 +292,7 @@ h3 {
 .text-button {
   background: none;
   border: 0;
-  color: var(--brand-blue-hover);
+  color: var(--accent-strong);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
@@ -333,7 +336,7 @@ h3 {
 }
 
 .next-trip > span:last-of-type {
-  color: #dbeafe;
+  color: #f8fafc;
   font-size: 14px;
   grid-column: 1;
 }
@@ -348,7 +351,7 @@ h3 {
 }
 
 .next-label {
-  color: #bfdbfe;
+  color: var(--accent);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -392,8 +395,8 @@ h3 {
 
 .status-completed,
 .status-finalized {
-  background: var(--brand-blue-tint);
-  border-color: #bfdbfe;
+  background: var(--accent-tint);
+  border-color: var(--accent-border);
   color: var(--brand-navy);
 }
 
@@ -453,7 +456,7 @@ h3 {
 
 .card-arrow {
   bottom: 18px;
-  color: var(--brand-blue-hover);
+  color: var(--accent-strong);
   font-size: 13px;
   font-weight: 600;
   position: absolute;
@@ -496,9 +499,9 @@ h3 {
 
 .empty-index {
   align-items: center;
-  background: var(--brand-blue-tint);
+  background: var(--accent-tint);
   border-radius: 50%;
-  color: var(--brand-blue-hover);
+  color: var(--accent-strong);
   display: flex;
   font-size: 13px;
   font-weight: 600;
@@ -515,9 +518,9 @@ h3 {
 
 .spinner {
   animation: spin 800ms linear infinite;
-  border: 3px solid #dbeafe;
+  border: 3px solid var(--accent-tint);
   border-radius: 50%;
-  border-top-color: var(--brand-blue);
+  border-top-color: var(--accent);
   height: 32px;
   margin-bottom: 18px;
   width: 32px;
@@ -642,12 +645,12 @@ select:hover {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--brand-blue);
-  box-shadow: 0 0 0 3px rgb(47 128 255 / 0.14);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(255 107 107 / 0.16);
 }
 
 .back-link {
-  color: var(--brand-blue-hover);
+  color: var(--accent-strong);
   display: inline-block;
   font-size: 14px;
   font-weight: 500;
@@ -675,7 +678,7 @@ select:focus {
 }
 
 .trip-masthead::before {
-  background: var(--brand-blue);
+  background: var(--accent);
   content: '';
   height: 100%;
   left: 0;
@@ -719,7 +722,7 @@ select:focus {
 }
 
 .progress-track span {
-  background: var(--brand-blue);
+  background: var(--accent);
   display: block;
   height: 100%;
 }
@@ -914,9 +917,9 @@ select:focus {
 
 .report-placeholder span {
   align-items: center;
-  background: var(--brand-blue-tint);
+  background: var(--accent-tint);
   border-radius: 50%;
-  color: var(--brand-blue-hover);
+  color: var(--accent-strong);
   display: flex;
   font-size: 15px;
   font-weight: 600;
@@ -970,9 +973,9 @@ select:focus {
 
 .report-section-number {
   align-items: center;
-  background: var(--brand-blue-tint);
+  background: var(--accent-tint);
   border-radius: 50%;
-  color: var(--brand-blue-hover);
+  color: var(--accent-strong);
   display: flex;
   font-size: 13px;
   font-weight: 600;
