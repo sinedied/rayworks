@@ -1,0 +1,22 @@
+{
+  "cliVersion": "1.35.1",
+  "items": {
+    "mcp:rayfin": {
+      "sha256": "57eaf1771e2104e6bc301cc98320df3a9eeed56094818bad44fc8492a389bda7",
+      "source": {
+        "id": "@microsoft/rayfin-cli",
+        "kind": "cli",
+        "versionOrSha": "1.35.1"
+      }
+    },
+    "skill:rayfin": {
+      "sha256": "ea1a555a446c8b2450f34dd8bb94c51f236ace95372dab2002172b639a76c2f0",
+      "source": {
+        "id": "@microsoft/rayfin-cli",
+        "kind": "cli",
+        "versionOrSha": "1.35.1"
+      }
+    }
+  },
+  "version": 1
+}

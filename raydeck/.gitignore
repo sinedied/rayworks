@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+*.local
+
+# Env files
+.env
+.env.local
+.env*.local
+
+# Fabric / Rayfin generated artifacts
+.rayfin
+rayfin/.temp
+*.tsbuildinfo
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Added by Rayfin CLI
+lerna-debug.log*
+.vite
+coverage
+rayfin/.env*
+rayfin/.deployments.json
+rayfin/.*.tmp
+rayfin/.temp/
+rayfin.config.json
