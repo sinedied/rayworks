@@ -25,7 +25,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={() => void handleCopy()}
-      className={`rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 ${className}`}
+      className={`rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas ${className}`}
     >
       {copied ? 'Copied!' : label}
     </button>

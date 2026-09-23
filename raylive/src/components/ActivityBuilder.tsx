@@ -20,7 +20,7 @@ const KIND_HINTS: Record<ActivityKind, string> = {
 const KINDS = Object.keys(ACTIVITY_LABELS) as ActivityKind[];
 
 const inputClass =
-  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500';
+  'w-full rounded-lg border border-admin-control-border px-3 py-2 text-sm focus:border-admin-accent-strong focus:outline-none focus:ring-1 focus:ring-admin-accent-strong';
 
 interface OptionDraft {
   label: string;
@@ -97,7 +97,7 @@ export function ActivityBuilder({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-xl border border-dashed border-gray-300 px-4 py-4 text-sm font-medium text-gray-500 transition-colors hover:border-blue-400 hover:text-blue-600"
+        className="w-full rounded-lg border border-dashed border-admin-control-border px-4 py-4 text-sm font-medium text-admin-muted transition-colors hover:border-admin-accent-strong hover:text-admin-accent-strong"
       >
         + Add an activity
       </button>
@@ -107,7 +107,7 @@ export function ActivityBuilder({
   return (
     <form
       onSubmit={(event) => void handleSubmit(event)}
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      className="rounded-lg border border-admin-border bg-white p-5 shadow-sm"
     >
       <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {KINDS.map((option) => (
@@ -117,14 +117,14 @@ export function ActivityBuilder({
             onClick={() => setKind(option)}
             className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
               kind === option
-                ? 'border-blue-500 bg-blue-50 text-blue-900'
-                : 'border-gray-200 hover:border-blue-300'
+                ? 'border-admin-accent-strong bg-admin-accent-soft text-admin-accent-strong'
+                : 'border-admin-border hover:border-admin-accent-strong'
             }`}
           >
             <span className="block font-semibold">
               {ACTIVITY_LABELS[option]}
             </span>
-            <span className="mt-0.5 block text-[11px] text-gray-500">
+            <span className="mt-0.5 block text-xs text-admin-muted">
               {KIND_HINTS[option]}
             </span>
           </button>
@@ -185,7 +185,7 @@ export function ActivityBuilder({
                     )
                   }
                   aria-label="Remove option"
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:text-red-600"
+                  className="rounded-lg px-2 py-1 text-admin-subtle hover:text-admin-danger"
                 >
                   ✕
                 </button>
@@ -200,12 +200,12 @@ export function ActivityBuilder({
                 { label: '', isCorrect: false },
               ])
             }
-            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+            className="text-xs font-medium text-admin-accent-strong hover:text-admin-accent-strong"
           >
             + Add option
           </button>
           {kind === 'quiz' && (
-            <p className="text-[11px] text-gray-400">
+            <p className="text-xs text-admin-subtle">
               Tick the correct answer(s). They stay hidden from the audience
               until you reveal them.
             </p>
@@ -213,14 +213,14 @@ export function ActivityBuilder({
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-admin-muted">
         {(kind === 'multipleChoice' || kind === 'quiz') && (
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={allowMultiple}
               onChange={(event) => setAllowMultiple(event.target.checked)}
-              className="h-4 w-4 accent-blue-600"
+              className="h-4 w-4 accent-admin-accent-strong"
             />
             Allow multiple answers
           </label>
@@ -235,7 +235,7 @@ export function ActivityBuilder({
               max={10}
               value={maxRating}
               onChange={(event) => setMaxRating(Number(event.target.value))}
-              className="w-16 rounded-lg border border-gray-300 px-2 py-1"
+              className="w-16 rounded-lg border border-admin-control-border px-2 py-1"
             />
           </label>
         )}
@@ -251,7 +251,7 @@ export function ActivityBuilder({
               onChange={(event) =>
                 setTimeLimitSeconds(Number(event.target.value))
               }
-              className="w-16 rounded-lg border border-gray-300 px-2 py-1"
+              className="w-16 rounded-lg border border-admin-control-border px-2 py-1"
             />
           </label>
         )}
@@ -261,7 +261,7 @@ export function ActivityBuilder({
             type="checkbox"
             checked={showResults}
             onChange={(event) => setShowResults(event.target.checked)}
-            className="h-4 w-4 accent-blue-600"
+            className="h-4 w-4 accent-admin-accent-strong"
           />
           Show results on attendee devices
         </label>
@@ -271,7 +271,7 @@ export function ActivityBuilder({
             type="checkbox"
             checked={allowChangeAnswer}
             onChange={(event) => setAllowChangeAnswer(event.target.checked)}
-            className="h-4 w-4 accent-blue-600"
+            className="h-4 w-4 accent-admin-accent-strong"
           />
           Let people change their answer
         </label>
@@ -281,14 +281,14 @@ export function ActivityBuilder({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-lg px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+          className="rounded-lg px-4 py-2 text-sm text-admin-muted hover:text-admin-muted"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!canSubmit || busy}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="rounded-lg admin-primary px-4 py-2 text-sm font-medium disabled:opacity-40"
         >
           Add {ACTIVITY_LABELS[kind].toLowerCase()}
         </button>

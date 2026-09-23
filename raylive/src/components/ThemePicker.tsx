@@ -57,9 +57,9 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
   };
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-admin-border bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-admin-subtle">
           Branding &amp; theme
         </h2>
         <button
@@ -67,14 +67,14 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
             void onSave({ ...theme, preset, brandTitle: brandTitle.trim() })
           }
           disabled={!dirty || !valid || busy}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="rounded-lg admin-primary px-4 py-2 text-sm font-medium disabled:opacity-40"
         >
           {dirty ? 'Save theme' : 'Saved'}
         </button>
       </div>
 
       <label className="mt-4 block">
-        <span className="text-xs font-medium text-gray-500">
+        <span className="text-xs font-medium text-admin-muted">
           Title shown to the audience
         </span>
         <input
@@ -82,7 +82,7 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
           onChange={(event) => setBrandTitle(event.target.value)}
           maxLength={60}
           placeholder="Ray|Live"
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-admin-control-border px-3 py-2 text-sm focus:border-admin-accent-strong focus:outline-none"
         />
       </label>
 
@@ -93,8 +93,8 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
             onClick={() => choosePreset(entry.id)}
             className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
               preset === entry.id
-                ? 'border-blue-500 bg-blue-50 text-blue-900'
-                : 'border-gray-200 text-gray-600 hover:border-blue-300'
+                ? 'border-admin-accent-strong bg-admin-accent-soft text-admin-accent-strong'
+                : 'border-admin-border text-admin-muted hover:border-admin-accent-strong'
             }`}
           >
             <span
@@ -127,19 +127,19 @@ export function ThemePicker({ room, onSave, busy = false }: ThemePickerProps) {
       </div>
 
       {!valid && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-3 rounded-lg bg-admin-warning-soft px-3 py-2 text-xs text-admin-warning">
           Colours must be 6-digit hex values like <code>#1d4ed8</code>.
         </p>
       )}
 
       {valid && rating === 'Low' && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-3 rounded-lg bg-admin-warning-soft px-3 py-2 text-xs text-admin-warning">
           Text contrast is {ratio.toFixed(1)}:1 — hard to read on a projector.
           Aim for at least 4.5:1.
         </p>
       )}
       {valid && rating !== 'Low' && (
-        <p className="mt-3 text-xs text-gray-400">
+        <p className="mt-3 text-xs text-admin-subtle">
           Text contrast {ratio.toFixed(1)}:1 ({rating}) · accent{' '}
           {accentRatio.toFixed(1)}:1
         </p>
@@ -189,13 +189,13 @@ function ColorField({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-gray-500">{label}</span>
+      <span className="text-xs font-medium text-admin-muted">{label}</span>
       <span className="mt-1 flex items-center gap-2">
         <input
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-9 w-10 cursor-pointer rounded border border-gray-200 bg-white"
+          className="h-9 w-10 cursor-pointer rounded border border-admin-border bg-white"
           aria-label={`${label} colour`}
         />
         <input
@@ -203,7 +203,7 @@ function ColorField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           maxLength={7}
-          className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 font-mono text-xs uppercase focus:border-blue-500 focus:outline-none"
+          className="w-24 rounded-lg border border-admin-control-border px-2 py-1.5 font-mono text-xs uppercase focus:border-admin-accent-strong focus:outline-none"
         />
       </span>
     </label>

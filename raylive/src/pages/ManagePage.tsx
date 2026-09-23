@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { Activity } from '../../rayfin/data/Activity';
 
 import { ActivityBuilder } from '@/components/ActivityBuilder';
+import { AppHeader } from '@/components/AppHeader';
 import { ActivityResults, ResponseCount } from '@/components/ActivityResults';
 import { CopyButton } from '@/components/CopyButton';
 import { Leaderboard } from '@/components/Leaderboard';
@@ -81,7 +82,7 @@ export function ManagePage() {
     return (
       <Centered>
         <p>Room not found.</p>
-        <Link to="/" className="mt-3 inline-block text-sm text-blue-600">
+        <Link to="/" className="mt-3 inline-block text-sm text-admin-accent-strong">
           Back to rooms
         </Link>
       </Centered>
@@ -106,22 +107,24 @@ export function ManagePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">
-        <div>
-          <Link to="/" className="text-xs text-gray-400 hover:text-gray-600">
+    <div className="admin-app min-h-screen">
+      <AppHeader />
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mb-8 flex flex-col gap-4">
+        <div className="min-w-0">
+          <Link to="/" className="text-xs text-admin-subtle hover:text-admin-muted">
             ← All rooms
           </Link>
-          <h1 className="mt-1 text-xl font-bold text-gray-900">{room.title}</h1>
+          <h1 className="admin-page-title mt-1 break-words">{room.title}</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() =>
               void run(() =>
                 updateRoom(room.id, { qnaEnabled: !qnaEnabled })
               )
             }
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
           >
             {qnaEnabled ? 'Turn Q&A off' : 'Turn Q&A on'}
           </button>
@@ -134,7 +137,7 @@ export function ManagePage() {
                   })
                 )
               }
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
             >
               {room.isAcceptingQuestions ? 'Pause questions' : 'Resume questions'}
             </button>
@@ -143,54 +146,52 @@ export function ManagePage() {
             onClick={() =>
               void run(() => updateRoom(room.id, { isOpen: !room.isOpen }))
             }
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
           >
             {room.isOpen ? 'End room' : 'Reopen room'}
           </button>
           <Link
             to={`/present/${room.code}`}
-            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="admin-control rounded-lg admin-primary px-3 py-2 text-sm font-medium"
           >
             Present
           </Link>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      </div>
         {!room.isOpen && (
-          <p className="mb-6 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="mb-6 rounded-lg bg-admin-warning-soft px-4 py-3 text-sm text-admin-warning">
             This room is closed — the audience can no longer see it. Reopen it
             to share again.
           </p>
         )}
 
-        <section className="mb-8 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <section className="mb-8 rounded-lg border border-admin-border bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start gap-6">
             <QrCode url={joinUrl} size={132} />
             <div className="min-w-0 flex-1 space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <p className="text-xs font-semibold uppercase tracking-wide text-admin-subtle">
                   Join link
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <code className="truncate rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                  <code className="truncate rounded-lg bg-admin-canvas px-3 py-2 text-sm text-admin-muted">
                     {joinUrl}
                   </code>
                   <CopyButton value={joinUrl} />
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <p className="text-xs font-semibold uppercase tracking-wide text-admin-subtle">
                   Remote control
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <code className="truncate rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                  <code className="truncate rounded-lg bg-admin-canvas px-3 py-2 text-sm text-admin-muted">
                     {controlUrl}
                   </code>
                   <CopyButton value={controlUrl} />
                   <button
                     onClick={() => setShowRemoteQr((value) => !value)}
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted hover:bg-admin-canvas"
                   >
                     {showRemoteQr ? 'Hide QR' : 'Show QR'}
                   </button>
@@ -198,7 +199,7 @@ export function ManagePage() {
                 {showRemoteQr && (
                   <div className="mt-3">
                     <QrCode url={controlUrl} size={132} />
-                    <p className="mt-2 max-w-xs text-xs text-gray-400">
+                    <p className="mt-2 max-w-xs text-xs text-admin-subtle">
                       Scan to drive the room from your phone. You need to be
                       signed in as the owner on that device.
                     </p>
@@ -206,11 +207,11 @@ export function ManagePage() {
                 )}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <p className="text-xs font-semibold uppercase tracking-wide text-admin-subtle">
                   Embed in your slides
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <code className="truncate rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                  <code className="truncate rounded-lg bg-admin-canvas px-3 py-2 text-xs text-admin-muted">
                     {embedSnippet}
                   </code>
                   <CopyButton value={embedSnippet} label="Copy embed" />
@@ -239,7 +240,7 @@ export function ManagePage() {
         </div>
 
         {(actionError || error) && (
-          <p className="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="mb-6 rounded-lg bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
             {actionError ?? error}
           </p>
         )}
@@ -329,7 +330,7 @@ export function ManagePage() {
 
         {tab === 'qna' && qnaEnabled &&
           (questions.length === 0 ? (
-            <p className="py-12 text-center text-sm text-gray-400">
+            <p className="py-12 text-center text-sm text-admin-subtle">
               No questions yet. Share the code to get started.
             </p>
           ) : (
@@ -337,24 +338,24 @@ export function ManagePage() {
               {questions.map((question) => (
                 <li
                   key={question.id}
-                  className={`rounded-xl border bg-white px-4 py-3 shadow-sm ${
+                  className={`rounded-lg border bg-white px-4 py-3 shadow-sm ${
                     question.isHidden
-                      ? 'border-gray-200 opacity-60'
+                      ? 'border-admin-border opacity-60'
                       : question.isAnswered
                         ? 'border-green-200'
-                        : 'border-gray-100'
+                        : 'border-admin-border'
                   }`}
                 >
                   <div className="flex gap-3">
-                    <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-gray-50 text-sm font-semibold text-gray-700">
+                    <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-admin-canvas text-sm font-semibold text-admin-muted">
                       <span aria-hidden="true">▲</span>
                       {question.voteCount}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-gray-900">
+                      <p className="text-sm text-admin-text">
                         {question.content}
                       </p>
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-admin-subtle">
                         {question.authorName || 'Anonymous'}
                         {question.isHidden && ' · Hidden'}
                         {question.isAnswered && ' · Answered'}
@@ -382,7 +383,7 @@ export function ManagePage() {
                     </SmallButton>
                     <button
                       onClick={() => void run(() => deleteQuestion(question.id))}
-                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-red-600"
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-admin-subtle transition-colors hover:text-admin-danger"
                     >
                       Delete
                     </button>
@@ -394,12 +395,12 @@ export function ManagePage() {
 
         {tab === 'leaderboard' && (
           <section>
-            <p className="mb-4 text-xs text-gray-400">
+            <p className="mb-4 text-xs text-admin-subtle">
               Scored on this screen — the answer key is never sent to attendees.
               Project it with{' '}
               <Link
                 to={`/present/${room.code}?leaderboard=1`}
-                className="text-blue-600"
+                className="text-admin-accent-strong"
               >
                 /present/{room.code}?leaderboard=1
               </Link>
@@ -457,28 +458,28 @@ function ActivityCard({
 
   return (
     <article
-      className={`rounded-xl border bg-white p-4 shadow-sm ${
-        isLive ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-100'
+      className={`rounded-lg border bg-white p-4 shadow-sm ${
+        isLive ? 'border-admin-accent-strong ring-1 ring-admin-accent-strong' : 'border-admin-border'
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-600">
+          <p className="text-xs font-semibold uppercase tracking-wide text-admin-accent-strong">
             {ACTIVITY_LABELS[activity.kind]}
             {isLive &&
               (preparing ? (
-                <span className="ml-2 text-amber-600">● Lobby</span>
+                <span className="ml-2 text-admin-warning">● Lobby</span>
               ) : (
-                <span className="ml-2 text-green-600">● Live</span>
+                <span className="ml-2 text-admin-success">● Live</span>
               ))}
             {activity.state === 'ended' && (
-              <span className="ml-2 text-gray-400">Ended</span>
+              <span className="ml-2 text-admin-subtle">Ended</span>
             )}
             {activity.state === 'draft' && (
-              <span className="ml-2 text-gray-400">Draft</span>
+              <span className="ml-2 text-admin-subtle">Draft</span>
             )}
           </p>
-          <p className="mt-1 font-medium text-gray-900">{activity.prompt}</p>
+          <p className="mt-1 font-medium text-admin-text">{activity.prompt}</p>
           <div className="mt-1">
             <ResponseCount answers={answers} />
           </div>
@@ -510,7 +511,7 @@ function ActivityCard({
                 onClick={onPrepare}
                 disabled={busy}
                 title="Let people join and set a nickname without showing the question"
-                className="rounded-lg border border-blue-600 px-3 py-1.5 text-xs font-medium text-blue-700 disabled:opacity-40"
+                className="rounded-lg border border-admin-accent-strong px-3 py-1.5 text-xs font-medium text-admin-accent-strong disabled:opacity-40"
               >
                 Prepare
               </button>
@@ -518,7 +519,7 @@ function ActivityCard({
             <button
               onClick={onGoLive}
               disabled={busy}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+              className="rounded-lg admin-primary px-3 py-1.5 text-xs font-medium disabled:opacity-40"
             >
               {activity.kind === 'quiz' ? 'Start now' : 'Go live'}
             </button>
@@ -527,7 +528,7 @@ function ActivityCard({
           <button
             onClick={onStart}
             disabled={busy}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+            className="rounded-lg admin-primary px-3 py-1.5 text-xs font-medium disabled:opacity-40"
           >
             Start question
           </button>
@@ -535,7 +536,7 @@ function ActivityCard({
           <button
             onClick={onEnd}
             disabled={busy}
-            className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+            className="rounded-lg bg-admin-heading px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
           >
             End
           </button>
@@ -571,14 +572,14 @@ function ActivityCard({
 
         <button
           onClick={onDelete}
-          className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-red-600"
+          className="rounded-lg px-3 py-1.5 text-xs font-medium text-admin-subtle transition-colors hover:text-admin-danger"
         >
           Delete
         </button>
       </div>
 
       {expanded && (
-        <div className="mt-4 border-t border-gray-100 pt-4">
+        <div className="mt-4 border-t border-admin-border pt-4">
           <ActivityResults
             activity={activity}
             options={options}
@@ -604,8 +605,8 @@ function TabButton({
       onClick={onClick}
       className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
         active
-          ? 'bg-blue-600 text-white'
-          : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+          ? 'admin-primary'
+          : 'border border-admin-border bg-white text-admin-muted hover:bg-admin-canvas'
       }`}
     >
       {children}
@@ -623,7 +624,7 @@ function SmallButton({
   return (
     <button
       onClick={onClick}
-      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+      className="rounded-lg border border-admin-border px-3 py-1.5 text-xs font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
     >
       {children}
     </button>
@@ -646,7 +647,7 @@ function IconButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-500 disabled:opacity-30"
+      className="rounded-lg border border-admin-border px-2 py-1 text-xs text-admin-muted disabled:opacity-30"
     >
       {children}
     </button>
@@ -655,8 +656,9 @@ function IconButton({
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="text-center text-gray-500">{children}</div>
+    <div className="admin-app min-h-screen">
+      <AppHeader />
+      <main className="admin-page-state px-4 text-center text-admin-muted">{children}</main>
     </div>
   );
 }

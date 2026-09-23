@@ -3,12 +3,10 @@ import { Link } from 'react-router-dom';
 
 import type { Room } from '../../rayfin/data/Room';
 
-import { useAuth } from '@/hooks/AuthContext';
-import { RayLiveWordmark } from '@/components/RayLiveWordmark';
+import { AppHeader } from '@/components/AppHeader';
 import { createRoom, deleteRoom, listMyRooms } from '@/services/rooms';
 
 export function HomePage() {
-  const { signOut, user } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(true);
@@ -57,26 +55,12 @@ export function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 sm:px-8 sm:py-5">
-        <h1>
-          <RayLiveWordmark />
-        </h1>
-        <div className="flex items-center gap-4">
-          {user?.email && (
-            <span className="text-sm text-gray-600">{user.email}</span>
-          )}
-          <button
-            onClick={() => void signOut()}
-            className="text-sm text-gray-400 transition-colors hover:text-gray-600"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
+    <div className="admin-app min-h-screen">
+      <AppHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <p className="mb-8 text-sm text-gray-500">
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <h1 className="admin-page-title">Your rooms</h1>
+        <p className="mt-1.5 mb-8 text-sm text-admin-muted">
           Create a room, share the code with your audience, and project the live
           results in your slides.
         </p>
@@ -91,28 +75,28 @@ export function HomePage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Talk title, e.g. Building apps with Rayfin"
             maxLength={200}
-            className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="min-w-0 flex-1 rounded-lg border border-admin-control-border bg-white px-4 py-2 text-sm text-admin-text placeholder-admin-subtle shadow-sm focus:border-admin-accent-strong focus:outline-none focus:ring-1 focus:ring-admin-accent-strong"
           />
           <button
             type="submit"
             disabled={!title.trim()}
-            className="min-h-11 shrink-0 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 disabled:opacity-40"
+            className="shrink-0 rounded-lg admin-primary px-4 py-2 text-sm font-medium shadow-sm disabled:opacity-40"
           >
             Create room
           </button>
         </form>
 
         {error && (
-          <p className="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <p className="mb-6 rounded-lg bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
             {error}
           </p>
         )}
 
         {loading ? (
-          <p className="text-center text-sm text-gray-400">Loading...</p>
+          <p className="text-center text-sm text-admin-subtle">Loading...</p>
         ) : rooms.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-admin-subtle">
               No rooms yet. Create one above to get started.
             </p>
           </div>
@@ -121,14 +105,14 @@ export function HomePage() {
             {rooms.map((room) => (
               <li
                 key={room.id}
-                className="rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm"
+                className="rounded-lg border border-admin-border bg-white px-5 py-4 shadow-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-gray-900">{room.title}</p>
-                    <p className="mt-1 text-xs text-gray-400">
+                  <div className="min-w-0">
+                    <p className="break-words font-medium text-admin-text">{room.title}</p>
+                    <p className="mt-1 text-xs text-admin-subtle">
                       Code{' '}
-                      <span className="font-mono text-gray-600">
+                      <span className="font-mono text-admin-muted">
                         {room.code}
                       </span>
                       {' · '}
@@ -138,22 +122,22 @@ export function HomePage() {
                         ' · Questions paused'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Link
                       to={`/manage/${room.code}`}
-                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                      className="admin-control rounded-lg admin-primary px-3 py-2 text-sm font-medium"
                     >
                       Manage
                     </Link>
                     <Link
                       to={`/present/${room.code}`}
-                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                      className="admin-control rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
                     >
                       Present
                     </Link>
                     <button
                       onClick={() => void handleDelete(room)}
-                      className="rounded-lg px-3 py-2 text-sm text-gray-400 transition-colors hover:text-red-600"
+                      className="rounded-lg px-3 py-2 text-sm text-admin-subtle transition-colors hover:text-admin-danger"
                     >
                       Delete
                     </button>

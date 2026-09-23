@@ -9,6 +9,114 @@
   --color-blue-600: #2f80ff;
   --color-blue-700: #246bdb;
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-admin-heading: var(--admin-heading);
+  --color-admin-text: var(--admin-text);
+  --color-admin-muted: var(--admin-muted);
+  --color-admin-subtle: var(--admin-subtle);
+  --color-admin-canvas: var(--admin-canvas);
+  --color-admin-inset: var(--admin-inset);
+  --color-admin-border: var(--admin-border);
+  --color-admin-control-border: var(--admin-control-border);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-hover: var(--admin-accent-hover);
+  --color-admin-accent-strong: var(--admin-accent-strong);
+  --color-admin-accent-soft: var(--admin-accent-soft);
+  --color-admin-success: #047857;
+  --color-admin-success-soft: #ecfdf5;
+  --color-admin-warning: #9a6700;
+  --color-admin-warning-soft: #fffbeb;
+  --color-admin-danger: #b42318;
+  --color-admin-danger-soft: #fef3f2;
+}
+
+.admin-app {
+  --header-height: 64px;
+  --admin-heading: #0b2a5b;
+  --admin-text: #1f2937;
+  --admin-muted: #4b5563;
+  --admin-subtle: #6b7280;
+  --admin-canvas: #f8fafc;
+  --admin-inset: #f1f5f9;
+  --admin-border: #e5e7eb;
+  --admin-control-border: #cbd5e1;
+  --admin-accent: #00c2ab;
+  --admin-accent-hover: #00b39d;
+  --admin-accent-strong: #007d70;
+  --admin-accent-soft: #e6faf6;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--admin-text);
+  background: var(--admin-canvas);
+}
+
+.admin-app .app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: var(--header-height);
+  flex-shrink: 0;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #ffffff;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.app-brand-link { display: flex; align-items: center; flex-shrink: 0; }
+.app-account { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.app-identity { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--admin-muted); }
+.app-sign-out { flex-shrink: 0; padding: 8px 16px; font-weight: 500; color: var(--admin-muted); }
+.app-sign-out:hover { background: var(--admin-inset); color: var(--admin-text); }
+.admin-page-title { color: var(--admin-heading); font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.011em; }
+.admin-page-state { min-height: calc(100vh - var(--header-height)); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+.admin-app :where(button, input:not([type='checkbox']):not([type='radio']), select, .admin-control):not(:where([data-ia-theme], [data-ia-theme] *)) {
+  min-height: 40px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.admin-control { display: inline-flex; align-items: center; justify-content: center; }
+.admin-app button:not(:disabled) { cursor: pointer; }
+
+.admin-app :where(button, a, input, textarea, select):focus-visible:not(:where([data-ia-theme], [data-ia-theme] *)) {
+  outline: 2px solid var(--admin-accent-strong);
+  outline-offset: 2px;
+}
+
+.admin-primary {
+  background: var(--admin-accent);
+  color: var(--admin-heading);
+  transition: background-color 140ms ease;
+}
+.admin-primary:hover:not(:disabled) { background: var(--admin-accent-hover); }
+
+/* Room previews keep the same typography as audience and presentation screens. */
+.admin-app [data-ia-theme] { font-family: var(--font-sans); }
+
+@media (width < 640px) {
+  .admin-app { --header-height: 56px; }
+  .admin-app .app-header { padding: 0 16px; }
+  .app-identity { display: none; }
+  .admin-page-title { font-size: 24px; }
+}
+
+@media (width < 640px), (pointer: coarse) {
+  .admin-app :where(button, input:not([type='checkbox']):not([type='radio']), select, .app-brand-link, .admin-control):not(:where([data-ia-theme], [data-ia-theme] *)) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .admin-app label:has(input[type='checkbox']) { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-app :not(:where([data-ia-theme], [data-ia-theme] *)) {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 @layer base {

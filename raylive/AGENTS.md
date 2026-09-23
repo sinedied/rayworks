@@ -46,6 +46,9 @@ anything typed into a field.
 
 ## Theming
 
+Follow the root `DESIGN.md` for management/auth UI: IBM Plex Sans, teal product accents, and the
+shared header and neutral palette. Keep these styles separate from room-themed surfaces.
+
 Rooms store three colours (`themeBackground`, `themeText`, `themeAccent`) plus `themePreset`.
 `src/lib/theme.ts` resolves them with fallbacks and emits `--ia-bg` / `--ia-text` / `--ia-accent`;
 `main.css` mixes the rest (`--ia-surface`, `--ia-muted`, `--ia-border`, `--ia-accent-soft`) with
