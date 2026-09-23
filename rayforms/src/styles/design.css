@@ -22,9 +22,11 @@
   --brand: #2f80ff;
   --brand-hover: #246bdb;
   --brand-tint: #edf5ff;
+  --action: #246bdb;
+  --action-hover: #1d56b3;
 
-  --success: #059669;
-  --danger: #dc2626;
+  --success: #047857;
+  --danger: #b42318;
 
   /* shadcn token overrides — keeps every existing ui/* component on-palette */
   --background: var(--bg);
@@ -33,7 +35,7 @@
   --card-foreground: var(--text);
   --popover: var(--surface);
   --popover-foreground: var(--text);
-  --primary: var(--brand);
+  --primary: var(--action);
   --primary-foreground: #ffffff;
   --secondary: var(--surface-sunk);
   --secondary-foreground: var(--text);
@@ -44,7 +46,7 @@
   --destructive: var(--danger);
   --border: var(--border-subtle);
   --input: var(--border-strong);
-  --ring: var(--brand);
+  --ring: var(--action);
   --radius: 0.5rem;
 
   --chart-1: var(--brand);
@@ -66,8 +68,55 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 64px;
+  flex-shrink: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+}
+
+.app-header a:focus-visible,
+.auth-submit:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+[data-slot='input'],
+[data-slot='select-trigger'],
+.auth-submit {
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+@media (width < 640px) {
+  .app-header {
+    height: 56px;
+    padding: 0 16px;
+  }
+}
+
+@media (width < 640px), (pointer: coarse) {
+  [data-slot='button'],
+  [data-slot='input'],
+  [data-slot='select-trigger'],
+  .auth-submit,
+  .app-header a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 /* Headings stay in the body face; weight and a slight negative tracking carry the hierarchy. */
 .font-heading {
+  color: var(--brand-navy);
   font-weight: 600;
   letter-spacing: -0.011em;
 }

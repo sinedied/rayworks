@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { MockSignInDialog } from '@/components/MockSignInDialog';
-import { RayFormsWordmark } from '@/components/RayFormsWordmark';
+import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/hooks/AuthContext';
 
 export function AuthPage() {
@@ -67,9 +67,7 @@ export function AuthPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-14 items-center border-b border-[var(--border-subtle)] bg-[var(--surface)] px-4 sm:px-6">
-        <RayFormsWordmark />
-      </header>
+      <AppHeader showAccount={false} />
 
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="fade-in card w-full max-w-sm p-7">
@@ -82,7 +80,7 @@ export function AuthPage() {
             type="button"
             onClick={handleSignIn}
             disabled={isLoading}
-            className="mt-6 flex w-full items-center justify-center rounded-md bg-[var(--brand)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--brand-hover)] disabled:opacity-50"
+            className="auth-submit mt-6 flex w-full items-center justify-center rounded-lg bg-[var(--action)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--action-hover)] disabled:opacity-50"
           >
             {msLogo}
             {buttonLabel}

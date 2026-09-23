@@ -173,7 +173,7 @@ export function PublicForm() {
                         {field.required && (
                           <span
                             aria-hidden
-                            className="ml-1 text-[var(--brand)]"
+                            className="ml-1 text-[var(--action)]"
                           >
                             *
                           </span>

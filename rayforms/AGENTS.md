@@ -112,6 +112,8 @@ Key config/files:
 
 ## Design system
 
+Follow the root `DESIGN.md` for shared header geometry, typography, controls, and semantic colors.
+
 A clean, professional light theme aligned with the root `DESIGN.md`. White surfaces sit on a soft
 grey canvas, with Ray|Works navy (`#0B2A5B`) and blue (`#2F80FF`) as the brand anchors. IBM Plex
 Sans is used throughout; IBM Plex Mono is reserved for tabular figures. Tokens live in

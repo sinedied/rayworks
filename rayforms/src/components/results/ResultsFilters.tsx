@@ -87,9 +87,9 @@ export function ResultsFilters({ fields, filters, onChange, onReset }: Props) {
                         onClick={() => toggleChoice(field.id, choice)}
                         aria-pressed={active}
                         className={cn(
-                          'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                          'min-h-9 rounded-lg border px-3 py-1 text-sm transition-colors max-sm:min-h-11 coarse:min-h-11',
                           active
-                            ? 'border-[var(--brand)] bg-[var(--brand)] text-white'
+                            ? 'border-[var(--action)] bg-[var(--action)] text-white'
                             : 'border-[var(--border-subtle)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text)]'
                         )}
                       >
