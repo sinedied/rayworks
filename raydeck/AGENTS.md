@@ -71,6 +71,9 @@ only when you're on the analytics path.
 
 ## Rules
 
+- Follow the root `DESIGN.md` for editor chrome; retain purple accents, dark mode, and slide
+  typography. The active stylesheet is `src/global.css`, not the template `src/main.css`.
+
 - **Make the requested code changes only**, and keep the project building —
   prefer small, correct increments.
 - **Deploy to Fabric with `npm run rayfin:up`** (i.e. `rayfin up`) when you want

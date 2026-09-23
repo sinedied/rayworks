@@ -293,15 +293,15 @@ function App() {
           </div>
           <div className="header-actions">
             <span className="save-state"><i /> Saved locally</span>
-            <button className="icon-button" onClick={resetDeck} title="Reset sample deck" type="button">
+            <button className="icon-button" onClick={resetDeck} aria-label="Reset sample deck" title="Reset sample deck" type="button">
               <Icon name="reset" />
             </button>
-            <button className="icon-button" onClick={theme.toggleTheme} title="Toggle theme" type="button">
+            <button className="icon-button" onClick={theme.toggleTheme} aria-label="Toggle theme" title="Toggle theme" type="button">
               <Icon name={theme.isDark ? 'sun' : 'moon'} />
             </button>
-            <button className="present-button" onClick={() => setPresenting(true)} type="button">
+            <button className="present-button" onClick={() => setPresenting(true)} aria-label="Present" title="Present" type="button">
               <Icon name="play" size={16} />
-              Present
+              <span>Present</span>
             </button>
           </div>
         </header>
