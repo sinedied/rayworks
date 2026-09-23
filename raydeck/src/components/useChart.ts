@@ -8,6 +8,8 @@ import {
   type SelectionStore,
 } from 'graphein';
 
+import { bindChartScale } from './chartPointer';
+
 /** Options for {@link useChart} — every field is optional. */
 export interface UseChartOptions {
   /**
@@ -21,6 +23,7 @@ export interface UseChartOptions {
   onSelectionChange?: SelectionChangeListener;
   /** Called with the live instance after each mount and update. */
   onReady?: (instance: ChartInstance) => void;
+  scaled?: boolean;
 }
 
 /**
@@ -46,7 +49,7 @@ export function useChart<T extends HTMLElement = HTMLDivElement>(
   const specRef = useRef(spec);
   const onReadyRef = useRef(options.onReady);
   const onSelectionChangeRef = useRef(options.onSelectionChange);
-  const { store } = options;
+  const { store, scaled } = options;
   const skipNextUpdate = useRef(true);
 
   useEffect(() => {
@@ -59,6 +62,7 @@ export function useChart<T extends HTMLElement = HTMLDivElement>(
     const el = ref.current;
     if (!el) return;
     const instance = render(el, specRef.current, store ? { store } : undefined);
+    const unbindScale = scaled ? bindChartScale(instance.surface) : undefined;
     instanceRef.current = instance;
     const offSelection = instance.on('selectionchange', (name, value) =>
       onSelectionChangeRef.current?.(name, value)
@@ -69,11 +73,12 @@ export function useChart<T extends HTMLElement = HTMLDivElement>(
     onReadyRef.current?.(instance);
     return () => {
       offSelection();
+      unbindScale?.();
       instance.destroy();
       instanceRef.current = null;
     };
     // Mount once per store identity; the sync effects handle later changes.
-  }, [store]);
+  }, [store, scaled]);
 
   useEffect(() => {
     if (skipNextUpdate.current) {

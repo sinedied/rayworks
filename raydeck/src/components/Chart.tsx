@@ -32,6 +32,8 @@ export interface ChartProps {
   onSelectionChange?: SelectionChangeListener;
   className?: string;
   style?: CSSProperties;
+  /** The chart is displayed inside a uniformly scaled slide. */
+  scaled?: boolean;
 }
 
 const FILL: CSSProperties = { width: '100%', height: '100%' };
@@ -42,8 +44,9 @@ export function Chart({
   onSelectionChange,
   className,
   style,
+  scaled,
 }: ChartProps) {
-  const ref = useChart<HTMLDivElement>(spec, { store, onSelectionChange });
+  const ref = useChart<HTMLDivElement>(spec, { store, onSelectionChange, scaled });
   return (
     <div
       ref={ref}

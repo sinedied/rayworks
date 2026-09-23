@@ -9,7 +9,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    include: ['src/**/*.{test,spec}.ts', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'scripts/**/*.test.mjs'],
     exclude: ['node_modules', 'dist'],
   },
 });
