@@ -71,6 +71,9 @@ only when you're on the analytics path.
 
 ## Rules
 
+- Follow the root `DESIGN.md` for app headers, loaded IBM Plex Sans, controls, and shared colors;
+  retain the coral product accent and purpose-built report content.
+
 - **Make the requested code changes only**, and keep the project building —
   prefer small, correct increments.
 - Use `src/assets/raytrip.svg` for product branding and `src/assets/favicon.svg` for browser tabs.

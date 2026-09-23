@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { RayTripBrand } from '@/components/RayTripBrand';
+import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/hooks/AuthContext';
 
 const microsoftLogo = (
@@ -30,11 +30,9 @@ export function AuthPage() {
   }
 
   return (
-    <main className="auth-page">
-      <header className="auth-header">
-        <RayTripBrand />
-      </header>
-      <section className="auth-content">
+    <div className="auth-page">
+      <AppHeader showAccount={false} />
+      <main className="auth-content">
         <div className="auth-intro">
           <p className="section-label">Business travel reporting</p>
           <h1>Capture each day. Share what mattered.</h1>
@@ -65,7 +63,7 @@ export function AuthPage() {
             </div>
           )}
         </div>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }
