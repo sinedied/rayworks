@@ -1,5 +1,7 @@
 const paths = {
   check: <path d="m5 12 4 4L19 6" />,
+  minus: <path d="M5 12h14" />,
+  plus: <path d="M5 12h14M12 5v14" />,
   'chevron-down': <path d="m6 9 6 6 6-6" />,
   'chevron-up': <path d="m6 15 6-6 6 6" />,
   'chevron-left': <path d="m15 18-6-6 6-6" />,

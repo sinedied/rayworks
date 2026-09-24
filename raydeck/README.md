@@ -20,6 +20,10 @@ compatible. Notes are excluded from audience messages and never rendered on
 slides; they are not a security boundary against someone with access to the
 same browser or bundled source.
 
+The **− / +** controls change notes text from 14px to 48px in 2px steps (16px by
+default). The size is shared between editor and presenter notes and remembered
+in this browser. It changes only how notes are displayed, not their content.
+
 A checkmark beside **Saved locally** confirms that the current edits were saved
 in this browser. Open that menu and choose **Copy changes as prompt**, then paste
 the prompt into your coding assistant in this repository. It includes only
@@ -54,6 +58,18 @@ Open **Present** and choose:
   audience status/recovery, and an elapsed timer with pause/resume/reset.
   Reset retains the timer's running/paused state. Timer ticks are not saved or
   exported.
+
+The presenter starts with **one third current slide / two thirds next slide and
+notes**. Drag the vertical divider to adjust the split, or focus it and use
+Left/Right arrows (2 percentage points per press), Home, or End. The current-slide
+share ranges from 15% to 85%, with tighter limits on small windows to keep both
+panes usable. The preferred ratio is remembered; temporarily shrinking a window
+does not replace the ratio you chose for a larger screen.
+
+Layout and notes-size preferences are stored separately from the deck. They are
+not included in copied change prompts or audience updates, and resetting the
+sample deck does not reset them. If browser storage is unavailable, adjustments
+still work for the current tab and a notice explains that they cannot be remembered.
 
 Navigation from either window stays synchronized. Move the audience window to
 your display and choose **Enter fullscreen** there; browsers control whether a

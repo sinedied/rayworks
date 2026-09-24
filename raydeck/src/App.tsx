@@ -15,6 +15,7 @@ import { useAppTheme } from '@/hooks/use-theme';
 import { useDeckDraft } from '@/hooks/useDeckDraft';
 import { usePresentation } from '@/hooks/usePresentation';
 import { usePresenterSession } from '@/hooks/usePresenterSession';
+import { useViewPreferences } from '@/hooks/useViewPreferences';
 import { navigateIndex, type Navigation } from '@/presentation/session';
 import { ignoresPresentationShortcut } from '@/presentation/shortcuts';
 
@@ -50,6 +51,7 @@ function Thumbnail({
 function App() {
   const theme = useAppTheme();
   const { slides, saveState, updateSlide, resetDeck } = useDeckDraft();
+  const view = useViewPreferences();
   const [activeIndex, setActiveIndex] = useState(0);
   const [overflowFields, setOverflowFields] = useState<Record<string, boolean>>({});
   const root = useRef<HTMLDivElement>(null);
@@ -136,7 +138,8 @@ function App() {
         {session.active ? (
           <PresenterView slides={slides} index={activeIndex} connection={session.connection} onNavigate={goTo}
             onNotes={(value) => updateSlide(activeSlide.id, 'notes', value)} onOpen={session.open} onEnd={session.end}
-            saveState={saveState} changes={changes} isDark={theme.isDark} onTheme={theme.toggleTheme} error={session.error} />
+            saveState={saveState} changes={changes} isDark={theme.isDark} onTheme={theme.toggleTheme} error={session.error}
+            preferences={view.preferences} preferenceNotice={view.notice} onSplitRatio={view.setSplitRatio} onNotesSize={view.setNotesFontSize} />
         ) : <div className="deck-workspace">
           <aside className="thumbnail-rail" aria-label="Slides">
             <div className="rail-label">Slides</div>
@@ -150,6 +153,7 @@ function App() {
             {!presenting && (
               <div className="stage-notices">
                 {session.error && <p className="notice notice-error" role="alert">{session.error}</p>}
+                {view.notice && <p className="notice notice-warning" role="status">{view.notice}</p>}
                 {saveState.status === 'error' && <p className="notice notice-error" role="alert">{saveState.message}</p>}
                 {overflowing.length > 0 && (
                   <p className="notice notice-warning" role="status">
@@ -185,7 +189,8 @@ function App() {
             </div>
             {!presenting && <div className="editor-notes">
               <SpeakerNotes value={activeSlide.notes ?? ''} slideNumber={activeSlide.number}
-                onChange={(value) => updateSlide(activeSlide.id, 'notes', value)} />
+                onChange={(value) => updateSlide(activeSlide.id, 'notes', value)}
+                fontSize={view.preferences.notesFontSize} onFontSizeChange={view.setNotesFontSize} />
             </div>}
           </main>
         </div>}

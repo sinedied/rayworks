@@ -86,6 +86,41 @@ afterEach(async () => {
 });
 
 describe('speaker notes', () => {
+  it('zooms notes in both views without changing content, export or audience state', async () => {
+    await render();
+    expect(container.textContent).not.toContain('Not shown to the audience');
+    const storedDeck = localStorage.getItem('raydeck.sample-deck.v1');
+    await click('Increase notes text size');
+    expect(container.querySelector<HTMLTextAreaElement>('.speaker-notes textarea')?.style.fontSize).toBe('18px');
+    await click('Saved locally. Open save menu');
+    expect(button('Copy changes as prompt').getAttribute('aria-disabled')).toBe('true');
+    await click('Saved locally. Open save menu');
+    await click('Present');
+    await click('Enter presenter mode');
+    expect(container.querySelector<HTMLTextAreaElement>('.speaker-notes textarea')?.style.fontSize).toBe('18px');
+    const audienceMessages = post.mock.calls.length;
+    await click('Increase notes text size');
+    const divider = container.querySelector('[role="separator"]')!;
+    await act(async () => divider.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })));
+    expect(container.querySelector('.presenter-current article')?.getAttribute('data-slide-id')).toBe('opening');
+    expect(post.mock.calls).toHaveLength(audienceMessages);
+    expect(localStorage.getItem('raydeck.sample-deck.v1')).toBe(storedDeck);
+    await click('End presentation');
+    expect(container.querySelector<HTMLTextAreaElement>('.speaker-notes textarea')?.style.fontSize).toBe('20px');
+    await click('Reset sample deck');
+    expect(container.querySelector<HTMLTextAreaElement>('.speaker-notes textarea')?.style.fontSize).toBe('20px');
+  });
+  it('steps notes size within 14-48px and retains the current text', async () => {
+    await render();
+    await editNotes('Text to preserve');
+    await click('Decrease notes text size');
+    expect(button('Decrease notes text size').disabled).toBe(true);
+    for (let size = 14; size < 48; size += 2) await click('Increase notes text size');
+    expect(button('Increase notes text size').disabled).toBe(true);
+    const notes = container.querySelector<HTMLTextAreaElement>('.speaker-notes textarea')!;
+    expect(notes.style.fontSize).toBe('48px');
+    expect(notes.value).toBe('Text to preserve');
+  });
   it('migrates existing drafts, edits notes, and restores/resets them without discarding slide text', async () => {
     localStorage.setItem('raydeck.sample-deck.v1', JSON.stringify(SAMPLE_DECK.map((slide) => ({ ...slide, title: `Edited ${slide.id}` }))));
     await render();
