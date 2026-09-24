@@ -13,6 +13,7 @@ export type DeckSlide = {
   eyebrow: string;
   title: string;
   body: string;
+  notes?: string;
   kind: 'cover' | 'metrics' | 'chart' | 'comparison' | 'closing';
   metrics?: Metric[];
   chart?: ChartSpec;

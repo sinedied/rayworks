@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { EDITABLE_FIELDS, type EditableField } from '@/deck/changes';
+import { SLIDE_TEXT_FIELDS, type EditableField } from '@/deck/changes';
 import { SAMPLE_DECK, type DeckSlide } from '@/deck/sampleDeck';
 
 const STORAGE_KEY = 'raydeck.sample-deck.v1';
@@ -12,7 +12,8 @@ export type SaveState =
 function isStoredSlide(value: unknown): value is Pick<DeckSlide, 'id' | EditableField> {
   return typeof value === 'object' && value !== null
     && 'id' in value && typeof value.id === 'string'
-    && EDITABLE_FIELDS.every((field) => field in value && typeof Reflect.get(value, field) === 'string');
+    && SLIDE_TEXT_FIELDS.every((field) => field in value && typeof Reflect.get(value, field) === 'string')
+    && (!('notes' in value) || typeof value.notes === 'string');
 }
 
 function loadDraft() {
@@ -31,7 +32,7 @@ function loadDraft() {
     return {
       slides: SAMPLE_DECK.map((slide) => {
         const text = stored.get(slide.id)!;
-        return { ...slide, eyebrow: text.eyebrow, title: text.title, body: text.body };
+        return { ...slide, eyebrow: text.eyebrow, title: text.title, body: text.body, notes: text.notes ?? slide.notes ?? '' };
       }),
       blocked: false,
       error: '',

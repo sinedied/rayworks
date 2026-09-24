@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
-import type { EditableField } from '@/deck/changes';
+import type { SlideTextField } from '@/deck/changes';
 import type { DeckSlide } from '@/deck/sampleDeck';
 
 import { Chart } from './Chart';
@@ -9,14 +9,14 @@ function SlideText({
   value, field, className, fontSize, minSize, maxHeight, readOnly, onChange, onOverflow,
 }: {
   value: string;
-  field: EditableField;
+  field: SlideTextField;
   className: string;
   fontSize: number;
   minSize: number;
   maxHeight: number;
   readOnly: boolean;
-  onChange?: (field: EditableField, value: string) => void;
-  onOverflow?: (field: EditableField, overflowing: boolean) => void;
+  onChange?: (field: SlideTextField, value: string) => void;
+  onOverflow?: (field: SlideTextField, overflowing: boolean) => void;
 }) {
   const mirror = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(fontSize);
@@ -76,11 +76,11 @@ export function SlideCanvas({
   slide: DeckSlide;
   total: number;
   readOnly?: boolean;
-  onChange?: (field: EditableField, value: string) => void;
-  onOverflow?: (field: EditableField, overflowing: boolean) => void;
+  onChange?: (field: SlideTextField, value: string) => void;
+  onOverflow?: (field: SlideTextField, overflowing: boolean) => void;
 }) {
   const cover = slide.kind === 'cover';
-  const text = (field: EditableField, extraClass = '') => (
+  const text = (field: SlideTextField, extraClass = '') => (
     <SlideText key={field} value={slide[field]} field={field} className={`slide-${field} ${extraClass}`}
       fontSize={field === 'title' ? (cover ? 86 : 54) : field === 'body' ? 22 : 14}
       minSize={field === 'title' ? 28 : field === 'body' ? 16 : 12}

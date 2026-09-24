@@ -6,10 +6,12 @@ export function usePresentation(
 ) {
   const [presenting, setPresenting] = useState(false);
   const [notice, setNotice] = useState('');
+  const [fullscreen, setFullscreen] = useState(false);
   const intended = useRef(false);
   const owned = useRef(false);
   const mounted = useRef(true);
   const request = useRef(0);
+  const pending = useRef(false);
   const wasPresenting = useRef(false);
 
   useEffect(() => {
@@ -20,6 +22,7 @@ export function usePresentation(
   useEffect(() => {
     mounted.current = true;
     const fullscreenChanged = () => {
+      setFullscreen(document.fullscreenElement === root.current);
       if (document.fullscreenElement === root.current) {
         owned.current = true;
       } else if (owned.current) {
@@ -40,7 +43,7 @@ export function usePresentation(
   }, [root]);
 
   const enter = useCallback(async () => {
-    if (intended.current || !root.current) return;
+    if (pending.current || (intended.current && document.fullscreenElement === root.current) || !root.current) return;
     intended.current = true;
     const currentRequest = ++request.current;
     const element = root.current;
@@ -50,6 +53,7 @@ export function usePresentation(
       setNotice('Fullscreen is unavailable in this browser. Presenting in this window instead.');
       return;
     }
+    pending.current = true;
     try {
       await element.requestFullscreen();
       if (!mounted.current || currentRequest !== request.current || !intended.current) {
@@ -62,6 +66,8 @@ export function usePresentation(
       if (mounted.current && currentRequest === request.current && intended.current) {
         setNotice('Fullscreen was blocked. Presenting in this window instead.');
       }
+    } finally {
+      pending.current = false;
     }
   }, [root]);
 
@@ -87,5 +93,5 @@ export function usePresentation(
     }
   }, [root]);
 
-  return { presenting, notice, enter, exit };
+  return { presenting, fullscreen, notice, enter, exit };
 }

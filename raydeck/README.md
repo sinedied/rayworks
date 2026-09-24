@@ -13,6 +13,13 @@ automatically fits within its region. If it cannot fit at the minimum readable
 size, an editor warning identifies the slide and field to shorten; the full text
 remains available in the text control and exported prompt.
 
+Use **Speaker notes** below the editor or in presenter mode to keep per-slide
+talking points. Notes are plain text, share the same local save status, and are
+included in **Copy changes as prompt**. Existing drafts without notes remain
+compatible. Notes are excluded from audience messages and never rendered on
+slides; they are not a security boundary against someone with access to the
+same browser or bundled source.
+
 A checkmark beside **Saved locally** confirms that the current edits were saved
 in this browser. Open that menu and choose **Copy changes as prompt**, then paste
 the prompt into your coding assistant in this repository. It includes only
@@ -33,11 +40,44 @@ replaces it with the bundled sample.
 
 ## Present
 
-**Present** requests browser fullscreen for the active slide. Use arrow keys or
-the navigation buttons to move between slides; **Exit** or **Escape** returns to
-the editor without losing edits. If fullscreen is unsupported or blocked (for
-example, by an embedding host), presentation continues in the current window
-with a visible notice.
+Open **Present** and choose:
+
+- **Start presentation** to present the active slide in the current window.
+  It requests browser fullscreen; **Exit** or **Escape** returns to the editor
+  without losing edits. Blocked/unsupported fullscreen falls back visibly to
+  in-window presentation.
+- **Enter presenter mode** to keep a presenter console in this window and open
+  a separate audience window. The header-free console fills the window without
+  page scrolling: the current slide is on the left, with a next-slide preview
+  and speaker notes on the right. Long notes scroll inside their pane.
+  The bottom bar holds navigation, a slide picker, save/export and theme actions,
+  audience status/recovery, and an elapsed timer with pause/resume/reset.
+  Reset retains the timer's running/paused state. Timer ticks are not saved or
+  exported.
+
+Navigation from either window stays synchronized. Move the audience window to
+your display and choose **Enter fullscreen** there; browsers control whether a
+new window or tab is opened and generally require a click in that window for
+fullscreen. Leaving audience fullscreen keeps it connected.
+
+Slideshow/audience controls hide after three seconds. Move the mouse into the
+bottom 80px or tap that area to reveal them. Deliberately tabbing into the toolbar
+also reveals it for keyboard use. Slide changes, navigation keys, and updates
+from the presenter never bring hidden controls back or restart their hide timer.
+Hovered or keyboard-focused controls stay visible. Presenter-console controls
+never auto-hide.
+
+Closing the audience window does not stop the timer: use **Reopen audience
+window** to continue. Refreshing the audience reconnects to the current slide.
+**End presentation** returns the presenter to the editor and closes its audience
+window. Closing/reloading the presenter ends the session; if the connection is
+lost unexpectedly, the audience freezes the last received slide with an explicit
+notice rather than silently continuing.
+
+This is a same-browser, same-device workflow using a paired window connection,
+not a remote sharing link. Popup blockers, embedding sandbox policies, or opener
+isolation can prevent it; the app shows an error/retry action instead of claiming
+it is connected. Allow popups for the app or use single-window presentation.
 
 ## Customize
 

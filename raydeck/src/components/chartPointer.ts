@@ -1,5 +1,11 @@
 import type { Surface } from 'graphein';
 
+const chartEvents = new WeakSet<Event>();
+
+export function isScaledChartPointer(event: Event) {
+  return chartEvents.has(event);
+}
+
 /** Adapt Graphein 0.18 pointer and tooltip measurements to a scaled slide. */
 export function bindChartScale(surface: Pick<Surface, 'root' | 'width' | 'height'>) {
   const { root } = surface;
@@ -47,6 +53,7 @@ export function bindChartScale(surface: Pick<Surface, 'root' | 'width' | 'height
       coordinates.isPrimary = event.isPrimary;
     }
     const mapped = new PointerEvent(event.type, coordinates);
+    chartEvents.add(mapped);
     event.stopImmediatePropagation();
     forwarding = true;
     try {

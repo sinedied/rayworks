@@ -42,6 +42,9 @@ Each item in `SAMPLE_DECK` is one slide:
 
 - `eyebrow`, `title`, and `body` are editable in the running app and persisted
   to browser local storage.
+- Optional `notes` holds plain-text speaker notes, edited below the slide or in
+  presenter mode and included in change-prompt export. Missing notes are equivalent
+  to an empty string; preserve older drafts that have no notes field.
 - `kind` selects a layout: `cover`, `metrics`, `chart`, `comparison`, or
   `closing`.
 - `metrics` supplies the executive summary rows.
@@ -78,6 +81,12 @@ spec.
 ## Presentation quality
 
 - Use the thumbnail rail for editing and presentation mode for delivery.
+- Reuse `SlideCanvas` and `SlideViewport` for all previews and audience slides.
+  Speaker notes belong outside the canvas and must be excluded from audience
+  session messages; audience startup must not mount editor persistence.
+- Keep presenter/audience synchronization in the existing paired-window hooks,
+  not BroadcastChannel/shared storage: Fabric embedding can partition storage.
+  Fullscreen must be requested from a user action in the relevant window.
 - Titles should remain legible from a distance and body copy should stay above
   14px at normal presentation size.
 - Format every axis and value. Avoid raw large numbers.

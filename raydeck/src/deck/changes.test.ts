@@ -39,6 +39,20 @@ describe('createChangePrompt', () => {
     expect(createChangePrompt(slides, SAMPLE_DECK)).toEqual({ status: 'unchanged' });
   });
 
+  it('exports exact speaker notes, normalizing absent notes to empty strings', () => {
+    expect(createChangePrompt(SAMPLE_DECK.map((slide) => ({ ...slide, notes: '' })), SAMPLE_DECK))
+      .toEqual({ status: 'unchanged' });
+    const notes = 'Remember: "private"\nSecond point \u00e9';
+    const result = createChangePrompt(SAMPLE_DECK.map((slide, index) => index ? slide : { ...slide, notes }), SAMPLE_DECK);
+    expect(result.status).toBe('ready');
+    if (result.status !== 'ready') throw new Error('Expected notes prompt');
+    expect(result.count).toBe(1);
+    expect(JSON.parse(result.prompt.slice(result.prompt.indexOf('{\n')))).toEqual({
+      changes: [{ slideId: 'opening', fields: [{ field: 'notes', original: '', replacement: notes }] }],
+    });
+    expect(result.prompt).toContain('Never render notes on audience slides');
+  });
+
   it.each(['missing', 'unknown', 'duplicate'])('reports %s slide IDs', (kind) => {
     const slides = SAMPLE_DECK.map((slide) => ({ ...slide }));
     if (kind === 'missing') slides.pop();

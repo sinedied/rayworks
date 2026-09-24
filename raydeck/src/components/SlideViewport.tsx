@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
-export function SlideViewport({ children }: { children: ReactNode }) {
+export function SlideViewport({ children, centered = false }: { children: ReactNode; centered?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
 
@@ -15,8 +15,11 @@ export function SlideViewport({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="slide-viewport" ref={ref}>
-      <div className="slide-canvas" style={{ transform: `scale(${scale})`, visibility: scale ? 'visible' : 'hidden' }}>
+    <div className={`slide-viewport ${centered ? 'slide-viewport-centered' : ''}`} ref={ref}>
+      <div className="slide-canvas" style={{
+        transform: `${centered ? 'translate(-50%, -50%) ' : ''}scale(${scale})`,
+        visibility: scale ? 'visible' : 'hidden',
+      }}>
         {children}
       </div>
     </div>

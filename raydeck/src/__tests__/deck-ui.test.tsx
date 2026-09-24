@@ -35,6 +35,11 @@ async function mount() {
   await act(async () => root.render(<App />));
 }
 
+async function startPresentation() {
+  await click(getButton('Present'));
+  await click(getButton('Start presentation'));
+}
+
 async function edit(field: string, value: string) {
   const input = container.querySelector<HTMLTextAreaElement>(`textarea[aria-label="Edit slide ${field}"]`);
   if (!input) throw new Error(`Missing input: ${field}`);
@@ -187,7 +192,7 @@ describe('presentation', () => {
     await mount();
     await click(getButton('Slide 02: Growth is accelerating without sacrificing efficiency.'));
     await edit('title', 'Updated second slide');
-    await click(getButton('Present'));
+    await startPresentation();
     expect(enterFullscreen).toHaveBeenCalledTimes(1);
     expect(document.fullscreenElement).toBe(container.querySelector('.deck-app'));
     expect(container.querySelector('.stage-shell [data-field="title"]')?.textContent).toBe('Updated second slide');
@@ -201,13 +206,13 @@ describe('presentation', () => {
 
   it('restores the editor when the browser leaves fullscreen', async () => {
     await mount();
-    await click(getButton('Present'));
+    await startPresentation();
     await act(async () => {
       fullscreen = null;
       document.dispatchEvent(new Event('fullscreenchange'));
     });
     expect(container.querySelector('.is-presenting')).toBeNull();
-    await click(getButton('Present'));
+    await startPresentation();
     expect(enterFullscreen).toHaveBeenCalledTimes(2);
   });
 
@@ -216,7 +221,7 @@ describe('presentation', () => {
     if (failure === 'blocked') enterFullscreen.mockRejectedValue(new Error('Denied'));
     else Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', { configurable: true, value: undefined });
     await mount();
-    await click(getButton('Present'));
+    await startPresentation();
     expect(container.querySelector('.is-presenting')).not.toBeNull();
     expect(container.querySelector('.presentation-notice')?.textContent).toContain('Presenting in this window instead');
     await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
@@ -227,7 +232,7 @@ describe('presentation', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     exitFullscreen.mockRejectedValue(new Error('Denied'));
     await mount();
-    await click(getButton('Present'));
+    await startPresentation();
     await click(getButton('Exit'));
     expect(container.querySelector('.is-presenting')).not.toBeNull();
     expect(container.querySelector('.presentation-notice')?.textContent).toContain('Could not leave fullscreen');
@@ -243,7 +248,7 @@ describe('presentation', () => {
       };
     }));
     await mount();
-    await click(getButton('Present'));
+    await startPresentation();
     await click(getButton('Exit'));
     await act(async () => finishEntry?.());
     expect(container.querySelector('.is-presenting')).toBeNull();

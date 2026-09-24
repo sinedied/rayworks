@@ -85,12 +85,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .app-logo { height: 32px; width: auto; flex-shrink: 0; }
 .document-title { border-left: 1px solid var(--color-border); color: var(--color-foreground-secondary); font-size: 14px; padding-left: 24px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .header-actions { gap: 8px; flex-shrink: 0; }
-.save-menu { position: relative; }
+.save-menu, .present-menu { position: relative; }
 .save-state { align-items: center; background: transparent; border: 1px solid var(--color-control-border); border-radius: 8px; color: var(--color-foreground-secondary); cursor: pointer; display: flex; font-size: 12px; gap: 8px; height: 40px; padding: 0 12px; }
 .save-state-saved > svg:first-child { color: var(--color-success); }
 .save-state-error > svg:first-child { color: var(--color-destructive); }
 .save-state:hover { background: var(--color-background); }
 .save-panel { background: var(--color-popover); border: 1px solid var(--color-control-border); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 12%); margin-top: 8px; max-height: calc(100dvh - 88px); overflow: auto; padding: 8px; position: absolute; right: 0; width: 320px; z-index: 21; }
+.present-panel { background: var(--color-popover); border: 1px solid var(--color-control-border); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 12%); margin-top: 8px; padding: 8px; position: absolute; right: 0; width: 280px; z-index: 21; }
 .save-action { align-items: center; background: transparent; border: 0; border-radius: 8px; cursor: pointer; display: flex; font-size: 14px; gap: 8px; min-height: 40px; padding: 8px; text-align: left; width: 100%; }
 .save-action:hover:not([aria-disabled="true"]) { background: var(--color-background); }
 .save-action[aria-disabled="true"] { color: var(--color-foreground-secondary); cursor: default; }
@@ -124,6 +125,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .stage-shell { aspect-ratio: 16 / 9; background: #ffffff; outline: 1px solid var(--color-control-border); box-shadow: 0 16px 40px rgba(11, 42, 91, 0.12); max-width: 1120px; overflow: hidden; width: min(100%, calc((100vh - 190px) * 16 / 9)); }
 .slide-viewport { height: 100%; overflow: hidden; position: relative; width: 100%; }
 .slide-canvas { height: 720px; position: absolute; transform-origin: top left; width: 1280px; }
+.slide-viewport-centered .slide-canvas { left: 50%; top: 50%; transform-origin: center; }
 .slide { background: #ffffff; color: #0b2a5b; font-family: var(--font-slide); height: 100%; overflow: hidden; padding: 56px 64px; position: relative; width: 100%; }
 .slide::before { background: #7c3aed; content: ""; height: 5px; left: 0; position: absolute; right: 0; top: 0; }
 .slide-cover { background: #0b2a5b; color: #ffffff; }
@@ -192,24 +194,91 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .is-presenting .stage-area { display: block; padding: 0; }
 .is-presenting .stage-shell { box-shadow: none; height: min(100dvh, 56.25vw); max-height: none; max-width: none; outline: 0; width: min(100vw, calc(100dvh * 16 / 9)); }
 .presentation-controls { background: rgba(8, 13, 24, 0.94); border: 1px solid #68758a; border-radius: 8px; bottom: 16px; color: #ffffff; font-family: var(--font-sans); font-size: 14px; gap: 8px; left: 50%; padding: 8px; position: fixed; transform: translateX(-50%); z-index: 10; }
+.presentation-controls { opacity: 1; transition: opacity 160ms ease; max-width: calc(100% - 24px); }
+.presentation-controls.controls-hidden { opacity: 0; pointer-events: none; }
+.presentation-controls button { flex-shrink: 0; }
 .presentation-controls button { border-color: #8994a5; color: #ffffff; gap: 8px; height: 36px; min-width: 36px; width: auto; }
 .presentation-controls button:hover:not(:disabled) { background: #28344a; }
 .presentation-controls button:disabled { cursor: default; opacity: 0.4; }
 .presentation-controls button:last-child { padding: 0 12px; }
-.presentation-controls span { font-family: var(--font-mono); font-size: 12px; padding: 0 4px; }
+.presentation-controls > span { font-family: var(--font-mono); font-size: 12px; padding: 0 4px; }
 .presentation-notice { background: #172033; border: 1px solid #8994a5; border-radius: 8px; color: #f8fafc; font-family: var(--font-sans); font-size: 14px; left: 50%; margin: 0; max-width: calc(100% - 32px); padding: 12px 16px; position: fixed; top: 16px; transform: translateX(-50%); width: max-content; z-index: 10; }
+.audience-waiting { color: #f8fafc; font-family: var(--font-sans); max-width: 600px; padding: 32px; text-align: center; }
+.audience-waiting h1 { font-size: 24px; font-weight: 600; }
+.audience-waiting p { color: #aeb8ca; font-size: 16px; line-height: 1.5; }
+.editor-notes { margin-top: 24px; max-width: 1120px; width: min(100%, calc((100vh - 190px) * 16 / 9)); }
+.speaker-notes { background: var(--color-card); border: 1px solid var(--color-control-border); border-radius: 8px; min-width: 0; padding: 16px; }
+.notes-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; justify-content: space-between; margin-bottom: 12px; }
+.notes-heading label { font-size: 16px; font-weight: 600; }
+.notes-heading span { color: var(--color-foreground-secondary); font-size: 12px; }
+.speaker-notes textarea { background: var(--color-background); border: 1px solid var(--color-control-border); border-radius: 8px; color: var(--color-foreground); display: block; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; min-height: 140px; padding: 12px; resize: vertical; width: 100%; }
+.speaker-notes textarea::placeholder { color: var(--color-foreground-secondary); }
+.is-presenter { height: 100dvh; min-height: 0; overflow: hidden; }
+.presenter-view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.presenter-notices { flex: 0 0 auto; max-height: min(25dvh, 128px); overflow: auto; padding: 8px 16px 0; }
+.presenter-notices .notice { margin: 0 0 8px; padding: 8px 12px; }
+.audience-connection { color: var(--color-foreground-secondary); font-size: 12px; line-height: 1.4; margin: 0; max-width: 160px; }
+.connection-connected { color: var(--color-success); }
+.connection-disconnected, .connection-closed { color: var(--color-warning); }
+.presenter-timer { align-items: center; display: flex; flex-shrink: 0; gap: 8px; }
+.presenter-timer output { font-family: var(--font-mono); font-size: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.secondary-button { align-items: center; background: var(--color-card); border: 1px solid var(--color-control-border); border-radius: 8px; cursor: pointer; display: inline-flex; font-size: 14px; gap: 8px; justify-content: center; min-height: 40px; padding: 8px 16px; }
+.secondary-button:hover:not(:disabled) { background: var(--color-background); border-color: var(--color-primary); }
+.secondary-button:disabled { cursor: default; opacity: 0.45; }
+.presenter-grid { display: grid; flex: 1; gap: 24px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); min-height: 0; padding: 16px 24px; }
+.presenter-current, .presenter-next { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.presenter-sidebar { display: grid; gap: 16px; grid-template-rows: minmax(0, 0.85fr) minmax(0, 1.15fr); min-height: 0; min-width: 0; }
+.preview-label { align-items: baseline; display: flex; flex: 0 0 auto; gap: 8px; justify-content: space-between; margin-bottom: 8px; min-width: 0; }
+.preview-label h2, .presenter-slide-list h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.preview-label > span { color: var(--color-foreground-secondary); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.presenter-preview { flex: 1; min-height: 0; min-width: 0; }
+.presenter-end { align-items: center; background: var(--color-card); border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-foreground-secondary); display: flex; flex: 1; font-size: 16px; gap: 8px; justify-content: center; min-height: 0; }
+.presenter-sidebar .speaker-notes { display: flex; flex-direction: column; min-height: 0; }
+.presenter-sidebar .speaker-notes textarea { flex: 1; height: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; resize: none; }
+.presenter-sidebar .notes-heading { flex: 0 0 auto; }
+.presenter-controls { align-items: center; background: var(--color-card); border-top: 1px solid var(--color-border); display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; padding: 12px 16px; position: relative; z-index: 20; }
+.presenter-primary-controls, .presenter-utilities, .presenter-navigation { align-items: center; display: flex; }
+.presenter-primary-controls { gap: 24px; }
+.presenter-utilities { gap: 8px; }
+.presenter-navigation { gap: 8px; }
+.presenter-controls .icon-button { flex-shrink: 0; }
+.presenter-controls .icon-button:disabled { cursor: default; opacity: 0.4; }
+.presenter-controls .save-state { justify-content: center; padding: 0; width: 40px; }
+.presenter-controls .save-state > span, .presenter-controls .save-state > svg:last-child { display: none; }
+.slide-picker-trigger { gap: 4px; padding: 8px; white-space: nowrap; }
+.slide-picker-trigger > span { font-family: var(--font-mono); font-size: 12px; }
+.presenter-exit { gap: 0; white-space: pre; }
+.presenter-controls .save-menu-above { position: static; }
+.presenter-controls .save-panel, .presenter-slide-picker { bottom: calc(100% + 8px); margin: 0; max-height: min(440px, calc(100dvh - 160px)); overflow: auto; overscroll-behavior: contain; position: absolute; top: auto; }
+.presenter-controls .save-panel { right: 8px; width: min(320px, calc(100vw - 16px)); }
+.presenter-slide-picker { background: var(--color-popover); border: 1px solid var(--color-control-border); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 12%); left: 8px; width: min(360px, calc(100vw - 16px)); }
+.presenter-slide-list { display: grid; gap: 8px; padding: 12px; }
+.presenter-slide-list button { align-items: baseline; background: transparent; border: 1px solid transparent; border-radius: 8px; cursor: pointer; display: flex; font-size: 14px; gap: 12px; min-height: 40px; padding: 8px; text-align: left; }
+.presenter-slide-list button > span:first-child { color: var(--color-foreground-secondary); font-family: var(--font-mono); font-size: 12px; }
+.presenter-slide-list button:hover { background: var(--color-background); }
+.presenter-slide-list button[aria-current="step"] { border-color: var(--color-primary); color: var(--color-primary-strong); }
+
+@media (max-width: 1100px) {
+  .presenter-controls { gap: 8px 16px; }
+  .presenter-primary-controls { gap: 16px; }
+  .presenter-exit > span { display: none; }
+  .audience-connection { max-width: 120px; }
+}
 
 @media (max-width: 860px) {
   .document-title, .save-state > span, .save-state > svg:last-child { display: none; }
   .save-state { justify-content: center; padding: 0; width: 40px; }
   .save-panel { position: fixed; right: 16px; top: var(--header-height); width: min(320px, calc(100vw - 32px)); }
+  .present-panel { position: fixed; right: 16px; top: var(--header-height); width: min(280px, calc(100vw - 32px)); }
   .deck-workspace { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .thumbnail-rail { align-items: flex-start; border-bottom: 1px solid var(--color-border); border-right: 0; display: flex; gap: 10px; overflow-x: auto; padding: 12px 14px; }
   .rail-label { display: none; }
   .thumbnail { flex: 0 0 118px; grid-template-columns: 1fr; margin: 0; min-width: 0; width: 118px; }
   .thumbnail-number { display: none; }
   .stage-area { padding: 22px 14px 16px; }
-  .stage-toolbar, .stage-shell { width: 100%; }
+  .stage-toolbar, .stage-shell, .editor-notes { width: 100%; }
+  .presenter-grid { gap: 16px; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); padding: 12px 16px; }
+  .presenter-primary-controls, .presenter-utilities { flex: 1 1 100%; justify-content: space-between; }
 }
 
 @media (width < 640px) {
@@ -218,16 +287,41 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   .app-logo { height: 28px; }
   .present-button { width: 44px; padding: 0; }
   .present-button span { display: none; }
+  .present-button > svg:last-child { display: none; }
+  .presentation-controls .control-action-label { display: none; }
+  .presenter-grid { gap: 8px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); padding: 8px; }
+  .presenter-sidebar { gap: 8px; grid-template-rows: minmax(0, 0.6fr) minmax(0, 1.4fr); }
+  .presenter-sidebar .speaker-notes { padding: 8px; }
+  .presenter-sidebar .speaker-notes textarea { padding: 8px; }
+  .presenter-sidebar .notes-heading { margin-bottom: 8px; }
+  .presenter-sidebar .notes-heading span { display: none; }
+  .presenter-current .preview-label > span { display: none; }
+  .presenter-controls { padding: 8px; }
+  .presenter-primary-controls { gap: 8px; }
+  .presenter-navigation, .presenter-timer { gap: 4px; }
+  .presenter-timer output { font-size: 18px; margin-right: 4px; }
 }
 
 @media (width < 640px), (pointer: coarse) {
-  .icon-button, .nav-button, .present-button, .save-state, .save-action, .presentation-controls button { min-height: 44px; min-width: 44px; }
+  .icon-button, .nav-button, .present-button, .save-state, .save-action, .presentation-controls button, .secondary-button, .presenter-slide-list button { min-height: 44px; min-width: 44px; }
+}
+
+@media (max-height: 600px) {
+  .presenter-grid { padding-top: 8px; padding-bottom: 8px; }
+  .presenter-sidebar { gap: 8px; grid-template-rows: minmax(0, 0.65fr) minmax(0, 1.35fr); }
+  .presenter-sidebar .speaker-notes { padding: 8px; }
+  .presenter-sidebar .notes-heading { margin-bottom: 8px; }
+  .presenter-sidebar .notes-heading span { display: none; }
+  .presenter-sidebar .speaker-notes textarea { padding: 8px; }
 }
 
 @media (width < 360px) {
   .header-theme-button { display: none; }
   .mobile-theme-button { display: inline-flex; }
   .stage-toolbar { align-items: center; }
+  .presenter-primary-controls { flex-wrap: wrap; justify-content: center; }
+  .presenter-utilities { gap: 4px; }
+  .audience-connection { max-width: 80px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

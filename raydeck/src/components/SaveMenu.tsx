@@ -5,7 +5,9 @@ import type { SaveState } from '@/hooks/useDeckDraft';
 
 import { Icon } from './Icon';
 
-export function SaveMenu({ saveState, changes }: { saveState: SaveState; changes: ChangePrompt }) {
+export function SaveMenu({ saveState, changes, placement = 'below' }: {
+  saveState: SaveState; changes: ChangePrompt; placement?: 'above' | 'below';
+}) {
   const [open, setOpen] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle');
   const wrapper = useRef<HTMLDivElement>(null);
@@ -56,7 +58,7 @@ export function SaveMenu({ saveState, changes }: { saveState: SaveState; changes
   };
 
   return (
-    <div className="save-menu" ref={wrapper}
+    <div className={`save-menu ${placement === 'above' ? 'save-menu-above' : ''}`} ref={wrapper}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
