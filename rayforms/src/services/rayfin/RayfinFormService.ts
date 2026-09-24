@@ -144,7 +144,8 @@ export class RayfinFormService implements IFormService {
     for (const [index, draft] of updates.fields.entries()) {
       const payload = {
         label: draft.label,
-        helpText: draft.helpText || undefined,
+        // The SDK omits undefined, so clearing text requires an explicit empty string.
+        helpText: draft.helpText?.trim() ?? '',
         kind: draft.kind,
         numericSettings: serializeNumericSettings(draft.kind, draft.numericSettings),
         choices: draft.choices.length
@@ -252,7 +253,7 @@ export class RayfinFormService implements IFormService {
     for (const [index, draft] of drafts.entries()) {
       await client.data.FormField.create({
         label: draft.label,
-        helpText: draft.helpText || undefined,
+        helpText: draft.helpText?.trim() ?? '',
         kind: draft.kind,
         numericSettings: serializeNumericSettings(draft.kind, draft.numericSettings),
         choices: draft.choices.length ? JSON.stringify(draft.choices) : undefined,

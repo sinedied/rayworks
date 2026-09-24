@@ -38,7 +38,9 @@ beforeEach(() => {
   api.fieldUpdate.mockImplementation(async ({ id }: { id: string }, payload: Partial<FormField>) => {
     const field = stored.find((candidate) => candidate.id === id);
     if (!field) throw new Error('Missing fixture');
-    Object.assign(field, payload);
+    Object.assign(field, Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined)
+    ));
     return field;
   });
 });
@@ -84,5 +86,44 @@ describe('numeric settings persistence', () => {
     expect(api.formUpdate).not.toHaveBeenCalled();
     expect(api.fieldCreate).not.toHaveBeenCalled();
     expect(api.fieldUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('question help text persistence', () => {
+  it.each([undefined, '', '   '])('clears saved help text with %j', async (helpText) => {
+    stored = [fieldFixture({ helpText: 'Existing guidance' })];
+    const service = new RayfinFormService();
+    await service.updateForm('form-1', {
+      title: 'Test',
+      fields: [draftFixture({ id: 'field-1', helpText })],
+    });
+    expect(api.fieldUpdate).toHaveBeenCalledWith(
+      { id: 'field-1' },
+      expect.objectContaining({ helpText: '' })
+    );
+    expect((await service.getFormById('form-1'))?.fields[0].helpText).toBe('');
+  });
+
+  it('preserves meaningful text and clears rating endpoint help independently', async () => {
+    const service = new RayfinFormService();
+    await service.createForm({
+      title: 'Test',
+      fields: [draftFixture({
+        helpText: '  General guidance  ',
+        numericSettings: { min: 1, max: 5, interval: 1, minLabel: 'Low', maxLabel: 'High' },
+      })],
+    });
+    expect(stored[0].helpText).toBe('General guidance');
+    await service.updateForm('form-1', {
+      title: 'Test',
+      fields: [draftFixture({
+        id: 'field-1',
+        helpText: 'General guidance',
+        numericSettings: { min: 1, max: 5, interval: 1, minLabel: '', maxLabel: '   ' },
+      })],
+    });
+    const saved = (await service.getFormById('form-1'))?.fields[0];
+    expect(saved?.helpText).toBe('General guidance');
+    expect(saved?.numericSettings).toBe('{"min":1,"max":5,"interval":1}');
   });
 });

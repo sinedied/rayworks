@@ -152,7 +152,7 @@ export function FormEditor() {
       fields: fields.map((field) => ({
         ...field,
         label: field.label.trim(),
-        helpText: field.helpText?.trim() || undefined,
+        helpText: field.helpText?.trim() ?? '',
         choices: isChoiceKind(field.kind)
           ? field.choices.map((c) => c.trim()).filter(Boolean)
           : [],

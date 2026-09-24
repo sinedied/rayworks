@@ -34,6 +34,22 @@ beforeEach(() => {
 });
 
 describe('FormEditor numeric settings', () => {
+  it.each(['', '   '])('saves cleared question help text explicitly for %j', async (replacement) => {
+    const user = userEvent.setup();
+    service.getFormById.mockResolvedValue({
+      form: formFixture(),
+      fields: [fieldFixture({ helpText: 'Existing guidance' })],
+    });
+    show(true);
+    const input = await screen.findByLabelText('Help text (optional)');
+    await user.clear(input);
+    if (replacement) await user.type(input, replacement);
+    await user.click(screen.getByRole('button', { name: 'Save form' }));
+    expect(service.updateForm).toHaveBeenCalledWith('form-1', expect.objectContaining({
+      fields: [expect.objectContaining({ helpText: '' })],
+    }));
+  });
+
   it('creates a rating with defaults and endpoint text', async () => {
     const user = userEvent.setup();
     show();
