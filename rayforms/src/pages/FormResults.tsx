@@ -89,14 +89,14 @@ export function FormResults() {
         eyebrow="Results"
         title={form.form.title}
         description={form.form.description}
-        actions={<ShareLinkButton shareToken={form.form.shareToken} />}
+        actions={<ShareLinkButton shareToken={form.form.shareToken} formTitle={form.form.title} />}
       />
 
       {rows.length === 0 ? (
         <EmptyState
           title="No responses yet"
           description="Share the link and answers will appear here as they arrive."
-          action={<ShareLinkButton shareToken={form.form.shareToken} />}
+          action={<ShareLinkButton shareToken={form.form.shareToken} formTitle={form.form.title} />}
         />
       ) : (
         <div className="space-y-6">

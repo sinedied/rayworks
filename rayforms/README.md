@@ -13,6 +13,7 @@ Admins sign in with Fabric Entra SSO; **respondents fill in a shared form withou
   configurable whole-number rating scales with endpoint help text
 - **Share links** — each form gets an unguessable token; recipients open `/f/<token>` with no
   account and no workspace access
+- **QR sharing** — show a scannable code for the public form link, generated in your browser
 - **Open / closed forms** — close a form to stop accepting responses, reopen it any time
 - **Results view** — KPI strip, filters, per-question charts, and a foldable raw table
   with CSV export
@@ -34,6 +35,17 @@ a slider. For example, 10–50 in steps of 10 uses five buttons, while 0–5 in 
 uses a slider. Ratings start unanswered, including sliders. Required ratings need an
 explicit selection; optional ratings can be cleared. Results use the existing numeric
 charts and export the selected number in CSV, not its endpoint label.
+
+### Show a form's QR code
+
+On **Your forms** or a form's **Results** page (including before any responses arrive),
+select **Show QR code** beside **Copy link**. The dialog shows the form title, its public
+URL, and a QR code for that exact URL. Copy link remains available, and the displayed URL
+can also be selected manually if clipboard access is blocked.
+
+QR codes are generated locally, without sending links to an external QR service. There
+is no download action. Scanning requires no attendee account; closing the form stops
+responses through its QR link just as it does through a copied link.
 
 ## ⚠️ Security model — read this first
 

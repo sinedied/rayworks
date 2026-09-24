@@ -122,7 +122,7 @@ function FormRow({ form, onToggleClosed, onDelete }: FormRowProps) {
           )}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <ShareLinkButton shareToken={form.shareToken} />
+            <ShareLinkButton shareToken={form.shareToken} formTitle={form.title} />
             <Button asChild variant="outline" size="sm" >
               <Link to={`/forms/${form.id}/results`}>
                 <BarChart3Icon className="mr-2 h-3.5 w-3.5" />
