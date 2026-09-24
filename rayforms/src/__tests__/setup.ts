@@ -1,6 +1,22 @@
 import '@testing-library/jest-dom';
 import { beforeEach } from 'vitest';
 
+global.ResizeObserver = class implements ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+for (const method of ['setPointerCapture', 'releasePointerCapture', 'scrollIntoView']) {
+  Object.defineProperty(HTMLElement.prototype, method, {
+    configurable: true,
+    value: () => {},
+  });
+}
+Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+  configurable: true,
+  value: () => false,
+});
+
 // Mock localStorage
 const localStorageMock = {
   store: {} as Record<string, string>,

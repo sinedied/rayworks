@@ -16,6 +16,7 @@ export type FormFieldKind =
   | 'shortText'
   | 'longText'
   | 'number'
+  | 'rating'
   | 'date'
   | 'singleChoice'
   | 'multiChoice';
@@ -25,6 +26,7 @@ export type FormFieldKind =
  *
  * `owner_id` is denormalized from the parent form because Rayfin policies cannot traverse
  * relationships. `choices` holds a JSON-encoded string array, used only by the choice kinds.
+ * `numericSettings` holds JSON bounds for numbers or a rating scale and its endpoint labels.
  */
 @entity()
 @anonymous('read', {
@@ -51,12 +53,14 @@ export class FormField {
     'shortText',
     'longText',
     'number',
+    'rating',
     'date',
     'singleChoice',
     'multiChoice',
   )
   kind!: FormFieldKind;
   @text({ optional: true, max: 4000 }) choices?: string;
+  @text({ optional: true, max: 4000 }) numericSettings?: string;
   @boolean() required!: boolean;
   /**
    * Soft-delete marker. Questions are never hard-deleted while editing because `Answer.field_id`

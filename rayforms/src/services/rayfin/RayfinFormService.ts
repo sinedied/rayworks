@@ -1,5 +1,6 @@
 import type { Form } from '../../../rayfin/data/Form';
 import type { FormField } from '../../../rayfin/data/FormField';
+import { serializeNumericSettings, validateNumericSettings } from '../../lib/numericFields';
 import {
   CreateFormInput,
   FormFieldDraft,
@@ -26,6 +27,7 @@ const QUESTION_FIELDS = [
   'helpText',
   'kind',
   'choices',
+  'numericSettings',
   'required',
   'isDeleted',
   'isClosed',
@@ -46,6 +48,13 @@ function requireUserId(): string {
     throw new Error('User is not authenticated');
   }
   return userId;
+}
+
+function validateFieldSettings(fields: FormFieldDraft[]): void {
+  for (const [index, field] of fields.entries()) {
+    const error = validateNumericSettings(field.kind, field.numericSettings);
+    if (error) throw new Error(`Question ${index + 1}: ${error}`);
+  }
 }
 
 export class RayfinFormService implements IFormService {
@@ -90,6 +99,7 @@ export class RayfinFormService implements IFormService {
   }
 
   async createForm(input: CreateFormInput): Promise<Form> {
+    validateFieldSettings(input.fields);
     const client = getRayfinClient();
     const ownerId = requireUserId();
     const now = new Date();
@@ -112,6 +122,7 @@ export class RayfinFormService implements IFormService {
     id: string,
     updates: { title: string; description?: string; fields: FormFieldDraft[] }
   ): Promise<Form> {
+    validateFieldSettings(updates.fields);
     const client = getRayfinClient();
     const ownerId = requireUserId();
 
@@ -135,6 +146,7 @@ export class RayfinFormService implements IFormService {
         label: draft.label,
         helpText: draft.helpText || undefined,
         kind: draft.kind,
+        numericSettings: serializeNumericSettings(draft.kind, draft.numericSettings),
         choices: draft.choices.length
           ? JSON.stringify(draft.choices)
           : undefined,
@@ -242,6 +254,7 @@ export class RayfinFormService implements IFormService {
         label: draft.label,
         helpText: draft.helpText || undefined,
         kind: draft.kind,
+        numericSettings: serializeNumericSettings(draft.kind, draft.numericSettings),
         choices: draft.choices.length ? JSON.stringify(draft.choices) : undefined,
         required: draft.required,
         isDeleted: false,

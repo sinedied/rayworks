@@ -1,9 +1,10 @@
 import { CheckIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { EmptyState } from '@/components/EmptyState';
 import { PageShell } from '@/components/PageShell';
+import { RatingInput } from '@/components/RatingInput';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { usePublicForm } from '@/hooks/usePublicForm';
 import { parseStringArray as parseChoices } from '@/lib/choices';
+import { readNumericSettings, validateNumericAnswer } from '@/lib/numericFields';
 import type { AnswerDraft } from '@/services/interfaces/IResponseService';
 import { ServiceContainer } from '@/services/ServiceContainer';
 
@@ -28,9 +30,21 @@ export function PublicForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [badNumberInputs, setBadNumberInputs] = useState<Record<string, boolean>>({});
+  const configuredFields = useMemo(() => data?.fields.map((field) => ({
+    field,
+    ...readNumericSettings(field.kind, field.numericSettings),
+  })) ?? [], [data]);
 
   const setAnswer = (fieldId: string, value: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [fieldId]: value }));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldId];
+      return next;
+    });
+    setSubmitError(null);
   };
 
   const toggleChoice = (fieldId: string, choice: string) => {
@@ -48,15 +62,27 @@ export function PublicForm() {
       return;
     }
 
-    for (const field of data.fields) {
+    const errors: Record<string, string> = {};
+    for (const { field, settings, error } of configuredFields) {
       const value = answers[field.id];
       const empty =
         value === undefined ||
         (Array.isArray(value) ? value.length === 0 : !String(value).trim());
-      if (field.required && empty) {
-        setSubmitError(`"${field.label}" is required.`);
-        return;
+      if (error) {
+        errors[field.id] = error;
+      } else if (badNumberInputs[field.id]) {
+        errors[field.id] = 'Enter a valid finite number.';
+      } else if (field.required && empty) {
+        errors[field.id] = `"${field.label}" is required.`;
+      } else if (typeof value === 'string') {
+        const numericError = validateNumericAnswer(field.kind, settings, value);
+        if (numericError) errors[field.id] = numericError;
       }
+    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setSubmitError('Please check the highlighted questions.');
+      return;
     }
 
     setSubmitting(true);
@@ -145,9 +171,14 @@ export function PublicForm() {
           )}
 
           <div className="fade-in space-y-3">
-            {data.fields.map((field, index) => {
+            {configuredFields.map(({ field, settings, error: configError }, index) => {
               const choices = parseChoices(field.choices);
               const value = answers[field.id];
+              const fieldError = configError ?? fieldErrors[field.id];
+              const describedBy = [
+                field.helpText ? `${field.id}-help` : '',
+                fieldError ? `${field.id}-error` : '',
+              ].filter(Boolean).join(' ') || undefined;
 
               return (
                 <fieldset
@@ -180,15 +211,22 @@ export function PublicForm() {
                         )}
                       </Label>
                       {field.helpText && (
-                        <p className="mt-1 text-sm text-[var(--text-muted)]">
+                        <p id={`${field.id}-help`} className="mt-1 text-sm text-[var(--text-muted)]">
                           {field.helpText}
                         </p>
                       )}
 
-                      <div className="mt-3">
+                      {fieldError && (
+                        <p id={`${field.id}-error`} role="alert" className="mt-2 text-sm text-destructive">
+                          {fieldError}
+                        </p>
+                      )}
+                      {!configError && <div className="mt-3">
                         {field.kind === 'longText' && (
                           <Textarea
                             id={field.id}
+                            aria-describedby={describedBy}
+                            aria-invalid={Boolean(fieldError)}
                             rows={4}
                             value={(value as string) ?? ''}
                             onChange={(e) =>
@@ -202,6 +240,11 @@ export function PublicForm() {
                           field.kind === 'date') && (
                           <Input
                             id={field.id}
+                            min={field.kind === 'number' ? settings.min : undefined}
+                            max={field.kind === 'number' ? settings.max : undefined}
+                            step={field.kind === 'number' ? 'any' : undefined}
+                            aria-describedby={describedBy}
+                            aria-invalid={Boolean(fieldError)}
                             type={
                               field.kind === 'number'
                                 ? 'number'
@@ -210,9 +253,28 @@ export function PublicForm() {
                                   : 'text'
                             }
                             value={(value as string) ?? ''}
-                            onChange={(e) =>
-                              setAnswer(field.id, e.target.value)
-                            }
+                            onInput={(e) => {
+                              if (field.kind === 'number') {
+                                const badInput = e.currentTarget.validity.badInput;
+                                setBadNumberInputs((prev) => ({
+                                  ...prev, [field.id]: badInput,
+                                }));
+                              }
+                            }}
+                            onChange={(e) => setAnswer(field.id, e.target.value)}
+                          />
+                        )}
+
+                        {field.kind === 'rating' && (
+                          <RatingInput
+                            id={field.id}
+                            label={field.label}
+                            settings={settings}
+                            value={typeof value === 'string' ? value : ''}
+                            required={field.required}
+                            describedBy={describedBy}
+                            invalid={Boolean(fieldError)}
+                            onChange={(next) => setAnswer(field.id, next)}
                           />
                         )}
 
@@ -257,7 +319,7 @@ export function PublicForm() {
                             ))}
                           </div>
                         )}
-                      </div>
+                      </div>}
                     </div>
                   </div>
                 </fieldset>

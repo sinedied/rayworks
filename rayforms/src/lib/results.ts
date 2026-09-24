@@ -149,6 +149,7 @@ export function numberStats(
 ): NumberStats | null {
   const values = rows
     .flatMap((row) => answerValues(row.answersByFieldId.get(field.id)))
+    .filter((value) => value.trim().length > 0)
     .map((value) => Number(value))
     .filter((value) => Number.isFinite(value))
     .sort((a, b) => a - b);

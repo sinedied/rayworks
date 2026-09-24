@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { defaultRatingSettings } from '@/lib/numericFields';
 import {
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ const KIND_LABELS: Record<FormFieldKind, string> = {
   shortText: 'Short answer',
   longText: 'Paragraph',
   number: 'Number',
+  rating: 'Rating',
   date: 'Date',
   singleChoice: 'Single choice',
   multiChoice: 'Multiple choice',
@@ -122,6 +124,7 @@ export function FieldEditor({
               onValueChange={(kind) =>
                 onChange({
                   kind: kind as FormFieldKind,
+                  numericSettings: kind === 'rating' ? defaultRatingSettings() : undefined,
                   choices: isChoiceKind(kind as FormFieldKind)
                     ? field.choices.length
                       ? field.choices
@@ -153,6 +156,66 @@ export function FieldEditor({
             onChange={(e) => onChange({ helpText: e.target.value })}
           />
         </div>
+
+        {(field.kind === 'number' || field.kind === 'rating') && (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {([
+              ['min', 'Minimum'],
+              ['max', 'Maximum'],
+              ...(field.kind === 'rating' ? [['interval', 'Interval'] as const] : []),
+            ] as const).map(([key, label]) => (
+              <div key={key} className="space-y-1.5">
+                <Label htmlFor={`${key}-${index}`}>
+                  {label}{field.kind === 'number' && ' (optional)'}
+                </Label>
+                <Input
+                  id={`${key}-${index}`}
+                  type="number"
+                  step={field.kind === 'rating' ? 1 : 'any'}
+                  min={key === 'interval' ? 1 : undefined}
+                  value={Number.isFinite(field.numericSettings?.[key])
+                    ? field.numericSettings?.[key] : ''}
+                  onInput={(e) => {
+                    if (e.currentTarget.validity.badInput) {
+                      onChange({ numericSettings: { ...field.numericSettings, [key]: NaN } });
+                    }
+                  }}
+                  onChange={(e) => onChange({
+                    numericSettings: {
+                      ...field.numericSettings,
+                      [key]: e.target.value === '' && !e.target.validity.badInput
+                        ? undefined : e.target.valueAsNumber,
+                    },
+                  })}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {field.kind === 'rating' && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(['min', 'max'] as const).map((endpoint) => {
+              const key = endpoint === 'min' ? 'minLabel' : 'maxLabel';
+              return (
+                <div key={key} className="space-y-1.5">
+                  <Label htmlFor={`${key}-${index}`}>
+                    {endpoint === 'min' ? 'Minimum' : 'Maximum'} help text (optional)
+                  </Label>
+                  <Input
+                    id={`${key}-${index}`}
+                    value={field.numericSettings?.[key] ?? ''}
+                    maxLength={500}
+                    placeholder={endpoint === 'min' ? 'Not useful' : 'Extremely useful'}
+                    onChange={(e) => onChange({
+                      numericSettings: { ...field.numericSettings, [key]: e.target.value },
+                    })}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {choiceKind && (
           <div className="space-y-2">

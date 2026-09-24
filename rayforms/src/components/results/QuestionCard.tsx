@@ -14,6 +14,7 @@ const KIND_LABELS: Record<FormField['kind'], string> = {
   shortText: 'Short answer',
   longText: 'Paragraph',
   number: 'Number',
+  rating: 'Rating',
   date: 'Date',
   singleChoice: 'Single choice',
   multiChoice: 'Multiple choice',
@@ -74,7 +75,7 @@ function Visualisation({
     );
   }
 
-  if (field.kind === 'number') {
+  if (field.kind === 'number' || field.kind === 'rating') {
     const stats = numberStats(rows, field);
     return stats ? (
       <NumberChart stats={stats} />

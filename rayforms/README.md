@@ -7,14 +7,33 @@ Admins sign in with Fabric Entra SSO; **respondents fill in a shared form withou
 
 ## Features
 
-- **Form builder** — add, reorder, and delete questions across six question kinds
-  (short answer, paragraph, number, date, single choice, multiple choice)
+- **Form builder** — add, reorder, and delete questions across seven question kinds
+  (short answer, paragraph, number, rating, date, single choice, multiple choice)
+- **Number bounds and ratings** — optional inclusive minimum/maximum for numbers;
+  configurable whole-number rating scales with endpoint help text
 - **Share links** — each form gets an unguessable token; recipients open `/f/<token>` with no
   account and no workspace access
 - **Open / closed forms** — close a form to stop accepting responses, reopen it any time
 - **Results view** — KPI strip, filters, per-question charts, and a foldable raw table
   with CSV export
 - **Fabric Entra SSO** — Fabric sign-in in production, mock email/password locally
+
+### Number and rating questions
+
+For **Number**, set either, both, or neither of the optional Minimum and Maximum bounds.
+Negative and decimal numbers are supported; bounds are inclusive and minimum may equal
+maximum. Clear a bound to remove it.
+
+For **Rating**, Minimum, Maximum, and Interval default to **1, 5, and 1**. All three must
+be whole numbers, minimum must be less than maximum, and a positive interval must reach
+the maximum exactly. Add optional minimum/maximum help text, such as "Not useful" and
+"Extremely useful", independently of the question's general help text.
+
+Scales with **five or fewer selectable values** use numbered buttons; larger scales use
+a slider. For example, 10–50 in steps of 10 uses five buttons, while 0–5 in steps of 1
+uses a slider. Ratings start unanswered, including sliders. Required ratings need an
+explicit selection; optional ratings can be cleared. Results use the existing numeric
+charts and export the selected number in CSV, not its endpoint label.
 
 ## ⚠️ Security model — read this first
 
@@ -101,7 +120,7 @@ read permission that would leak submissions.
   `setFormClosed`. The two writes are not transactional.
 - **Submissions are not atomic.** `RayfinResponseService.submitResponse` writes the response and
   then each answer in sequence; a failure part-way leaves a partial submission. Required-field
-  and choice validation is client-side only.
+  and numeric/rating validation is client-side only; direct API clients can bypass it.
 - **Editing a form soft-deletes removed questions** (`FormField.isDeleted`) rather than dropping
   them, because `Answer.field_id` holds a foreign key. Results still show those columns.
 - **Deleting a form permanently deletes its responses and answers**, since they are FK-bound to it.
@@ -179,6 +198,10 @@ Notes on the modelling choices:
   schema generation.
 - `FormField.choices` and multi-choice `Answer.value` store JSON-encoded string arrays, parsed
   defensively via `src/lib/choices.ts`.
+- Optional `FormField.numericSettings` stores validated JSON for Number bounds or Rating
+  scales and endpoint labels. Existing Number questions without settings remain unbounded;
+  malformed settings produce an explicit error. Scalar answers remain strings, with blank
+  strings for skipped questions. Scale edits do not discard historical numeric answers.
 - `Answer.fieldLabel` snapshots the question text so old results stay readable after a form
   is edited.
 - Editing a form updates questions in place and soft-deletes removed ones, preserving the

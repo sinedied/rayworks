@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { parseStringArray } from '@/lib/choices';
+import { readNumericSettings, validateNumericSettings } from '@/lib/numericFields';
 import type { FormFieldDraft } from '@/services/interfaces/IFormService';
 import { ServiceContainer } from '@/services/ServiceContainer';
 
@@ -34,6 +35,7 @@ export function FormEditor() {
   const [description, setDescription] = useState('');
   const [fields, setFields] = useState<FormFieldDraft[]>([blankField()]);
   const [loading, setLoading] = useState(isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,11 +45,15 @@ export function FormEditor() {
     }
 
     let cancelled = false;
+    setLoading(true);
+    setLoadFailed(false);
+    setError(null);
     (async () => {
       try {
         const result = await formService.getFormById(id);
         if (cancelled || !result) {
           if (!cancelled) {
+            setLoadFailed(true);
             setError('Form not found.');
           }
           return;
@@ -57,19 +63,27 @@ export function FormEditor() {
         setDescription(result.form.description ?? '');
         setFields(
           result.fields.length
-            ? result.fields.map((field) => ({
-                id: field.id,
-                label: field.label,
-                helpText: field.helpText ?? '',
-                kind: field.kind,
-                choices: parseStringArray(field.choices),
-                required: field.required,
-              }))
+            ? result.fields.map((field, index) => {
+                const numeric = readNumericSettings(field.kind, field.numericSettings);
+                if (numeric.error) {
+                  throw new Error(`Question ${index + 1}: ${numeric.error}`);
+                }
+                return {
+                  id: field.id,
+                  label: field.label,
+                  helpText: field.helpText ?? '',
+                  kind: field.kind,
+                  choices: parseStringArray(field.choices),
+                  numericSettings: numeric.settings,
+                  required: field.required,
+                };
+              })
             : [blankField()]
         );
       } catch (err) {
         console.error('Failed to load form:', err);
         if (!cancelled) {
+          setLoadFailed(true);
           setError(err instanceof Error ? err.message : 'Failed to load form');
         }
       } finally {
@@ -116,6 +130,8 @@ export function FormEditor() {
       ) {
         return `Question ${index + 1} needs at least one choice.`;
       }
+      const numericError = validateNumericSettings(field.kind, field.numericSettings);
+      if (numericError) return `Question ${index + 1}: ${numericError}`;
     }
     return null;
   };
@@ -180,7 +196,7 @@ export function FormEditor() {
 
       {loading ? (
         <p className="text-sm text-[var(--text-muted)]">Loading form…</p>
-      ) : (
+      ) : !loadFailed && (
         <div className="fade-in">
           <div className="card mb-6 space-y-4 bg-[var(--surface)] p-4 sm:p-5">
             <div className="space-y-1.5">

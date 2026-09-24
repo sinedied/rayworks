@@ -73,6 +73,7 @@ describe('QuestionCard', () => {
         choices: JSON.stringify(['Cheese', 'Ham']),
       }),
       field({ id: 'c', kind: 'number', label: 'Score' }),
+      field({ id: 'r', kind: 'rating', label: 'Rating score' }),
       field({ id: 'd', kind: 'longText', label: 'Comments' }),
     ];
 
@@ -81,6 +82,7 @@ describe('QuestionCard', () => {
         a: 'Red',
         b: JSON.stringify(['Cheese', 'Ham']),
         c: '4',
+        r: '5',
         d: 'Very good',
       }),
       row('2', { a: 'Blue', b: JSON.stringify(['Cheese']), c: '9', d: '' }),
@@ -105,6 +107,13 @@ describe('QuestionCard', () => {
     );
     expect(screen.getByText(/1 answered/)).toBeInTheDocument();
     expect(screen.getByText(/1 skipped/)).toBeInTheDocument();
+  });
+
+  it('renders rating statistics rather than text responses', () => {
+    render(<QuestionCard field={field({ id: 'r', kind: 'rating', label: 'Usefulness' })}
+      rows={[row('1', { r: '3' }), row('2', { r: '5' }), row('3', { r: '' })]} index={0} />);
+    expect(screen.getByText('Mean')).toBeInTheDocument();
+    expect(screen.getByText(/Rating · 2 answered · 1 skipped/)).toBeInTheDocument();
   });
 });
 

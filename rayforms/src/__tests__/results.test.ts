@@ -120,6 +120,20 @@ describe('numberStats', () => {
   it('returns null when nothing numeric was answered', () => {
     expect(numberStats([row('1', '2026-01-01', { n: '' })], score)).toBeNull();
   });
+
+  it('aggregates ratings without counting skips or dropping historical values', () => {
+    const rating = field({ id: 'r', kind: 'rating', numericSettings: '{"min":1,"max":5,"interval":1}' });
+    const rows = [
+      row('1', '2026-01-01', { r: '1' }),
+      row('2', '2026-01-01', { r: '5' }),
+      row('3', '2026-01-01', { r: '9' }),
+      row('4', '2026-01-01', { r: '' }),
+      row('5', '2026-01-01', { r: ' ' }),
+      row('6', '2026-01-01', { r: 'bad' }),
+    ];
+    expect(numberStats(rows, rating)).toMatchObject({ count: 3, min: 1, max: 9, mean: 5 });
+    expect(toCsv(rows.slice(0, 1), [rating])).toContain(',Anonymous,1');
+  });
 });
 
 describe('applyFilters', () => {

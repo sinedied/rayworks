@@ -1,5 +1,6 @@
 import type { Form } from '../../../rayfin/data/Form';
 import type { FormField } from '../../../rayfin/data/FormField';
+import type { NumericFieldSettings } from '../../lib/numericFields';
 
 /** A question as edited in the builder, before it is persisted. */
 export interface FormFieldDraft {
@@ -8,6 +9,7 @@ export interface FormFieldDraft {
   helpText?: string;
   kind: FormField['kind'];
   choices: string[];
+  numericSettings?: NumericFieldSettings;
   required: boolean;
 }
 
