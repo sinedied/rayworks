@@ -7,8 +7,9 @@ const clientMocks = vi.hoisted(() => {
   const select = vi.fn(() => ({ where }));
   const findById = vi.fn();
   const createTripDay = vi.fn();
+  const updateReport = vi.fn();
 
-  return { execute, first, where, select, findById, createTripDay };
+  return { execute, first, where, select, findById, createTripDay, updateReport };
 });
 
 vi.mock('./rayfinClient', () => ({
@@ -21,11 +22,29 @@ vi.mock('./rayfinClient', () => ({
       TripDay: {
         create: clientMocks.createTripDay,
       },
+      TripReport: { update: clientMocks.updateReport },
     },
   }),
 }));
 
-import { getTrip, saveTripDay } from './trips';
+import { finalizeTripReport, getTrip, saveTripDay, saveTripReport } from './trips';
+
+describe('single report mutations', () => {
+  beforeEach(() => vi.clearAllMocks());
+  it('saves only the new field and finalizes the same text atomically', async () => {
+    await saveTripReport('r1', '  ## Summary\nSaved  ');
+    expect(clientMocks.updateReport).toHaveBeenCalledWith({ id: 'r1' }, { content: '## Summary\nSaved' });
+    await finalizeTripReport('r1', '## Summary\nFinal');
+    expect(clientMocks.updateReport).toHaveBeenLastCalledWith({ id: 'r1' }, {
+      content: '## Summary\nFinal', status: 'finalized', finalizedAt: expect.any(Date),
+    });
+  });
+  it('does not persist empty or over-limit content', async () => {
+    await expect(saveTripReport('r1', '')).rejects.toThrow();
+    await expect(finalizeTripReport('r1', 'x'.repeat(2501))).rejects.toThrow();
+    expect(clientMocks.updateReport).not.toHaveBeenCalled();
+  });
+});
 
 describe('getTrip', () => {
   beforeEach(() => {

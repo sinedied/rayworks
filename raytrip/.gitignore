@@ -41,6 +41,8 @@ Thumbs.db
 lerna-debug.log*
 .vite
 coverage
+.test-results/
+playwright-report/
 rayfin/.env*
 rayfin/.deployments.json
 rayfin/.*.tmp

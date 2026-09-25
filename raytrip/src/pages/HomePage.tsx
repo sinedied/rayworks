@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Trip } from '../../rayfin/data/Trip';
 
 import { AppHeader } from '@/components/AppHeader';
+import { Modal } from '@/components/Modal';
 import { useAuth } from '@/hooks/AuthContext';
 import { formatDate } from '@/lib/dates';
 import { createTrip, listTrips } from '@/services/trips';
@@ -14,6 +15,7 @@ export function HomePage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,10 +39,15 @@ export function HomePage() {
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!user) return;
+    if (saving) return;
+    if (!user) { setError('Sign in again before creating a trip.'); return; }
     const form = new FormData(event.currentTarget);
     setError(null);
+    setSaving(true);
     try {
+      if (String(form.get('endDate')) < String(form.get('startDate'))) {
+        throw new Error('The end date must be on or after the start date.');
+      }
       const trip = await createTrip(
         {
           title: String(form.get('title')),
@@ -59,6 +66,8 @@ export function HomePage() {
       setError(
         reason instanceof Error ? reason.message : 'Could not create the trip.'
       );
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -147,17 +156,7 @@ export function HomePage() {
       </main>
 
       {creating && (
-        <div className="modal-backdrop" role="presentation">
-          <section className="modal-card" role="dialog" aria-modal="true">
-            <button
-              className="modal-close"
-              aria-label="Close"
-              onClick={() => setCreating(false)}
-            >
-              ×
-            </button>
-            <p className="eyebrow">New trip</p>
-            <h2>Create a trip</h2>
+        <Modal title="Create a trip" onClose={() => { if (!saving) { setCreating(false); setError(null); } }}>
             <form className="form-stack" onSubmit={(event) => void handleCreate(event)}>
               <label>
                 Trip title
@@ -186,12 +185,12 @@ export function HomePage() {
                   <input name="endDate" required type="date" />
                 </label>
               </div>
-              <button className="primary-button" type="submit">
-                Create trip
+              {error && <div className="inline-error" role="alert">{error}</div>}
+              <button className="primary-button" type="submit" disabled={saving}>
+                {saving ? 'Creating…' : 'Create trip'}
               </button>
             </form>
-          </section>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,8 +1,9 @@
 import {
-  BrowserRouter,
+  createBrowserRouter,
   Navigate,
   Route,
   Routes,
+  RouterProvider,
   useLocation,
 } from 'react-router-dom';
 
@@ -80,12 +81,10 @@ function AppRoutes() {
   );
 }
 
+const router = createBrowserRouter([{ path: '*', element: <AppRoutes /> }]);
+
 function App() {
-  return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

@@ -7,9 +7,10 @@ export default defineConfig({
       '@': resolve(import.meta.dirname, 'src'),
     },
   },
+  esbuild: { jsx: 'automatic' },
   test: {
     globals: true,
-    include: ['src/**/*.{test,spec}.ts', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'tests/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     exclude: ['node_modules', 'dist'],
   },
 });

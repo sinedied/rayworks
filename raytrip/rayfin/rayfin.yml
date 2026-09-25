@@ -16,7 +16,7 @@ services:
     enabled: true
     dialect: mssql
   storage:
-    enabled: true
+    enabled: false
   staticHosting:
     enabled: true
     assetAccess: protected

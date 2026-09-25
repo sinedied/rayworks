@@ -1,78 +1,57 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-
 import type { Trip } from '../../rayfin/data/Trip';
 import type { TripDay } from '../../rayfin/data/TripDay';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
 import type { TripReport } from '../../rayfin/data/TripReport';
-
 import { AppHeader } from '@/components/AppHeader';
+import { Modal } from '@/components/Modal';
+import { ReportWorkspace } from '@/components/ReportWorkspace';
 import { useAuth } from '@/hooks/AuthContext';
 import { formatDate, toDateInputValue, toValidDate } from '@/lib/dates';
 import {
-  deleteTripDay,
-  deleteTripPhoto,
-  finalizeTripReport,
-  generateTripReport,
-  getTrip,
-  getTripPhotoUrl,
-  getTripReport,
-  listTripDays,
-  listTripPhotos,
-  saveTripDay,
-  saveTripReport,
-  updateTrip,
-  uploadTripPhoto,
+  deleteTripDay, deleteTripPhoto, getTrip, getTripPhotoUrl, getTripReport,
+  listTripDays, listTripPhotos, saveTripDay, updateTrip, uploadTripPhoto,
 } from '@/services/trips';
 
-type PageState = 'loading' | 'ready' | 'not-found' | 'error';
-
-function PhotoTile({
-  photo,
-  onDelete,
-}: {
-  photo: TripPhoto;
-  onDelete: () => void;
+function PhotoTile({ photo, disabled, onDelete }: {
+  photo: TripPhoto; disabled: boolean; onDelete: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
-
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const container = useRef<HTMLElement>(null);
   useEffect(() => {
-    let objectUrl: string | null = null;
-    setLoadFailed(false);
-    getTripPhotoUrl(photo)
-      .then((loaded) => {
-        objectUrl = loaded;
-        setUrl(loaded);
-      })
-      .catch(() => setLoadFailed(true));
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    let cancelled = false;
+    let objectUrl: string | undefined;
+    let started = false;
+    setUrl(null);
+    setError('');
+    const load = () => {
+      if (started || cancelled) return;
+      started = true;
+      getTripPhotoUrl(photo).then(value => {
+        if (cancelled) URL.revokeObjectURL(value);
+        else { objectUrl = value; setUrl(value); }
+      }).catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Could not load the photo.'); });
     };
-  }, [photo]);
-
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) load();
+    }, { rootMargin: '200px' });
+    if (container.current) observer.observe(container.current);
+    return () => { cancelled = true; observer.disconnect(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [photo, attempt]);
   return (
-    <figure className="photo-tile">
-      {url ? (
-        <img src={url} alt={photo.caption || 'Trip attachment'} />
-      ) : (
-        <div className="photo-placeholder">
-          {loadFailed ? 'Preview unavailable' : 'Loading image…'}
+    <figure className="photo-tile" ref={container}>
+      {url ? <img src={url} alt={photo.caption || 'Trip attachment'} /> : (
+        <div className="photo-placeholder" role={error ? 'alert' : 'status'}>
+          {error || 'Loading image…'}
+          {!!error && <button className="text-button" onClick={() => setAttempt(value => value + 1)}>Retry preview</button>}
         </div>
       )}
       <figcaption>
-        <span>{photo.caption || 'Untitled field photo'}</span>
-        <button className="text-button danger" onClick={onDelete}>
-          Remove
-        </button>
+        <span>{photo.caption || 'Trip photo'}</span>
+        <button className="text-button danger" disabled={disabled} onClick={onDelete}>Remove</button>
       </figcaption>
     </figure>
   );
@@ -80,735 +59,265 @@ function PhotoTile({
 
 export function TripPage() {
   const { tripId = '' } = useParams();
-  const { key: routeKey } = useLocation();
+  const location = useLocation();
+  // A fresh workspace per history entry keeps late async work out of subsequent visits.
+  return <TripWorkspace key={`${location.key}:${tripId}`} tripId={tripId} />;
+}
+
+function TripWorkspace({ tripId }: { tripId: string }) {
   const { user } = useAuth();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [days, setDays] = useState<TripDay[]>([]);
   const [photos, setPhotos] = useState<TripPhoto[]>([]);
   const [report, setReport] = useState<TripReport | null>(null);
+  const [reportLoaded, setReportLoaded] = useState(false);
+  const [pageState, setPageState] = useState<'loading' | 'ready' | 'not-found' | 'error'>('loading');
+  const [view, setView] = useState<'notes' | 'report'>('notes');
   const [editingDay, setEditingDay] = useState<TripDay | null>(null);
   const [addingDay, setAddingDay] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pageState, setPageState] = useState<PageState>('loading');
-  const loadRequest = useRef(0);
-  const activeRoute = useRef({ tripId, routeKey, generation: 0 });
-
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoProgress, setPhotoProgress] = useState('');
+  const uploadController = useRef<AbortController | null>(null);
+  const mounted = useRef(false);
+  const request = useRef(0);
+  const mutation = useRef(false);
   useLayoutEffect(() => {
-    activeRoute.current = {
-      tripId,
-      routeKey,
-      generation: activeRoute.current.generation + 1,
-    };
-  }, [routeKey, tripId]);
+    mounted.current = true;
+    return () => { mounted.current = false; uploadController.current?.abort(); };
+  }, []);
 
-  function isCurrentRoute(
-    routeTripId: string,
-    expectedRouteKey: string,
-    expectedGeneration: number
-  ) {
-    return (
-      activeRoute.current.tripId === routeTripId &&
-      activeRoute.current.routeKey === expectedRouteKey &&
-      activeRoute.current.generation === expectedGeneration
-    );
-  }
-
-  const refresh = useCallback(async (showLoading = false) => {
-    const requestId = ++loadRequest.current;
-    const requestedTripId = tripId;
-    const requestedRouteKey = routeKey;
-    const requestedGeneration = activeRoute.current.generation;
-    if (showLoading) {
-      setPageState('loading');
-      setTrip(null);
-      setDays([]);
-      setPhotos([]);
-      setReport(null);
-    }
+  const refresh = useCallback(async () => {
+    const id = ++request.current;
+    const current = () => mounted.current && request.current === id;
     setError(null);
-
     try {
-      const nextTrip = await getTrip(requestedTripId);
-      if (
-        requestId !== loadRequest.current ||
-        !isCurrentRoute(
-          requestedTripId,
-          requestedRouteKey,
-          requestedGeneration
-        )
-      ) {
-        return;
-      }
-      if (!nextTrip) {
-        setTrip(null);
-        setPageState('not-found');
-        return;
-      }
-
+      const nextTrip = await getTrip(tripId);
+      if (!current()) return;
+      if (!nextTrip) { setPageState('not-found'); return; }
       setTrip(nextTrip);
-
-      const [daysResult, photosResult, reportResult] = await Promise.allSettled([
-        listTripDays(requestedTripId),
-        listTripPhotos(requestedTripId),
-        getTripReport(requestedTripId),
+      const results = await Promise.allSettled([
+        listTripDays(tripId), listTripPhotos(tripId), getTripReport(tripId),
       ]);
-      if (
-        requestId !== loadRequest.current ||
-        !isCurrentRoute(
-          requestedTripId,
-          requestedRouteKey,
-          requestedGeneration
-        )
-      ) {
-        return;
-      }
-      const sectionFailures: string[] = [];
-
-      if (daysResult.status === 'fulfilled') {
-        setDays(daysResult.value);
-      } else {
-        setDays([]);
-        sectionFailures.push('Daily notes could not be loaded.');
-      }
-      if (photosResult.status === 'fulfilled') {
-        setPhotos(photosResult.value);
-      } else {
-        setPhotos([]);
-        sectionFailures.push('Photos could not be loaded.');
-      }
-      if (reportResult.status === 'fulfilled') {
-        setReport(reportResult.value);
-      } else {
-        setReport(null);
-        sectionFailures.push('The report draft could not be loaded.');
-      }
-
-      if (sectionFailures.length) setError(sectionFailures.join(' '));
+      if (!current()) return;
+      const failures: string[] = [];
+      if (results[0].status === 'fulfilled') setDays(results[0].value);
+      else failures.push('Daily notes could not be loaded.');
+      if (results[1].status === 'fulfilled') setPhotos(results[1].value);
+      else failures.push('Photos could not be loaded.');
+      if (results[2].status === 'fulfilled') { setReport(results[2].value); setReportLoaded(true); }
+      else failures.push('The report could not be loaded.');
+      if (failures.length) setError(failures.join(' '));
       setPageState('ready');
     } catch (reason) {
-      if (
-        requestId !== loadRequest.current ||
-        !isCurrentRoute(
-          requestedTripId,
-          requestedRouteKey,
-          requestedGeneration
-        )
-      ) {
-        return;
-      }
-      setTrip(null);
-      setError(
-        reason instanceof Error ? reason.message : 'Could not load this trip.'
-      );
+      if (!current()) return;
+      setError(reason instanceof Error ? reason.message : 'Could not load this trip.');
       setPageState('error');
     }
-  }, [routeKey, tripId]);
-
-  useEffect(() => {
-    setBusy(false);
-    setAddingDay(false);
-    setEditingDay(null);
-    void refresh(true);
-  }, [refresh]);
-
-  const tripProgress = useMemo(() => {
-    if (!trip) return 0;
-    const start = toValidDate(trip.startDate)?.getTime();
-    const end = toValidDate(trip.endDate)?.getTime();
-    if (start === undefined || end === undefined) return 0;
-    return Math.max(
-      0,
-      Math.min(100, Math.round(((Date.now() - start) / (end - start || 1)) * 100))
-    );
-  }, [trip]);
-
-  async function handleDay(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user) return;
-    const mutationTripId = tripId;
-    const mutationRouteKey = routeKey;
-    const mutationGeneration = activeRoute.current.generation;
-    const form = new FormData(event.currentTarget);
-    setBusy(true);
-    setError(null);
-    try {
-      await saveTripDay(
-        tripId,
-        user.id,
-        {
-          day: new Date(String(form.get('day'))),
-          title: String(form.get('title')) || undefined,
-          notes: String(form.get('notes')),
-        },
-        editingDay?.id
-      );
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setAddingDay(false);
-        setEditingDay(null);
-        await refresh();
-      }
-    } catch (reason) {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setError(
-          reason instanceof Error ? reason.message : 'Could not save note.'
-        );
-      }
-    } finally {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setBusy(false);
-      }
-    }
-  }
-
-  async function handlePhoto(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user) return;
-    const mutationTripId = tripId;
-    const mutationRouteKey = routeKey;
-    const mutationGeneration = activeRoute.current.generation;
-    const form = new FormData(event.currentTarget);
-    const file = form.get('photo');
-    if (!(file instanceof File) || !file.size) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await uploadTripPhoto(
-        tripId,
-        user.id,
-        file,
-        String(form.get('caption')) || undefined,
-        String(form.get('tripDayId')) || undefined
-      );
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        event.currentTarget.reset();
-        await refresh();
-      }
-    } catch (reason) {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setError(
-          reason instanceof Error ? reason.message : 'Could not upload photo.'
-        );
-      }
-    } finally {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setBusy(false);
-      }
-    }
-  }
-
-  async function handleGenerate() {
-    const mutationTripId = tripId;
-    const mutationRouteKey = routeKey;
-    const mutationGeneration = activeRoute.current.generation;
-    setBusy(true);
-    setError(null);
-    try {
-      await generateTripReport(tripId);
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        await refresh();
-      }
-    } catch (reason) {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : 'Could not generate the report.'
-        );
-      }
-    } finally {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setBusy(false);
-      }
-    }
-  }
-
-  async function handleReportSave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!report) return;
-    const mutationTripId = tripId;
-    const mutationRouteKey = routeKey;
-    const mutationGeneration = activeRoute.current.generation;
-    const form = new FormData(event.currentTarget);
-    setBusy(true);
-    try {
-      await saveTripReport(report.id, {
-        summary: String(form.get('summary')),
-        keyTakeaways: String(form.get('keyTakeaways')),
-      });
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        await refresh();
-      }
-    } catch (reason) {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setError(
-          reason instanceof Error ? reason.message : 'Could not save the report.'
-        );
-      }
-    } finally {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setBusy(false);
-      }
-    }
-  }
+  }, [tripId]);
+  useEffect(() => { void refresh(); }, [refresh]);
 
   async function runMutation(
     action: () => Promise<void>,
-    failureMessage: string
+    failure: (message: string | null) => void = setError,
+    success?: () => void
   ) {
-    const mutationTripId = tripId;
-    const mutationRouteKey = routeKey;
-    const mutationGeneration = activeRoute.current.generation;
+    if (mutation.current) return;
+    mutation.current = true;
     setBusy(true);
-    setError(null);
+    failure(null);
     try {
       await action();
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        await refresh();
-      }
+      if (!mounted.current) return;
+      success?.();
+      await refresh();
     } catch (reason) {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setError(reason instanceof Error ? reason.message : failureMessage);
-      }
+      if (mounted.current) failure(reason instanceof Error ? reason.message : 'Could not save changes.');
     } finally {
-      if (
-        isCurrentRoute(
-          mutationTripId,
-          mutationRouteKey,
-          mutationGeneration
-        )
-      ) {
-        setBusy(false);
-      }
+      mutation.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
 
-  if (pageState === 'loading') {
-    return (
-      <div className="app-frame">
-        <AppHeader />
-        <main className="page-state">
-          <div className="spinner" aria-hidden="true" />
-          <h1>Loading trip</h1>
-          <p>Retrieving your notes, photos, and report.</p>
-        </main>
-      </div>
-    );
+  function handleDay(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user) { setNoteError('Sign in again before saving.'); return; }
+    const form = new FormData(event.currentTarget);
+    void runMutation(() => saveTripDay(tripId, user.id, {
+      day: new Date(String(form.get('day'))),
+      title: String(form.get('title')) || undefined,
+      notes: String(form.get('notes')),
+    }, editingDay?.id), setNoteError, () => { setAddingDay(false); setEditingDay(null); });
   }
 
-  if (pageState === 'error') {
-    return (
-      <div className="app-frame">
-        <AppHeader />
-        <main className="page-state" role="alert">
-          <h1>We could not load this trip.</h1>
-          <p>{error}</p>
-          <div className="button-row">
-            <button
-              className="button button-primary"
-              onClick={() => void refresh(true)}
-            >
-              Try again
-            </button>
-            <Link className="button button-secondary" to="/">
-              Back to trips
-            </Link>
-          </div>
-        </main>
-      </div>
-    );
+  function handlePhoto(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user) { setPhotoError('Sign in again before uploading.'); return; }
+    const element = event.currentTarget;
+    const form = new FormData(element);
+    const file = form.get('photo');
+    if (!(file instanceof File) || !file.size) { setPhotoError('Choose a photo to upload.'); return; }
+    if (mutation.current) return;
+    const controller = new AbortController();
+    uploadController.current = controller;
+    void runMutation(() => uploadTripPhoto(
+      tripId, user.id, file, String(form.get('caption')) || undefined,
+      String(form.get('tripDayId')) || undefined,
+      { signal: controller.signal, onProgress: message => { if (mounted.current) setPhotoProgress(message); } }
+    ), message => {
+      setPhotoError(message);
+      if (message) { setPhotoProgress(''); void refresh(); }
+    }, () => element.reset());
   }
 
-  if (pageState === 'not-found' || !trip) {
-    return (
-      <div className="app-frame">
-        <AppHeader />
-        <main className="page-state">
-          <h1>Trip not found</h1>
-          <p>This trip may have been removed or belongs to another user.</p>
-          <Link className="button button-primary" to="/">
-            Back to trips
-          </Link>
-        </main>
-      </div>
-    );
-  }
+  const readyPhotos = photos.filter(photo => photo.storageBackend === 'sql-v1' && photo.uploadState === 'ready');
+  const pendingPhotos = photos.filter(photo => photo.storageBackend !== 'sql-v1' || photo.uploadState !== 'ready');
+  const start = toValidDate(trip?.startDate)?.getTime();
+  const end = toValidDate(trip?.endDate)?.getTime();
+  const progress = start === undefined || end === undefined ? 0
+    : Math.max(0, Math.min(100, Math.round(((Date.now() - start) / (end - start || 1)) * 100)));
 
   return (
     <div className="app-frame">
       <AppHeader />
-      <main className="trip-page">
-        <Link className="back-link" to="/">← All trips</Link>
-        <section className="trip-masthead">
-          <div>
-            <span className={`status-pill status-${trip.status}`}>{trip.status}</span>
-            <h1>{trip.title}</h1>
-            <p>{trip.destination}</p>
+      {pageState !== 'ready' || !trip ? (
+        <main className="page-state" role={pageState === 'error' ? 'alert' : undefined}>
+          <h1>{pageState === 'loading' ? 'Loading trip' : pageState === 'not-found' ? 'Trip not found' : 'We could not load this trip.'}</h1>
+          <p>{pageState === 'error' ? error : pageState === 'not-found' ? 'It may have been removed or belongs to another user.' : 'Retrieving your notes, photos, and report.'}</p>
+          <div className="button-row">
+            {pageState === 'error' && <button className="button button-primary" onClick={() => void refresh()}>Try again</button>}
+            {pageState !== 'loading' && <Link className="button button-secondary" to="/">Back to trips</Link>}
           </div>
-          <div className="trip-dates">
-            <span>{formatDate(trip.startDate)}</span>
-            <i />
-            <span>{formatDate(trip.endDate)}</span>
-          </div>
-          <div className="progress-track">
-            <span style={{ width: `${tripProgress}%` }} />
-          </div>
-        </section>
-
-        {error && <div className="notice error-notice">{error}</div>}
-
-        <div className="trip-columns">
-          <section className="journal-column">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Chronology</p>
-                <h2>Daily field notes</h2>
-              </div>
-              <button className="secondary-button" onClick={() => setAddingDay(true)}>
-                Add day
-              </button>
+        </main>
+      ) : (
+        <main className="trip-page">
+          <Link className="back-link" to="/">← All trips</Link>
+          <section className="trip-masthead">
+            <div>
+              <span className={`status-pill status-${trip.status}`}>{trip.status}</span>
+              <h1>{trip.title}</h1>
+              <p>{trip.destination}</p>
             </div>
-
-            <div className="timeline">
-              {days.length === 0 && (
-                <div className="empty-inline">No notes yet. Capture the first signal.</div>
-              )}
-              {days.map((entry) => (
-                <article className="day-entry" key={entry.id}>
-                  <time>{formatDate(entry.day)}</time>
-                  <div>
-                    <h3>{entry.title || 'Daily notes'}</h3>
-                    <p>{entry.notes}</p>
-                    <div className="entry-actions">
-                      <button className="text-button" onClick={() => setEditingDay(entry)}>
-                        Edit
-                      </button>
-                      <button
-                        className="text-button danger"
-                        onClick={() =>
-                          void runMutation(
-                            () => deleteTripDay(entry.id),
-                            'Could not delete the daily note.'
-                          )
-                        }
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <div className="trip-dates"><span>{formatDate(trip.startDate)}</span><span aria-hidden="true">—</span><span>{formatDate(trip.endDate)}</span></div>
+            <div className="progress-track" role="progressbar" aria-label="Trip timeline" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div>
           </section>
-
-          <aside className="trip-sidebar">
-            <section className="side-card">
-              <p className="eyebrow">Assignment brief</p>
-              <p className="purpose-copy">{trip.purpose || 'No purpose added yet.'}</p>
-              <label>
-                Trip state
-                <select
-                  value={trip.status}
-                  onChange={(event) =>
-                    void runMutation(
-                      () =>
-                        updateTrip(trip.id, {
-                          status: event.target.value as Trip['status'],
-                        }),
-                      'Could not update the trip status.'
-                    )
-                  }
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </label>
-            </section>
-
-            <section className="side-card photo-upload">
-              <p className="eyebrow">Visual evidence</p>
-              <h3>Add a field photo</h3>
-              <form onSubmit={(event) => void handlePhoto(event)}>
-                <input name="photo" type="file" accept="image/*" required />
-                <input name="caption" maxLength={500} placeholder="What should you remember?" />
-                <select name="tripDayId" defaultValue="">
-                  <option value="">General trip photo</option>
-                  {days.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {toDateInputValue(entry.day)} — {entry.title || 'Daily notes'}
-                    </option>
-                  ))}
-                </select>
-                <button className="secondary-button" disabled={busy} type="submit">
-                  Upload photo
-                </button>
-              </form>
-            </section>
-          </aside>
-        </div>
-
-        {photos.length > 0 && (
-          <section className="photo-section">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Contact sheet</p>
-                <h2>{photos.length} captured moments</h2>
-              </div>
-            </div>
-            <div className="photo-grid">
-              {photos.map((photo) => (
-                <PhotoTile
-                  key={photo.id}
-                  photo={photo}
-                  onDelete={() =>
-                    void runMutation(
-                      () => deleteTripPhoto(photo),
-                      'Could not remove the photo.'
-                    )
-                  }
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="report-studio">
-          <div className="report-intro">
-            <p className="eyebrow">Report studio</p>
-            <h2>Turn the trail into a brief.</h2>
-            <p>
-              Your daily notes and photo captions become a focused draft you can
-              review before sharing.
-            </p>
-            {report?.status !== 'finalized' && (
+          <div className="trip-view-tabs" role="tablist" aria-label="Trip views">
+            {(['notes', 'report'] as const).map((name, index) => (
               <button
-                className="primary-button"
-                disabled={busy}
-                onClick={() => void handleGenerate()}
-              >
-                {report ? 'Regenerate draft' : 'Generate report'}
-              </button>
+                key={name} type="button" id={`tab-${name}`} role="tab"
+                aria-selected={view === name} aria-controls={`panel-${name}`}
+                tabIndex={view === name ? 0 : -1}
+                onClick={() => setView(name)}
+                onKeyDown={event => {
+                  const next = event.key === 'Home' ? 'notes' : event.key === 'End' ? 'report'
+                    : ['ArrowLeft', 'ArrowRight'].includes(event.key) ? (index ? 'notes' : 'report') : null;
+                  if (next) { event.preventDefault(); setView(next); document.getElementById(`tab-${next}`)?.focus(); }
+                }}
+              >{name === 'notes' ? 'Notes & photos' : 'Report'}</button>
+            ))}
+          </div>
+          {error && <div className="notice error-notice" role="alert">{error} <button className="text-button" onClick={() => void refresh()}>Retry</button></div>}
+          <div id="panel-notes" role="tabpanel" aria-labelledby="tab-notes" hidden={view !== 'notes'}>
+            <div className="trip-columns">
+              <section className="journal-column">
+                <div className="section-heading">
+                  <h2>Daily notes</h2>
+                  <button className="secondary-button" disabled={busy} onClick={() => { setNoteError(null); setAddingDay(true); }}>Add day</button>
+                </div>
+                <div className="timeline">
+                  {!days.length && <div className="empty-inline">Add a note to capture what mattered today.</div>}
+                  {days.map(day => (
+                    <article className="day-entry" key={day.id}>
+                      <time>{formatDate(day.day)}</time>
+                      <div>
+                        <h3>{day.title || 'Daily notes'}</h3><p>{day.notes}</p>
+                        <div className="entry-actions">
+                          <button className="text-button" disabled={busy} onClick={() => { setNoteError(null); setEditingDay(day); }}>Edit</button>
+                          <button className="text-button danger" disabled={busy} onClick={() => void runMutation(() => deleteTripDay(day.id))}>Delete</button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+              <aside className="trip-sidebar">
+                <section className="side-card">
+                  <h2>Trip details</h2><p className="purpose-copy">{trip.purpose || 'No purpose added yet.'}</p>
+                  <label>Trip state
+                    <select value={trip.status} disabled={busy} onChange={event => {
+                      const status = event.target.value;
+                      if (status === 'draft' || status === 'active' || status === 'completed') {
+                        void runMutation(() => updateTrip(tripId, { status }));
+                      }
+                    }}>
+                      <option value="draft">Draft</option><option value="active">Active</option><option value="completed">Completed</option>
+                    </select>
+                  </label>
+                </section>
+                <section className="side-card photo-upload">
+                  <h2>Add a photo</h2>
+                  <p className="report-meta">Up to 20 MiB. We save an optimized JPEG copy up to 1,600px and 512 KiB, not the original.</p>
+                  <form onSubmit={handlePhoto}>
+                    <label>Photo<input name="photo" type="file" accept="image/*" required disabled={busy} /></label>
+                    <label>Caption<input name="caption" maxLength={500} placeholder="What should you remember?" disabled={busy} /></label>
+                    <label>Associate with a day<select name="tripDayId" defaultValue="" disabled={busy}>
+                      <option value="">General trip photo</option>
+                      {days.map(day => <option key={day.id} value={day.id}>{toDateInputValue(day.day)} — {day.title || 'Daily notes'}</option>)}
+                    </select></label>
+                    {photoError && <p className="inline-error" role="alert">{photoError}</p>}
+                    {!!photoProgress && <p role="status" className="report-meta">{photoProgress}</p>}
+                    <button className="secondary-button" disabled={busy} type="submit">Upload photo</button>
+                  </form>
+                </section>
+              </aside>
+            </div>
+            {!!pendingPhotos.length && (
+              <section className="photo-section">
+                <h2>Photos needing attention</h2>
+                {pendingPhotos.map(photo => (
+                  <div className="side-card" key={photo.id}>
+                    <p>{photo.caption || photo.fileName || 'Photo'}</p>
+                    <p>{photo.storageBackend !== 'sql-v1'
+                      ? 'This legacy photo used native storage, which is unavailable on Fabric. Re-upload your original image.'
+                      : photo.uploadState === 'deleting' ? 'Removal did not finish. Retry to remove the remaining data.'
+                        : 'This upload is incomplete. Discard it, then select the image to upload again.'}</p>
+                    <button className="secondary-button" disabled={busy} onClick={() => void runMutation(() => deleteTripPhoto(photo))}>
+                      {photo.uploadState === 'deleting' ? 'Retry removal' : 'Discard photo record'}
+                    </button>
+                  </div>
+                ))}
+              </section>
+            )}
+            {!!readyPhotos.length && (
+              <section className="photo-section">
+                <div className="section-heading"><h2>Trip photos ({readyPhotos.length})</h2></div>
+                <div className="photo-grid">{readyPhotos.map(photo => (
+                  <PhotoTile key={photo.id} photo={photo} disabled={busy} onDelete={() => void runMutation(() => deleteTripPhoto(photo))} />
+                ))}</div>
+              </section>
             )}
           </div>
-
-          {report ? (
-            <form className="report-paper" onSubmit={(event) => void handleReportSave(event)}>
-              <div className="report-paper-head">
-                <span>{report.status === 'finalized' ? 'Final report' : 'Working draft'}</span>
-                <time>{formatDate(report.generatedAt)}</time>
-              </div>
-              <h3>{report.title}</h3>
-              <label>
-                Executive summary
-                <textarea
-                  name="summary"
-                  rows={9}
-                  maxLength={4000}
-                  defaultValue={report.summary}
-                  readOnly={report.status === 'finalized'}
-                />
-              </label>
-              <label>
-                Key takeaways
-                <textarea
-                  name="keyTakeaways"
-                  rows={7}
-                  maxLength={4000}
-                  defaultValue={report.keyTakeaways}
-                  readOnly={report.status === 'finalized'}
-                />
-              </label>
-              <div className="report-actions">
-                {report.status === 'draft' ? (
-                  <>
-                    <button className="secondary-button" disabled={busy} type="submit">
-                      Save edits
-                    </button>
-                    <button
-                      className="primary-button"
-                      disabled={busy}
-                      type="button"
-                      onClick={() =>
-                        void runMutation(
-                          () => finalizeTripReport(report.id),
-                          'Could not finalize the report.'
-                        )
-                      }
-                    >
-                      Finalize & share
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link className="secondary-button" to={`/reports/${report.shareId}`}>
-                      Open shared report
-                    </Link>
-                    <button
-                      className="primary-button"
-                      type="button"
-                      onClick={() =>
-                        void navigator.clipboard.writeText(
-                          `${window.location.origin}/reports/${report.shareId}`
-                        )
-                      }
-                    >
-                      Copy share link
-                    </button>
-                  </>
-                )}
-              </div>
-            </form>
-          ) : (
-            <div className="report-placeholder">
-              <span>AI draft</span>
-              <p>Complete your notes, then generate a structured summary here.</p>
-            </div>
+          <div id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden={view !== 'report'}>
+            {reportLoaded ? <ReportWorkspace tripId={tripId} initialReport={report} /> : (
+              <div className="page-state" role="alert"><h2>Report unavailable</h2><p>Load the saved report before generating a new one.</p><button className="secondary-button" onClick={() => void refresh()}>Retry report loading</button></div>
+            )}
+          </div>
+          {(addingDay || editingDay) && (
+            <Modal title={editingDay ? 'Edit daily note' : 'Add daily note'} wide onClose={() => { if (!busy) { setAddingDay(false); setEditingDay(null); } }}>
+              <form className="form-stack" onSubmit={handleDay}>
+                <div className="form-row">
+                  <label>Day<input name="day" type="date" required defaultValue={toDateInputValue(editingDay?.day || trip.startDate)} disabled={busy} /></label>
+                  <label>Headline<input name="title" maxLength={160} defaultValue={editingDay?.title} disabled={busy} /></label>
+                </div>
+                <label>Notes<textarea name="notes" required maxLength={4000} rows={10} defaultValue={editingDay?.notes} disabled={busy} /></label>
+                {noteError && <div className="inline-error" role="alert">{noteError}</div>}
+                <button className="primary-button" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save note'}</button>
+              </form>
+            </Modal>
           )}
-        </section>
-      </main>
-
-      {(addingDay || editingDay) && (
-        <div className="modal-backdrop">
-          <section className="modal-card wide" role="dialog" aria-modal="true">
-            <button
-              className="modal-close"
-              aria-label="Close"
-              onClick={() => {
-                setAddingDay(false);
-                setEditingDay(null);
-              }}
-            >
-              ×
-            </button>
-            <p className="eyebrow">{editingDay ? 'Revise entry' : 'New field note'}</p>
-            <h2>What stood out today?</h2>
-            <form className="form-stack" onSubmit={(event) => void handleDay(event)}>
-              <div className="form-row">
-                <label>
-                  Day
-                  <input
-                    name="day"
-                    type="date"
-                    required
-                    defaultValue={
-                      editingDay
-                        ? toDateInputValue(editingDay.day)
-                        : toDateInputValue(trip.startDate)
-                    }
-                  />
-                </label>
-                <label>
-                  Headline
-                  <input
-                    name="title"
-                    maxLength={160}
-                    defaultValue={editingDay?.title}
-                    placeholder="The recurring theme"
-                  />
-                </label>
-              </div>
-              <label>
-                Notes
-                <textarea
-                  name="notes"
-                  required
-                  maxLength={4000}
-                  rows={12}
-                  defaultValue={editingDay?.notes}
-                  placeholder="Conversations, observations, decisions, follow-ups…"
-                />
-              </label>
-              <button className="primary-button" disabled={busy} type="submit">
-                Save field note
-              </button>
-            </form>
-          </section>
-        </div>
+        </main>
       )}
     </div>
   );

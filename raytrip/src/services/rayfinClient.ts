@@ -1,20 +1,7 @@
 import { RayfinClient } from '@microsoft/rayfin-client';
-import { createStorageClient } from '@microsoft/rayfin-storage';
 
 import type { UniversalAppSchema } from '../../rayfin/data/schema';
 import type { AppFunctionsSchema } from '../../rayfin/functions/src/types';
-
-interface TripPhotoObject {
-  folder: string;
-  name: string;
-  prefix?: string;
-  createdAt: string;
-  owner_id: string;
-}
-
-type RaytripStorageSchema = {
-  TripPhotos: TripPhotoObject;
-};
 
 export interface RayfinClientConfig {
   baseUrl: string;
@@ -22,12 +9,7 @@ export interface RayfinClientConfig {
   functionsBaseUrl?: string;
 }
 
-export class RaytripClient extends RayfinClient<
-  UniversalAppSchema,
-  AppFunctionsSchema
-> {
-  readonly storage = createStorageClient<RaytripStorageSchema>(this.apiClient);
-}
+export class RaytripClient extends RayfinClient<UniversalAppSchema, AppFunctionsSchema> {}
 
 let client: RaytripClient | null = null;
 

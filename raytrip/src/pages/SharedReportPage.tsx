@@ -4,7 +4,9 @@ import { Link, useParams } from 'react-router-dom';
 import type { TripReport } from '../../rayfin/data/TripReport';
 
 import { AppHeader } from '@/components/AppHeader';
+import { ReportMarkdown } from '@/components/ReportMarkdown';
 import { formatDate } from '@/lib/dates';
+import { reportDocument } from '@/lib/report';
 import { getSharedReport } from '@/services/trips';
 
 export function SharedReportPage() {
@@ -14,14 +16,19 @@ export function SharedReportPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    setReport(null);
     getSharedReport(shareId)
-      .then(setReport)
+      .then(value => { if (active) setReport(value); })
       .catch((reason: unknown) =>
-        setError(
+        active && setError(
           reason instanceof Error ? reason.message : 'Could not open the report.'
         )
       )
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [shareId]);
 
   return (
@@ -50,20 +57,7 @@ export function SharedReportPage() {
                 })}
               </p>
             </header>
-            <section>
-              <span className="report-section-number">01</span>
-              <div>
-                <h2>Executive summary</h2>
-                <p className="report-prose">{report.summary}</p>
-              </div>
-            </section>
-            <section>
-              <span className="report-section-number">02</span>
-              <div>
-                <h2>Key takeaways</h2>
-                <p className="report-prose">{report.keyTakeaways}</p>
-              </div>
-            </section>
+            <ReportMarkdown content={reportDocument(report)} />
             <footer>
               Shared securely with authenticated Ray|Trip users · ID {report.shareId}
             </footer>

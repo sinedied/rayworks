@@ -1,9 +1,10 @@
 import type { Trip } from '../../rayfin/data/Trip';
 import type { TripDay } from '../../rayfin/data/TripDay';
-import type { TripPhoto } from '../../rayfin/data/TripPhoto';
 import type { TripReport } from '../../rayfin/data/TripReport';
 
 import { getRayfinClient } from './rayfinClient';
+import { validateReportContent } from '@/lib/report';
+export { listTripPhotos, uploadTripPhoto, getTripPhotoUrl, deleteTripPhoto } from './photos';
 
 export type TripInput = Pick<
   Trip,
@@ -119,80 +120,13 @@ export async function deleteTripDay(id: string): Promise<void> {
   await getRayfinClient().data.TripDay.delete({ id });
 }
 
-export async function listTripPhotos(tripId: string): Promise<TripPhoto[]> {
-  return getRayfinClient().data.TripPhoto.select([
-    'id',
-    'storageName',
-    'contentType',
-    'caption',
-    'createdAt',
-    'trip_id',
-    'tripDay_id',
-    'owner_id',
-  ])
-    .where({ trip_id: { eq: tripId } })
-    .orderBy({ createdAt: 'desc' })
-    .first(1000)
-    .execute();
-}
-
-export async function uploadTripPhoto(
-  tripId: string,
-  ownerId: string,
-  file: File,
-  caption?: string,
-  tripDayId?: string
-): Promise<void> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '-');
-  const storageName = `${crypto.randomUUID()}-${safeName}`;
-  await getRayfinClient().storage.TripPhotos.upload(storageName, file, {
-    prefix: ownerId,
-    contentType: file.type || 'application/octet-stream',
-  });
-
-  try {
-    await getRayfinClient().data.TripPhoto.create({
-      storageName,
-      contentType: file.type || 'application/octet-stream',
-      caption: caption?.trim() || undefined,
-      createdAt: new Date(),
-      trip_id: tripId,
-      tripDay_id: tripDayId,
-      owner_id: ownerId,
-    });
-  } catch (error) {
-    await getRayfinClient().storage.TripPhotos.delete(storageName, {
-      prefix: ownerId,
-    });
-    throw error;
-  }
-}
-
-export async function getTripPhotoUrl(photo: TripPhoto): Promise<string> {
-  const result = await getRayfinClient().storage.TripPhotos.download(
-    photo.storageName,
-    { prefix: photo.owner_id }
-  );
-  return URL.createObjectURL(
-    await new Response(result.stream, {
-      headers: { 'Content-Type': photo.contentType },
-    }).blob()
-  );
-}
-
-export async function deleteTripPhoto(photo: TripPhoto): Promise<void> {
-  await getRayfinClient().storage.TripPhotos.delete(photo.storageName, {
-    prefix: photo.owner_id,
-  });
-  await getRayfinClient().data.TripPhoto.delete({ id: photo.id });
-}
-
 export async function getTripReport(
   tripId: string
 ): Promise<TripReport | null> {
   const reports = await getRayfinClient().data.TripReport.select([
     'id',
     'title',
+    'content',
     'summary',
     'keyTakeaways',
     'status',
@@ -214,6 +148,7 @@ export async function getSharedReport(
   const reports = await getRayfinClient().data.TripReport.select([
     'id',
     'title',
+    'content',
     'summary',
     'keyTakeaways',
     'status',
@@ -234,14 +169,16 @@ export async function generateTripReport(tripId: string): Promise<void> {
 
 export async function saveTripReport(
   id: string,
-  updates: Pick<TripReport, 'summary' | 'keyTakeaways'>
+  content: string
 ): Promise<void> {
-  await getRayfinClient().data.TripReport.update({ id }, updates);
+  await getRayfinClient().data.TripReport.update(
+    { id }, { content: validateReportContent(content) }
+  );
 }
 
-export async function finalizeTripReport(id: string): Promise<void> {
+export async function finalizeTripReport(id: string, content: string): Promise<void> {
   await getRayfinClient().data.TripReport.update(
     { id },
-    { status: 'finalized', finalizedAt: new Date() }
+    { content: validateReportContent(content), status: 'finalized', finalizedAt: new Date() }
   );
 }
