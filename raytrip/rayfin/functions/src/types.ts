@@ -17,8 +17,20 @@
  */
 
 export type AppFunctionsSchema = {
+  beginTripPhotoUpload: {
+    input: { photoId: string; tripId: string; dayId: string; fileName: string; caption: string; byteLength: number; width: number; height: number; chunkCount: number; sha256: string };
+    output: { photoId: string; ownerId: string };
+  };
+  completeTripPhotoUpload: {
+    input: { photoId: string };
+    output: { photoId: string };
+  };
+  deleteTripPhoto: {
+    input: { photoId: string };
+    output: { photoId: string; deleted: boolean };
+  };
   generateTripReport: {
     input: { tripId: string };
-    output: { reportId: string; shareId: string; summary: string; keyTakeaways: string };
+    output: { reportId: string; shareId: string; content: string };
   };
 };

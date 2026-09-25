@@ -10,7 +10,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@microsoft/fabric-user-data-functions": "experimental"
+    "@microsoft/fabric-user-data-functions": "experimental",
+    "jpeg-js": "^0.4.4"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

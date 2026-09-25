@@ -24,8 +24,9 @@ import { Trip } from './Trip.js';
 export class TripReport {
   @uuid() id!: string;
   @text({ min: 1, max: 160 }) title!: string;
-  @text({ min: 1, max: 4000 }) summary!: string;
-  @text({ min: 1, max: 4000 }) keyTakeaways!: string;
+  @text({ min: 1, max: 2500, optional: true }) content?: string;
+  @text({ min: 1, max: 4000, optional: true }) summary?: string;
+  @text({ min: 1, max: 4000, optional: true }) keyTakeaways?: string;
   @set('draft', 'finalized') status!: 'draft' | 'finalized';
   @text({ unique: true, max: 64 }) shareId!: string;
   @date() generatedAt!: Date;
