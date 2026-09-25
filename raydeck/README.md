@@ -1,187 +1,175 @@
-# Ray|Deck
+<div align="center">
 
-Ray|Deck is a short-form presentation template for turning Microsoft Fabric data
-into a concise, editable 3–10 slide narrative. The included five-slide sample
-runs with bundled data, supports inline text editing and browser-local drafts,
-and includes a distraction-free presentation mode.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../docs/logos/raydeck-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="../docs/logos/raydeck.svg">
+  <img src="../docs/logos/raydeck.svg" alt="Ray|Deck" height="72">
+</picture>
+
+**Turn Fabric data into concise, editable stories built to present.**
+
+[![Built with Copilot](https://img.shields.io/badge/Built%20with-Copilot-8957E5?style=flat-square&logo=githubcopilot&logoColor=white)](https://github.com/features/copilot)
+[![Microsoft Fabric Apps](https://img.shields.io/badge/Microsoft-Fabric%20Apps-7FBA00?style=flat-square&logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/fabric/apps/overview)
+[![Rayfin SDK](https://img.shields.io/badge/Rayfin-SDK-00C2AB?style=flat-square)](https://aka.ms/rayfin/docs)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+[&larr; Ray|Works](../README.md) &middot;
+[Features](#features) &middot;
+[Getting started](#getting-started) &middot;
+[Private access](#private-fabric-access) &middot;
+[Reference](#reference)
+
+</div>
+
+## Overview
+
+Ray|Deck is a short-form presentation app built with
+[Microsoft Fabric Apps](https://learn.microsoft.com/en-us/fabric/apps/overview) and
+[Project Rayfin](https://aka.ms/rayfin/docs). It turns Fabric semantic-model visuals and editable
+copy into a focused `3-10` slide narrative, with browser-local drafts and presenter tools.
+
+## Features
+
+- **Editable slide stories** - update titles and body copy directly in the shared 16:9 layout.
+- **Automatic text fitting** - keep edits inside readable slide regions with explicit overflow
+  warnings.
+- **Fabric visuals** - render semantic-model data with Graphein chart specifications.
+- **Browser-local drafts** - save changes locally and export precise reintegration prompts.
+- **Speaker notes** - maintain private per-slide notes with adjustable display size.
+- **Presentation modes** - single-window slideshow or presenter console with a synchronized
+  audience window.
+- **Presenter tools** - next-slide preview, resizable panes, navigation, themes, and an elapsed
+  timer.
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20.19+, 22.12+, or 24.x
+- A Microsoft Fabric workspace with Fabric Apps enabled
+- Access to the Fabric semantic model used by the deck
+
+Install dependencies and deploy the protected app:
+
+```bash
+npm install
+npm run rayfin:up
+```
+
+Open the sample locally against the active deployment:
+
+```bash
+npm run gallery
+```
+
+Use `npm run dev` for the full Rayfin deployment-and-Vite workflow.
 
 ## Private Fabric access
 
-Ray|Deck is private at runtime: the editor, presenter console, slideshow, and
-separate audience window all require Microsoft Fabric Entra SSO. The deployment
-also declares Rayfin's protected static-hosting posture
-(`assetAccess: protected`, sent to the workload as `anonymousAccess: false`).
+> [!WARNING]
+> Every Ray|Deck surface requires Microsoft Fabric Entra SSO: editor, presenter console,
+> slideshow, and audience window. Do not add public or anonymous deck access without explicit
+> product and security approval.
 
-- Inside the Fabric portal, Ray|Deck attempts silent embedded SSO.
-- In a standalone hosted window, **Sign in with Microsoft** opens the Fabric
-  broker and restores the requested editor or audience role afterward.
-- Audience windows are same-browser private companion windows, not public share
-  links. They restore the Fabric session before joining presenter synchronization.
-- Local development/gallery uses the active deployed Rayfin environment and
-  still requires Fabric sign-in; there is no password or mock-auth bypass.
+- Static hosting uses `assetAccess: protected`; password and mock authentication remain disabled.
+- Embedded Fabric sessions attempt silent SSO. Standalone windows use **Sign in with Microsoft**
+  and restore the requested editor or audience role afterward.
+- Audience windows are authenticated same-browser companions, not public share links.
+- Browser-local drafts, notes, and view preferences survive sign-out. On a shared browser profile,
+  the next authenticated user can see that local data.
+- If the hosting platform ever serves the static bundle anonymously despite the protected
+  posture, do not treat bundled content as confidential until the tenant policy is corrected.
 
-Static-host enforcement is controlled by the Fabric tenant/host. If a direct
-anonymous request can still retrieve the static bundle despite the protected
-posture, do not bake confidential customer deck content into
-`src/deck/sampleDeck.ts`; treat that as a hosting-policy issue to resolve before
-using bundled content as the private data boundary. Browser-edited drafts and
-speaker notes remain local to the browser and are never uploaded with the static
-bundle.
+Clear site data or reset the sample deck before signing out of a shared device.
 
-Signing out removes the Fabric session but intentionally retains browser-local
-deck drafts and presenter preferences. On a shared browser profile, the next
-authenticated Ray|Deck user can see that local data. Clear site data or reset the
-deck before signing out when device-local retention is not appropriate.
+## Editing and presenting
 
-## Edit, save, and reintegrate
+Edits to eyebrow, title, body, and speaker notes save in the browser. **Copy changes as prompt**
+exports only changed fields with stable slide IDs and original/replacement values; it never
+modifies source files or creates a commit. If storage fails, the current edits remain available
+for prompt export.
 
-Edit the eyebrow, title, or body directly on a slide. The thumbnail, editor, and
-presentation use the same 16:9 composition, including charts. Text wraps and
-automatically fits within its region. If it cannot fit at the minimum readable
-size, an editor warning identifies the slide and field to shorten; the full text
-remains available in the text control and exported prompt.
+<details>
+<summary><strong>Draft and note behavior</strong></summary>
 
-Use **Speaker notes** below the editor or in presenter mode to keep per-slide
-talking points. Notes are plain text, share the same local save status, and are
-included in **Copy changes as prompt**. Existing drafts without notes remain
-compatible. Notes are excluded from audience messages and never rendered on
-slides; they are not a security boundary against someone with access to the
-same browser or bundled source.
+- The comparison baseline is the bundled deck in the running app, not a live Git checkout.
+- Conflicting source values are reported instead of overwritten by the exported prompt.
+- Notes are plain text, excluded from slides and audience messages, and not a security boundary
+  against another user of the same browser.
+- Note size and presenter layout are stored separately from deck content and are not exported.
+- **Reset sample deck** explicitly replaces an unreadable or unwanted local draft.
 
-The **− / +** controls change notes text from 14px to 48px in 2px steps (16px by
-default). The size is shared between editor and presenter notes and remembered
-in this browser. It changes only how notes are displayed, not their content.
+</details>
 
-A checkmark beside **Saved locally** confirms that the current edits were saved
-in this browser. Open that menu and choose **Copy changes as prompt**, then paste
-the prompt into your coding assistant in this repository. It includes only
-changed text fields, stable slide IDs, and original/replacement values, with
-instructions to follow `DESIGN.md` and preserve the rest of the deck. Copying
-does not modify source files or commit anything.
+<details>
+<summary><strong>Presentation modes and audience recovery</strong></summary>
 
-The comparison baseline is the bundled deck in the running app, not a live Git
-checkout. If the source has changed since then, the prompt asks the assistant to
-report conflicting values instead of overwriting them. Export is disabled when
-there are no local changes. If clipboard access fails, the menu provides the
-prompt for manual copying.
+- **Start presentation** uses the current window and requests fullscreen, with an in-window
+  fallback when fullscreen is unavailable.
+- **Enter presenter mode** keeps the console in one window and opens a synchronized audience
+  window with current slide, next-slide preview, notes, controls, and timer.
+- The presenter split is adjustable from `15-85%`, keyboard accessible, and remembered locally.
+- Audience controls auto-hide but return on pointer, touch, or keyboard focus.
+- A closed audience window can be reopened without stopping the timer.
+- Unexpected connection loss freezes the last audience slide with an explicit notice.
+- Popup blockers, sandboxing, or opener isolation can prevent the paired-window connection.
 
-Local saving is not cloud synchronization. If storage is blocked or full, the
-app displays an error and keeps edits available for prompt export. An unreadable
-stored draft is not automatically overwritten; **Reset sample deck** explicitly
-replaces it with the bundled sample.
-
-## Present
-
-Open **Present** and choose:
-
-- **Start presentation** to present the active slide in the current window.
-  It requests browser fullscreen; **Exit** or **Escape** returns to the editor
-  without losing edits. Blocked/unsupported fullscreen falls back visibly to
-  in-window presentation.
-- **Enter presenter mode** to keep a presenter console in this window and open
-  a separate audience window. The header-free console fills the window without
-  page scrolling: the current slide is on the left, with a next-slide preview
-  and speaker notes on the right. Long notes scroll inside their pane.
-  The bottom bar holds navigation, a slide picker, save/export and theme actions,
-  audience status/recovery, and an elapsed timer with pause/resume/reset.
-  Reset retains the timer's running/paused state. Timer ticks are not saved or
-  exported.
-
-The presenter starts with **one third current slide / two thirds next slide and
-notes**. Drag the vertical divider to adjust the split, or focus it and use
-Left/Right arrows (2 percentage points per press), Home, or End. The current-slide
-share ranges from 15% to 85%, with tighter limits on small windows to keep both
-panes usable. The preferred ratio is remembered; temporarily shrinking a window
-does not replace the ratio you chose for a larger screen.
-
-Layout and notes-size preferences are stored separately from the deck. They are
-not included in copied change prompts or audience updates, and resetting the
-sample deck does not reset them. If browser storage is unavailable, adjustments
-still work for the current tab and a notice explains that they cannot be remembered.
-
-Navigation from either window stays synchronized. Move the audience window to
-your display and choose **Enter fullscreen** there; browsers control whether a
-new window or tab is opened and generally require a click in that window for
-fullscreen. Leaving audience fullscreen keeps it connected.
-
-Slideshow/audience controls hide after three seconds. Move the mouse into the
-bottom 80px or tap that area to reveal them. Deliberately tabbing into the toolbar
-also reveals it for keyboard use. Slide changes, navigation keys, and updates
-from the presenter never bring hidden controls back or restart their hide timer.
-Hovered or keyboard-focused controls stay visible. Presenter-console controls
-never auto-hide.
-
-Closing the audience window does not stop the timer: use **Reopen audience
-window** to continue. Refreshing the audience reconnects to the current slide.
-**End presentation** returns the presenter to the editor and closes its audience
-window. Closing/reloading the presenter ends the session; if the connection is
-lost unexpectedly, the audience freezes the last received slide with an explicit
-notice rather than silently continuing.
-
-This is a same-browser, same-device workflow using a paired window connection,
-not a remote sharing link. Popup blockers, embedding sandbox policies, or opener
-isolation can prevent it; the app shows an error/retry action instead of claiming
-it is connected. Allow popups for the app or use single-window presentation.
+</details>
 
 ## Customize
 
-The project-specific workflow lives in `.agents/skills/raydeck/SKILL.md`. It
-covers:
+The project workflow lives in [`.agents/skills/raydeck/SKILL.md`](.agents/skills/raydeck/SKILL.md)
+and covers:
 
 - company fonts, colors, logos, and chart palette;
-- slide copy, order, layouts, and sample data;
-- Fabric semantic-model connections with `fabric.yaml`;
+- slide copy, order, layouts, notes, and sample data;
+- Fabric semantic-model profiles in `fabric.yaml`;
 - DAX queries and Graphein visual validation.
 
-The canonical Ray|Deck wordmarks and favicon are copied into `public/` from the
-Ray|Works brand assets and must remain exact copies.
+The app-local wordmarks and favicon are deployment copies of the canonical Ray|Works assets and
+must remain byte-identical.
 
-## Commands
+## Reference
 
-Rayfin packages and the analytics pack's Rayfin declarations use the **1.35.1** stable
-baseline, with resolved versions recorded in `package-lock.json`. The upgrade preserves
-the offline sample, existing browser-local drafts, and presenter/audience behavior.
-Rayfin data remains disabled, while Fabric SSO and protected static hosting secure every
-surface. The empty Fabric model profile remains unchanged. Client factories use their
-configured absolute backend URL directly; the
-deprecated no-op `useProxy` option is omitted.
-
-Static hosting explicitly uses `assetAccess: protected`; password auth is disabled.
-Do not revert either setting to support direct links—the authenticated audience popup
-restores the same-origin Fabric session.
-
-Use a supported Node LTS version (20, 22, or 24). After upgrading the CLI, preview and
-refresh its managed guidance with `npx rayfin init ai-files install --dry-run --json`
-and `npx rayfin init ai-files install`. Keep custom agent instructions intact.
-
-Before deploying, run `npm test`, `npm run lint`, and `npm run build`.
-The separate `build:fabric` command generates Fabric configuration but skips TypeScript
-checking, so it is not a replacement for the checked build.
+### Commands
 
 | Command | Description |
 | --- | --- |
-| `npm run gallery` | Generate active deployment env, then open the private app locally |
+| `npm run gallery` | Generate active deployment env and open the private sample |
+| `npm run dev` | Deploy Rayfin services and start Vite |
 | `npm run build` | Type-check and create the production build |
-| `npm run preview -- --spec <file>` | Render one Graphein spec to PNG and diagnostics |
-| `npm test` | Run the project test suite |
+| `npm run build:fabric` | Generate Fabric configuration and build without TypeScript checking |
+| `npm run preview -- --spec <file>` | Render a Graphein spec to PNG and diagnostics |
+| `npm test` | Run Vitest |
 | `npm run lint` | Run ESLint |
-| `npm run rayfin:up` | Deploy the app to Microsoft Fabric |
+| `npm run rayfin:up` | Deploy the protected app to Fabric |
 
-## Structure
+Run `npm test`, `npm run lint`, and `npm run build` before deployment. `build:fabric` is not a
+replacement for the checked build.
+
+### Architecture
+
+Rayfin data remains disabled. Deck content is browser-local, while analytics come from an
+existing Fabric semantic model through the Fabric data and embed packages. Authentication and
+protected static hosting secure every surface.
 
 ```text
-├── .agents/skills/raydeck/SKILL.md  # Branding, editing, and Fabric workflow
-├── fabric.yaml                       # Semantic-model connection profiles
-├── public/                           # Canonical Ray|Deck brand assets
-├── rayfin/rayfin.yml                 # Rayfin services and static hosting
-└── src/
-    ├── App.tsx                       # Editor, thumbnails, and presentation mode
-    ├── deck/sampleDeck.ts            # Five-slide sample content and chart specs
-    ├── global.css                    # Ray|Deck visual tokens and layouts
-    ├── hooks/use-semantic-model-query.ts
-    └── components/Chart.tsx          # Graphein React binding
+.agents/skills/raydeck/SKILL.md  Branding, content, and Fabric workflow
+fabric.yaml                       Semantic-model profiles
+public/                           Canonical product assets
+rayfin/rayfin.yml                 Auth and protected static hosting
+src/deck/sampleDeck.ts            Bundled slide content and chart specs
+src/components/Chart.tsx          Graphein React binding
+src/global.css                    Visual tokens and layouts
 ```
 
-The template keeps Rayfin data disabled because slide content is stored locally
-and analytics are read from an existing Fabric semantic model. Enable Rayfin
-data and authentication only when shared, server-persisted decks are required.
+Rayfin packages use the stable `1.35.1` baseline. Fabric data packages are pinned separately at
+`1.0.0` or `1.1.0`; resolved versions live in `package-lock.json`. Client factories use the
+configured absolute backend URL directly.
+
+## More resources
+
+- [Ray|Works design system](../DESIGN.md)
+- [Ray|Works logo guide](../docs/logo.md)
+- [Fabric Apps documentation](https://learn.microsoft.com/fabric/apps/)
+- [Rayfin SDK documentation](https://aka.ms/rayfin/docs)
