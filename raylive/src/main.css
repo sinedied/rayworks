@@ -71,6 +71,18 @@
 .app-sign-out:hover { background: var(--admin-inset); color: var(--admin-text); }
 .admin-page-title { color: var(--admin-heading); font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.011em; }
 .admin-page-state { min-height: calc(100vh - var(--header-height)); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.auth-page { min-height: 100vh; }
+.auth-content { align-items: center; display: grid; gap: clamp(48px, 8vw, 88px); grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr); margin: 0 auto; max-width: 1080px; min-height: calc(100vh - var(--header-height)); padding: 64px 24px; width: 100%; }
+.auth-intro { max-width: 600px; min-width: 0; }
+.auth-eyebrow { color: var(--admin-accent-strong); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; margin: 0 0 16px; text-transform: uppercase; }
+.auth-intro h1 { color: var(--admin-heading); font-size: clamp(36px, 5vw, 54px); font-weight: 600; letter-spacing: -0.035em; line-height: 1.06; margin: 0; }
+.auth-intro > p:last-child { color: var(--admin-muted); font-size: 16px; line-height: 1.7; margin: 24px 0 0; max-width: 560px; }
+.auth-card { background: #ffffff; border: 1px solid var(--admin-border); border-radius: 8px; box-shadow: 0 8px 24px rgb(11 42 91 / 8%); min-width: 0; padding: 32px; }
+.auth-card h2 { color: var(--admin-heading); font-size: 20px; font-weight: 600; margin: 0; }
+.auth-card > p { color: var(--admin-muted); font-size: 14px; line-height: 1.6; margin: 8px 0 0; }
+.auth-submit { align-items: center; display: flex; font-weight: 600; gap: 10px; justify-content: center; margin-top: 24px; min-height: 44px; padding: 10px 16px; width: 100%; }
+.auth-submit:disabled { cursor: wait; opacity: 0.65; }
+.auth-inline-error { background: var(--color-admin-danger-soft); border: 1px solid color-mix(in srgb, var(--admin-danger) 35%, var(--admin-border)); border-radius: 8px; color: var(--admin-danger); font-size: 14px; margin: 16px 0 0; padding: 12px; }
 
 .admin-app :where(button, input:not([type='checkbox']):not([type='radio']), select, .admin-control):not(:where([data-ia-theme], [data-ia-theme] *)) {
   min-height: 40px;
@@ -96,11 +108,18 @@
 /* Room previews keep the same typography as audience and presentation screens. */
 .admin-app [data-ia-theme] { font-family: var(--font-sans); }
 
+@media (width < 900px) {
+  .auth-content { gap: 32px; grid-template-columns: minmax(0, 1fr); max-width: 680px; padding-top: 48px; }
+}
+
 @media (width < 640px) {
   .admin-app { --header-height: 56px; }
   .admin-app .app-header { padding: 0 16px; }
   .app-identity { display: none; }
   .admin-page-title { font-size: 24px; }
+  .auth-content { align-content: start; gap: 24px; padding: 32px 16px; }
+  .auth-intro h1 { font-size: 36px; }
+  .auth-card { padding: 24px; }
 }
 
 @media (width < 640px), (pointer: coarse) {
@@ -117,6 +136,10 @@
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+@media (max-height: 600px) {
+  .auth-content { min-height: 0; padding-block: 24px; }
 }
 
 @layer base {

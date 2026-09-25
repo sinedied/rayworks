@@ -9,7 +9,7 @@ const msLogo = (
     width="16"
     height="16"
     viewBox="0 0 21 21"
-    className="mr-2"
+    aria-hidden="true"
   >
     <rect x="1" y="1" width="9" height="9" fill="#f25022" />
     <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
@@ -43,35 +43,38 @@ export function AuthPage() {
     : 'Sign in with Microsoft';
 
   return (
-    <div className="admin-app flex min-h-screen flex-col">
+    <div className="admin-app auth-page">
       <AppHeader showAccount={false} />
 
-      <div className="relative flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-sm">
-          <div className="rounded-lg border border-admin-border bg-white p-7 shadow-sm">
-            <div className="mb-6">
-              <h1 className="text-xl font-semibold text-admin-heading">Sign in</h1>
-              <p className="mt-2 text-sm text-admin-muted">
-                Sign in to run live Q&amp;A, polls, and quizzes.
-              </p>
-            </div>
+      <main className="auth-content">
+        <section className="auth-intro">
+          <p className="auth-eyebrow">Live audience interaction</p>
+          <h1>Ask the room. See the response live.</h1>
+          <p>
+            Run Q&amp;A, polls, and quizzes from one presenter workspace while
+            your audience joins from any device.
+          </p>
+        </section>
 
-            <button
-              type="button"
-              onClick={handleSignIn}
-              disabled={isLoading}
-              className="admin-primary flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-            >
-              {msLogo}
-              {buttonLabel}
-            </button>
+        <section className="auth-card" aria-labelledby="auth-title">
+          <h2 id="auth-title">Sign in to Ray|Live</h2>
+          <p>Use your Microsoft Fabric identity to create and run rooms.</p>
 
-            {error && (
-              <p className="mt-3 text-center text-sm text-admin-danger">{error}</p>
-            )}
-          </div>
-        </div>
-      </div>
+          <button
+            type="button"
+            onClick={handleSignIn}
+            disabled={isLoading}
+            className="admin-primary auth-submit"
+          >
+            {msLogo}
+            {buttonLabel}
+          </button>
+
+          {error && (
+            <p className="auth-inline-error" role="alert">{error}</p>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
