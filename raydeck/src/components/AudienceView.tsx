@@ -12,7 +12,7 @@ export function AudienceView({ sessionId }: { sessionId: string | null }) {
   const { snapshot, status, error, navigate } = useAudienceSession(sessionId);
   const root = useRef<HTMLDivElement>(null);
   const fullscreenButton = useRef<HTMLButtonElement>(null);
-  const { fullscreen, notice, enter, exit } = usePresentation(root, fullscreenButton);
+  const { fullscreen, notice, enterFullscreen, exit } = usePresentation(root, fullscreenButton);
   const index = snapshot?.slides.findIndex((slide) => slide.id === snapshot.activeId) ?? 0;
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function AudienceView({ sessionId }: { sessionId: string | null }) {
           <PresentationControls index={index} total={snapshot.slides.length}
             disconnected={status !== 'connected'} onPrevious={() => navigate({ type: 'previous' })}
             onNext={() => navigate({ type: 'next' })} fullscreen={fullscreen} fullscreenButton={fullscreenButton}
-            onFullscreen={() => void (fullscreen ? exit() : enter())} />
+            onFullscreen={() => void (fullscreen ? exit() : enterFullscreen())} />
         </>
       ) : <main className="audience-waiting">
         <h1>{status === 'ended' ? 'Presentation ended' : status === 'waiting' ? 'Waiting for the presenter' : 'Presenter unavailable'}</h1>

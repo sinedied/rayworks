@@ -37,7 +37,12 @@ async function mount(element = <App />) {
 
 async function startPresentation() {
   await click(getButton('Present'));
-  await click(getButton('Start presentation'));
+  await click(getButton('Present fullscreen'));
+}
+
+async function startWindowedPresentation() {
+  await click(getButton('Present'));
+  await click(getButton('Present in this window'));
 }
 
 async function edit(field: string, value: string) {
@@ -212,6 +217,53 @@ describe('local save and prompt menu', () => {
 });
 
 describe('presentation', () => {
+  it('presents in the current window without calling the Fullscreen API', async () => {
+    await mount();
+    await click(getButton('Slide 02: Growth is accelerating without sacrificing efficiency.'));
+    await edit('title', 'Windowed presentation title');
+    await startWindowedPresentation();
+    expect(enterFullscreen).not.toHaveBeenCalled();
+    expect(document.fullscreenElement).toBeNull();
+    expect(container.querySelector('.is-presenting')).not.toBeNull();
+    expect(container.querySelector('.speaker-notes')).toBeNull();
+    expect(container.querySelector('.stage-shell [data-field="title"]')?.textContent).toBe('Windowed presentation title');
+    expect(container.querySelector('.presentation-notice')).toBeNull();
+    await click(getButton('Exit'));
+    expect(exitFullscreen).not.toHaveBeenCalled();
+    expect(container.querySelector('.is-presenting')).toBeNull();
+    expect(document.activeElement).toBe(getButton('Present'));
+    expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Edit slide title"]')?.value).toBe('Windowed presentation title');
+  });
+
+  it('exits windowed presentation with Escape', async () => {
+    await mount();
+    await startWindowedPresentation();
+    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
+    expect(container.querySelector('.is-presenting')).toBeNull();
+    expect(enterFullscreen).not.toHaveBeenCalled();
+    expect(exitFullscreen).not.toHaveBeenCalled();
+  });
+
+  it('navigates all three Present menu items with keyboard controls', async () => {
+    await mount();
+    const trigger = getButton('Present');
+    await click(trigger);
+    expect(document.activeElement).toBe(getButton('Present fullscreen'));
+    await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true })));
+    expect(document.activeElement).toBe(getButton('Enter presenter mode'));
+    await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
+    expect(document.activeElement).toBe(getButton('Present fullscreen'));
+    await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })));
+    expect(document.activeElement).toBe(getButton('Enter presenter mode'));
+    await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true })));
+    expect(document.activeElement).toBe(getButton('Present fullscreen'));
+    await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
+    expect(document.activeElement).toBe(getButton('Present in this window'));
+    await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('requests native fullscreen, retains text/slide, and exits back to the trigger', async () => {
     await mount();
     await click(getButton('Slide 02: Growth is accelerating without sacrificing efficiency.'));
@@ -278,6 +330,27 @@ describe('presentation', () => {
     expect(container.querySelector('.is-presenting')).toBeNull();
     expect(document.fullscreenElement).toBeNull();
     expect(exitFullscreen).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a stale fullscreen completion after a newer windowed entry', async () => {
+    let finishEntry: (() => void) | undefined;
+    enterFullscreen.mockImplementation(() => new Promise<void>((resolve) => {
+      finishEntry = () => {
+        fullscreen = container.querySelector('.deck-app');
+        document.dispatchEvent(new Event('fullscreenchange'));
+        resolve();
+      };
+    }));
+    await mount();
+    await startPresentation();
+    await click(getButton('Exit'));
+    await startWindowedPresentation();
+    await act(async () => finishEntry?.());
+    expect(container.querySelector('.is-presenting')).not.toBeNull();
+    expect(document.fullscreenElement).toBeNull();
+    expect(container.querySelector('.presentation-notice')).toBeNull();
+    await click(getButton('Exit'));
+    expect(container.querySelector('.is-presenting')).toBeNull();
   });
 
   it('does not navigate slides while editing or activating menu items', async () => {

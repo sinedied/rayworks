@@ -96,6 +96,11 @@ spec.
 ## Presentation quality
 
 - Use the thumbnail rail for editing and presentation mode for delivery.
+- Keep the three Present-menu modes distinct:
+  **Present fullscreen** requests native fullscreen,
+  **Present in this window** uses the same slideshow without calling the
+  Fullscreen API, and **Enter presenter mode** opens the synchronized audience
+  companion window.
 - Reuse `SlideCanvas` and `SlideViewport` for all previews and audience slides.
   Speaker notes belong outside the canvas and must be excluded from audience
   session messages; audience startup must not mount editor persistence.

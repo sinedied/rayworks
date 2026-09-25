@@ -66,7 +66,13 @@ function App({
   const [overflowFields, setOverflowFields] = useState<Record<string, boolean>>({});
   const root = useRef<HTMLDivElement>(null);
   const presentButton = useRef<HTMLButtonElement>(null);
-  const { presenting, notice, enter, exit } = usePresentation(root, presentButton);
+  const {
+    presenting,
+    notice,
+    enterFullscreen,
+    enterWindowed,
+    exit,
+  } = usePresentation(root, presentButton);
   const activeSlide = slides[activeIndex];
   const changes = useMemo(() => createChangePrompt(slides, SAMPLE_DECK), [slides]);
   const progress = `${((activeIndex + 1) / slides.length) * 100}%`;
@@ -141,7 +147,12 @@ function App({
             <button className={`icon-button ${session.active ? '' : 'header-theme-button'}`} onClick={theme.toggleTheme} aria-label="Toggle theme" title="Toggle theme" type="button">
               <Icon name={theme.isDark ? 'sun' : 'moon'} />
             </button>
-            {!session.active && <PresentMenu trigger={presentButton} onPresent={() => void enter()} onPresenter={session.open} />}
+            {!session.active && <PresentMenu
+              trigger={presentButton}
+              onFullscreen={() => void enterFullscreen()}
+              onWindowed={enterWindowed}
+              onPresenter={session.open}
+            />}
             {identity && onSignOut && <div className="app-account">
               <span className="app-identity" title={identity}>{identity}</span>
               <button

@@ -86,7 +86,7 @@ export function usePresenterSession(slides: DeckSlide[], activeId: string, navig
       setActive(true);
     } catch (cause) {
       console.error('Could not open the audience window:', cause);
-      setError('The browser prevented the audience window from opening. Allow popups or use Start presentation.');
+      setError('The browser prevented the audience window from opening. Allow popups or present in this window.');
     }
   }, [connection, send, sendState]);
 

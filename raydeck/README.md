@@ -104,8 +104,10 @@ for prompt export.
 <details>
 <summary><strong>Presentation modes and audience recovery</strong></summary>
 
-- **Start presentation** uses the current window and requests fullscreen, with an in-window
-  fallback when fullscreen is unavailable.
+- **Present fullscreen** uses the current window and requests native fullscreen,
+  with an in-window fallback when fullscreen is unavailable.
+- **Present in this window** deliberately stays windowed while using the same
+  distraction-free slide fitting, navigation, Exit behavior, and auto-hiding controls.
 - **Enter presenter mode** keeps the console in one window and opens a synchronized audience
   window with current slide, next-slide preview, notes, controls, and timer.
 - The presenter split is adjustable from `15-85%`, keyboard accessible, and remembered locally.

@@ -2,9 +2,10 @@ import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 import { Icon } from './Icon';
 
-export function PresentMenu({ trigger, onPresent, onPresenter }: {
+export function PresentMenu({ trigger, onFullscreen, onWindowed, onPresenter }: {
   trigger: RefObject<HTMLButtonElement | null>;
-  onPresent: () => void;
+  onFullscreen: () => void;
+  onWindowed: () => void;
   onPresenter: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -12,6 +13,11 @@ export function PresentMenu({ trigger, onPresent, onPresenter }: {
   const options = useRef<(HTMLButtonElement | null)[]>([]);
   const firstFocus = useRef(0);
   const id = useId();
+  const actions = [
+    { label: 'Present fullscreen', icon: 'expand' as const, onSelect: onFullscreen },
+    { label: 'Present in this window', icon: 'play' as const, onSelect: onWindowed },
+    { label: 'Enter presenter mode', icon: 'presenter' as const, onSelect: onPresenter },
+  ];
   useEffect(() => {
     if (!open) return;
     options.current[firstFocus.current]?.focus();
@@ -30,9 +36,9 @@ export function PresentMenu({ trigger, onPresent, onPresenter }: {
         } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
           event.preventDefault(); event.stopPropagation();
           const current = options.current.findIndex((option) => option === document.activeElement);
-          firstFocus.current = event.key === 'Home' ? 0 : event.key === 'End' ? 1
-            : (current + (event.key === 'ArrowDown' ? 1 : -1) + 2) % 2;
-          if (!open) { firstFocus.current = event.key === 'ArrowUp' ? 1 : 0; setOpen(true); }
+          firstFocus.current = event.key === 'Home' ? 0 : event.key === 'End' ? actions.length - 1
+            : (current + (event.key === 'ArrowDown' ? 1 : -1) + actions.length) % actions.length;
+          if (!open) { firstFocus.current = event.key === 'ArrowUp' ? actions.length - 1 : 0; setOpen(true); }
           else options.current[firstFocus.current]?.focus();
         }
       }}>
@@ -42,15 +48,25 @@ export function PresentMenu({ trigger, onPresent, onPresenter }: {
         <Icon name="play" size={16} /><span>Present</span><Icon name="chevron-down" size={16} />
       </button>
       {open && <div className="present-panel" role="menu" aria-label="Presentation options" id={id}>
-        <button ref={(element) => { options.current[0] = element; }} className="save-action" role="menuitem"
-          type="button" onClick={() => { setOpen(false); trigger.current?.focus(); onPresent(); }}>
-          <Icon name="play" />Start presentation
-        </button>
-        <button ref={(element) => { options.current[1] = element; }} className="save-action" role="menuitem"
-          type="button" onClick={() => { setOpen(false); trigger.current?.focus(); onPresenter(); }}>
-          <Icon name="presenter" />Enter presenter mode
-        </button>
-        <p className="save-description">Presenter mode opens a separate audience window.</p>
+        {actions.map((action, index) => (
+          <button
+            className="save-action"
+            key={action.label}
+            onClick={() => {
+              setOpen(false);
+              trigger.current?.focus();
+              action.onSelect();
+            }}
+            ref={(element) => { options.current[index] = element; }}
+            role="menuitem"
+            type="button"
+          >
+            <Icon name={action.icon} />{action.label}
+          </button>
+        ))}
+        <p className="save-description">
+          Use this window, request fullscreen, or open a separate presenter console.
+        </p>
       </div>}
     </div>
   );
