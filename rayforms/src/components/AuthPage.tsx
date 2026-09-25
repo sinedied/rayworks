@@ -46,7 +46,7 @@ export function AuthPage() {
       width="16"
       height="16"
       viewBox="0 0 21 21"
-      className="mr-2"
+      aria-hidden="true"
     >
       <rect x="1" y="1" width="9" height="9" fill="#f25022" />
       <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
@@ -66,32 +66,41 @@ export function AuthPage() {
     : 'Sign in with Microsoft';
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="auth-page">
       <AppHeader showAccount={false} />
 
-      <div className="flex flex-1 items-center justify-center p-4">
-        <div className="fade-in card w-full max-w-sm p-7">
-          <h1 className="font-heading text-xl text-[var(--text)]">Sign in</h1>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
-            Continue with Microsoft Fabric to manage your forms. Responding to a
-            shared form never requires an account.
+      <main className="auth-content">
+        <section className="auth-intro">
+          <p className="auth-eyebrow">Enterprise form workflows</p>
+          <h1>Build the form. Share the link. Collect the answers.</h1>
+          <p>
+            Create polished forms for your organization, share them in a click,
+            and review every response in one focused workspace.
+          </p>
+        </section>
+
+        <section className="fade-in card auth-card" aria-labelledby="auth-title">
+          <h2 id="auth-title">Sign in to Ray|Forms</h2>
+          <p>
+            Use your Microsoft Fabric identity to manage forms. Respondents can
+            use shared links without signing in.
           </p>
           <button
             type="button"
             onClick={handleSignIn}
             disabled={isLoading}
-            className="auth-submit mt-6 flex w-full items-center justify-center rounded-lg bg-[var(--action)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--action-hover)] disabled:opacity-50"
+            className="auth-submit"
           >
             {msLogo}
             {buttonLabel}
           </button>
           {error && (
-            <p className="mt-3 text-center text-sm text-[var(--danger)]">
+            <p className="auth-inline-error" role="alert">
               {error}
             </p>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
 
       {!fabricAuthEnabled && (
         <MockSignInDialog
