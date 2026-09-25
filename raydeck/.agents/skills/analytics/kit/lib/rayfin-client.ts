@@ -25,7 +25,6 @@ export function getRayfinClient(): RayfinClient {
             baseUrl: apiUrl,
             publishableKey,
             authStorage: true,
-            useProxy: false,
         });
     }
 

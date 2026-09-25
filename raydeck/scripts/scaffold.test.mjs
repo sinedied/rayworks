@@ -21,6 +21,22 @@ const BASE_MAIN = read('src/main.tsx');
 const analyticsPack = JSON.parse(read('.agents/skills/analytics/pack.json'));
 const seedEntry = (to) => analyticsPack.copy.find((e) => e.to === to);
 
+test('analytics pack preserves the app Rayfin version baseline', () => {
+  const app = JSON.parse(read('package.json'));
+  for (const section of ['dependencies', 'devDependencies']) {
+    for (const [name, version] of Object.entries(analyticsPack[section])) {
+      if (name.startsWith('@microsoft/rayfin-')) {
+        assert.equal(version, app[section][name], `${name} must match the app`);
+      }
+    }
+  }
+  assert.equal(
+    read('.agents/skills/analytics/kit/lib/rayfin-client.ts'),
+    read('src/lib/rayfin-client.ts'),
+    'The analytics kit must preserve the migrated client configuration',
+  );
+});
+
 // The exact wiring `.agents/skills/authentication/SKILL.md` tells you to write.
 const AUTH_WIRED_MAIN = `import { createRoot } from 'react-dom/client';
 

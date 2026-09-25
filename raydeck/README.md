@@ -110,6 +110,25 @@ Ray|Works brand assets and must remain exact copies.
 
 ## Commands
 
+Rayfin packages and the analytics pack's Rayfin declarations use the **1.35.1** stable
+baseline, with resolved versions recorded in `package-lock.json`. The upgrade preserves
+the offline sample, existing browser-local drafts, and presenter/audience behavior.
+It does not enable app sign-in or Rayfin data, and the empty Fabric model profile remains
+unchanged. Client factories use their configured absolute backend URL directly; the
+deprecated no-op `useProxy` option is omitted.
+
+Static hosting explicitly uses `assetAccess: public` to preserve the existing direct-link
+and audience-window access. CLI 1.35.1 otherwise defaults an unspecified value to protected.
+This does not enable anonymous data access; Rayfin data remains disabled.
+
+Use a supported Node LTS version (20, 22, or 24). After upgrading the CLI, preview and
+refresh its managed guidance with `npx rayfin init ai-files install --dry-run --json`
+and `npx rayfin init ai-files install`. Keep custom agent instructions intact.
+
+Before deploying, run `npm test`, `npm run lint`, and `npm run build`.
+The separate `build:fabric` command generates Fabric configuration but skips TypeScript
+checking, so it is not a replacement for the checked build.
+
 | Command | Description |
 | --- | --- |
 | `npm run gallery` | Open the sample deck in a local Vite preview |

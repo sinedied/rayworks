@@ -18,7 +18,6 @@ export function initRayfinClient(
   client = new RayfinClient<UniversalAppSchema>({
     baseUrl: config.baseUrl,
     publishableKey: config.publishableKey,
-    useProxy: false,
     authStorage: true,
   });
   return client;
