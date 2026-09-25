@@ -69,6 +69,7 @@
 }
 
 * { box-sizing: border-box; }
+:root { --header-height: 64px; }
 html, body, #root { min-height: 100%; margin: 0; }
 body { min-width: 320px; background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); font-size: 14px; -webkit-font-smoothing: antialiased; }
 button, input, textarea { font: inherit; }
@@ -78,7 +79,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .dark .logo-light { display: none; }
 .dark .logo-dark { display: block; }
 
-.deck-app { --header-height: 64px; min-height: 100vh; background: var(--color-background); }
+.deck-app { min-height: 100vh; background: var(--color-background); }
 .app-header { align-items: center; background: var(--color-card); border-bottom: 1px solid var(--color-border); display: flex; height: var(--header-height); justify-content: space-between; gap: 16px; padding: 0 24px; position: sticky; top: 0; z-index: 20; }
 .brand-lockup, .header-actions, .stage-controls, .presentation-controls { align-items: center; display: flex; }
 .brand-lockup { gap: 24px; min-width: 0; }
@@ -319,7 +320,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 }
 
 @media (width < 640px) {
-  .deck-app { --header-height: 56px; }
+  :root { --header-height: 56px; }
   .app-header { padding: 0 16px; gap: 8px; }
   .app-logo { height: 28px; }
   .header-actions { gap: 4px; }
