@@ -90,6 +90,8 @@ on their own device — the projected view always shows them).
 - Audience submits a short free-text answer (`max 80`), optionally several.
 - Repeated answers grow larger. Matching is case-insensitive and trimmed.
 - Results: frequency-scaled text cloud (CSS-based, no charting dependency).
+- The owner can delete all existing occurrences of a selected full-text entry from the console,
+  with confirmation. Matching uses the same case-insensitive, trimmed grouping as the cloud.
 
 ### 4.3 Rating
 
@@ -101,7 +103,8 @@ on their own device — the projected view always shows them).
 
 - Audience submits longer free text (`max 500`).
 - Results: a live list of responses, newest first, with optional author name.
-- Presenter can hide individual responses (moderation), same mechanism as Q&A.
+- The owner's **Manage responses** list supports confirmed deletion of individual responses,
+  including hidden entries and earlier versions.
 
 ### 4.5 Ranking
 
@@ -133,9 +136,26 @@ Multiple choice with correctness, a timer, and a leaderboard.
 
 Audience asks questions and upvotes; the presenter marks answered, hides, or deletes.
 Sorted by votes, ties broken by recency.
+Deletion requires confirmation and removes every vote before the question itself.
 
 Q&A is **optional per room** (`Room.qnaEnabled`): when off, the tab disappears from the audience
 view and the console, and the live view no longer falls back to the question feed.
+
+### Freeform moderation
+
+Deletion controls appear only in the management console, not in audience, projected, embedded,
+or remote views. The moderation list is not capped by the shared result renderer's display limit.
+All target rows are collected from complete activity-scoped snapshots before deleting.
+
+For single-response activities, remove older replacement versions before the selected response
+so they cannot resurface. Preserve newer replacements, non-target siblings of the same
+submission, unrelated participants, and independent entries in multiple-entry activities.
+Word-cloud deletion includes every existing matching occurrence, but not later submissions.
+
+Moderation does not change activity lifecycle, settings, reset markers, or browser answer locks.
+It is available while live and blocked during an event-wide reset. Existing change-answer and
+multiple-entry settings still apply; deletion alone grants no fresh attempt. Deletion is
+permanent, not a blocklist, and partial multi-write failures are surfaced for retry.
 
 ## 5c. Presenter controls
 

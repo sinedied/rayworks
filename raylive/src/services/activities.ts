@@ -399,7 +399,7 @@ export async function deleteActivity(activityId: string): Promise<void> {
 
 /**
  * Deletes every answer for an activity, keeping the activity and its options.
- * Handy for resetting after a rehearsal, and the only way to remove answers —
+ * Resets a rehearsal and audience answer locks. Individual moderation uses the answer service;
  * anonymous participants cannot delete what they submitted.
  */
 export async function clearAnswers(activityId: string): Promise<void> {

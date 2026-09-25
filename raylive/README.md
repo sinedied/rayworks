@@ -113,6 +113,27 @@ the reset finishes.
 > Rayfin has no realtime subscriptions in this version. Audience and stage views poll every three
 > seconds, pause while hidden, and refresh immediately when visible again.
 
+### Delete inappropriate responses
+
+In the owner's management console, open **Manage responses** on a Word cloud or Open text
+activity. The list includes all stored entries, including hidden responses and earlier versions.
+
+- **Open text:** **Delete response** removes the selected response after confirmation.
+- **Word cloud:** **Delete all occurrences** removes every existing matching entry in that
+  activity, including hidden and superseded copies. Matching ignores case and outer whitespace;
+  full phrases, internal whitespace, and punctuation otherwise stay distinct.
+- **Q&A:** **Delete** asks for confirmation before removing the question and all its votes.
+
+When responses replace earlier answers, deletion also removes older versions that could
+otherwise reappear. Newer replacements, unrelated participants, and independent multiple-entry
+submissions are preserved. Audience and projected results update on their next refresh.
+
+Moderation can happen while an activity is live, but pauses during an event-wide reset.
+Deletion has no undo and does not ban future submissions of the text. It does not reset browser
+answer locks: an attendee can answer again only when changing/multiple answers is already
+allowed or after a presenter reset. If deletion partially fails, refresh and retry the remaining
+entries; completed deletions cannot be rolled back.
+
 ## Security model
 
 > [!WARNING]

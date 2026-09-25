@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuth } from '@/hooks/AuthContext';
 import { useLiveRoom, type LiveRoomState } from '@/hooks/useLiveRoom';
@@ -9,7 +9,9 @@ import { ManagePage } from '@/pages/ManagePage';
 import { currentUserIdOrNull, updateRoom } from '@/services/rooms';
 import { resetRoomResponses } from '@/services/roomReset';
 import { saveActivityConfiguration } from '@/services/activities';
-import { activity as activityRow, answer } from './helpers/roomData';
+import { deleteAnswer, deleteWordCloudEntry } from '@/services/answers';
+import { deleteQuestion } from '@/services/questions';
+import { activity as activityRow, answer, question } from './helpers/roomData';
 
 vi.mock('@/hooks/AuthContext');
 vi.mock('@/hooks/useLiveRoom');
@@ -20,6 +22,7 @@ vi.mock('@/services/rooms', () => ({
 }));
 vi.mock('@/services/roomReset', () => ({ resetRoomResponses: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('@/services/activities');
+vi.mock('@/services/answers');
 vi.mock('@/services/questions');
 vi.mock('@/components/QrCode', () => ({ QrCode: () => null }));
 vi.mock('@/components/ThemePicker', () => ({ ThemePicker: () => null }));
@@ -54,7 +57,11 @@ describe('management shell', () => {
       signIn: vi.fn(), signOut: vi.fn(),
     });
     vi.mocked(useLiveRoom).mockReturnValue(roomState);
+    vi.mocked(deleteAnswer).mockResolvedValue(undefined);
+    vi.mocked(deleteWordCloudEntry).mockResolvedValue(undefined);
+    vi.mocked(deleteQuestion).mockResolvedValue(undefined);
   });
+  afterEach(() => vi.restoreAllMocks());
 
   it('keeps branding/account in the header and workflow actions in main', async () => {
     renderPage();
@@ -163,4 +170,70 @@ describe('management shell', () => {
       ? 'Clear all responses before editing this activity.'
       : 'End this activity before editing, including a prepared quiz.')).toBeVisible();
   });
+
+  it('confirms individual Open text deletion and refreshes the complete list', async () => {
+    const activity = { ...activityRow, kind: 'openText' as const, startedAt: undefined, state: 'live' as const };
+    const response = { ...answer, textValue: 'Selected text' };
+    const state = { ...roomState, activities: [activity], answersFor: () => [response] };
+    vi.mocked(useLiveRoom).mockReturnValue(state);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Manage responses' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete response' }));
+    expect(deleteAnswer).not.toHaveBeenCalled();
+    expect(confirm).toHaveBeenLastCalledWith(expect.stringContaining('Older replacement versions'));
+    confirm.mockReturnValue(true);
+    vi.mocked(deleteAnswer).mockImplementationOnce(async () => {
+      vi.mocked(useLiveRoom).mockReturnValue({ ...state, answersFor: () => [] });
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Delete response' }));
+    expect(deleteAnswer).toHaveBeenCalledExactlyOnceWith(activity.id, answer.id);
+    expect(screen.getByRole('status')).toHaveTextContent('Response and any older replacement versions deleted');
+    expect(screen.getByText('No stored responses to manage.')).toBeVisible();
+  });
+
+  it('confirms bulk cloud deletion and preserves a failed action for retry', async () => {
+    const activity = { ...activityRow, kind: 'wordCloud' as const, startedAt: undefined };
+    vi.mocked(useLiveRoom).mockReturnValue({
+      ...roomState, activities: [activity],
+      answersFor: () => [{ ...answer, textValue: 'term' }, { ...answer, id: 'second', textValue: ' TERM ' }],
+    });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(deleteWordCloudEntry).mockRejectedValueOnce(new Error('Deletion incomplete'));
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Manage responses' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete all occurrences' }));
+    expect(window.confirm).toHaveBeenLastCalledWith(expect.stringContaining('2 stored occurrences'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Deletion incomplete');
+    expect(screen.queryByText(/Matching word-cloud entries.*deleted/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Delete all occurrences' }));
+    expect(deleteWordCloudEntry).toHaveBeenLastCalledWith(activity.id, 'term');
+    expect(screen.getByRole('status')).toHaveTextContent('Matching word-cloud entries');
+  });
+
+  it('confirms Q&A question and vote deletion', async () => {
+    vi.mocked(useLiveRoom).mockReturnValue({
+      ...roomState, questions: [{ ...question, voteCount: 3, hasVoted: false }],
+    });
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Q&A (1)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(deleteQuestion).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(confirm).toHaveBeenLastCalledWith(expect.stringContaining('question and all its votes'));
+    expect(deleteQuestion).toHaveBeenCalledExactlyOnceWith(question.id);
+    expect(screen.getByRole('status')).toHaveTextContent('Question and its votes deleted');
+  });
+
+  it.each(['multipleChoice', 'rating', 'ranking', 'quiz'] as const)(
+    'does not offer freeform moderation for %s', (kind) => {
+      vi.mocked(useLiveRoom).mockReturnValue({
+        ...roomState, activities: [{ ...activityRow, kind, startedAt: undefined }],
+      });
+      renderPage();
+      expect(screen.queryByRole('button', { name: 'Manage responses' })).not.toBeInTheDocument();
+    }
+  );
 });

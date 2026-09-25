@@ -77,4 +77,21 @@ describe('audience after a reset', () => {
     view.rerender(page());
     expect(screen.getByRole('textbox')).toHaveValue('');
   });
+
+  it.each(['wordCloud', 'openText'] as const)('keeps a deleted %s response locked unless existing settings allow more', (kind) => {
+    const current = { ...state.liveActivity!, kind };
+    rememberAnswered(current.id);
+    state = { ...state, liveActivity: current };
+    const view = render(page());
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText(/Answer sent/)).toBeInTheDocument();
+
+    state = { ...state, liveActivity: { ...current, allowChangeAnswer: true } };
+    view.rerender(page());
+    expect(screen.getByRole('button', { name: 'Change my answer' })).toBeEnabled();
+
+    state = { ...state, liveActivity: { ...current, allowMultiple: true } };
+    view.rerender(page());
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
 });

@@ -5,7 +5,7 @@ import { getParticipantKey, rememberVote } from './identity';
 import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { createTolerantly } from './rayfinWrite';
-import { requireParticipatingRoom } from './rooms';
+import { requireManageableRoom, requireParticipatingRoom } from './rooms';
 
 const QUESTION_FIELDS = [
   'id',
@@ -145,12 +145,25 @@ export async function setQuestionHidden(
 /** Votes reference the question, so they are removed first. */
 export async function deleteQuestion(id: string): Promise<void> {
   const client = getRayfinClient();
+  const [question] = await client.data.Question.select(['id', 'room_id', 'owner_id'])
+    .where({ id: { eq: id } }).first(1).execute();
+  if (!question) throw new Error('This question is no longer available. Refresh the list before trying again.');
+  const room = await requireManageableRoom(question.room_id);
+  if (question.owner_id !== room.owner_id) {
+    throw new Error('This question does not belong to the room owner.');
+  }
   const votes = await readAll(client.data.Vote.select(['id'])
-    .where({ question_id: { eq: id } })
+    .where({ question_id: { eq: id }, room_id: { eq: room.id } })
     .orderBy({ id: 'asc' }));
 
-  for (const vote of votes) {
-    await client.data.Vote.delete({ id: vote.id });
+  await requireManageableRoom(room.id);
+  try {
+    for (const vote of votes) {
+      await client.data.Vote.delete({ id: vote.id });
+    }
+    await client.data.Question.delete({ id });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : 'A data operation failed.';
+    throw new Error(`Could not finish deleting the question. Some votes may have been removed; refresh and retry. ${detail}`);
   }
-  await client.data.Question.delete({ id });
 }

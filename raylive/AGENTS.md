@@ -110,7 +110,12 @@ follow the presenter with no extra coordination state. See `SPEC.md`.
 - Always tally through `tallyAnswers(activity, answers)` rather than raw rows, so changed answers
   are superseded — except word clouds and open text with `allowMultiple`, which intentionally
   accept several entries per person (that helper already handles it).
-- Only the presenter can delete answers (`clearAnswers`), which is the reset-after-rehearsal path.
+- Only the presenter can delete answers. `clearAnswers` is the reset-after-rehearsal path;
+  `deleteAnswer` and `deleteWordCloudEntry` in the answer service are individual moderation.
+- Keep moderation controls in the management console, not the shared results renderer. Use
+  `normalizeWordCloudText` for both cloud grouping and deletion. `responseDeletionTargets`
+  includes older replacements so deletion cannot resurrect them; preserve newer replacements
+  and independent entries. Moderation must not rotate reset markers or clear browser answer locks.
 - `resetRoomResponses` in `src/services/roomReset.ts` clears a whole room, including Q&A, and
   returns activities to Draft. Keep `Room.isResetting` and `resetResumeQuestions` durable until
   successful completion; never resume participation after a partial failure.

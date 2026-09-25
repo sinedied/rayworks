@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import type { Activity } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
+import type { Answer } from '../../rayfin/data/Answer';
 
 import { ActivityBuilder } from '@/components/ActivityBuilder';
 import { AppHeader } from '@/components/AppHeader';
@@ -10,11 +11,14 @@ import { ActivityResults, ResponseCount } from '@/components/ActivityResults';
 import { CopyButton } from '@/components/CopyButton';
 import { Leaderboard } from '@/components/Leaderboard';
 import { QrCode } from '@/components/QrCode';
+import { ResponseModeration } from '@/components/ResponseModeration';
 import { ThemePicker } from '@/components/ThemePicker';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
-import { buildLeaderboard } from '@/lib/aggregate';
+import { allowsMultipleSubmissions, buildLeaderboard, type WordCloudEntry } from '@/lib/aggregate';
 import { activityEditBlockReason } from '@/lib/activityEditing';
 import { isPreparing } from '@/lib/quiz';
+import { isFreeformActivity } from '@/lib/moderation';
+import { deleteAnswer, deleteWordCloudEntry } from '@/services/answers';
 import {
   ACTIVITY_LABELS,
   clearAnswers,
@@ -363,6 +367,24 @@ export function ManagePage() {
                     void run(() => clearAnswers(activity.id));
                   }
                 }}
+                onDeleteResponse={async (answer) => {
+                  if (!window.confirm(
+                    `Permanently delete this response?\n\n"${answer.textValue}"\n\n${replacementWarning(activity)}This cannot be undone.`
+                  )) return false;
+                  return run(
+                    () => deleteAnswer(activity.id, answer.id),
+                    'Response and any older replacement versions deleted.'
+                  );
+                }}
+                onDeleteWord={async (entry) => {
+                  if (!window.confirm(
+                    `Delete all existing occurrences of "${entry.word}" in this activity? There are currently ${entry.count} stored occurrences, including hidden and earlier versions.\n\n${replacementWarning(activity)}This cannot be undone. Future submissions of this text are still allowed.`
+                  )) return false;
+                  return run(
+                    () => deleteWordCloudEntry(activity.id, entry.word),
+                    'Matching word-cloud entries and any older replacement versions deleted.'
+                  );
+                }}
                 onToggleResults={() =>
                   void run(() =>
                     updateActivity(activity.id, {
@@ -464,7 +486,13 @@ export function ManagePage() {
                       {question.isHidden ? 'Unhide' : 'Hide'}
                     </SmallButton>
                     <button
-                      onClick={() => void run(() => deleteQuestion(question.id))}
+                      onClick={() => {
+                        if (window.confirm(
+                          `Permanently delete this question and all its votes?\n\n"${question.content}"\n\nThis cannot be undone.`
+                        )) {
+                          void run(() => deleteQuestion(question.id), 'Question and its votes deleted.');
+                        }
+                      }}
                       className="rounded-lg px-3 py-1.5 text-xs font-medium text-admin-subtle transition-colors hover:text-admin-danger"
                     >
                       Delete
@@ -513,6 +541,8 @@ function ActivityCard({
   onReset,
   onReveal,
   onClearAnswers,
+  onDeleteResponse,
+  onDeleteWord,
   onToggleResults,
   onToggleChangeAnswer,
   onMove,
@@ -534,12 +564,15 @@ function ActivityCard({
   onReset: () => void;
   onReveal: () => void;
   onClearAnswers: () => void;
+  onDeleteResponse: (answer: Answer) => Promise<boolean>;
+  onDeleteWord: (entry: WordCloudEntry) => Promise<boolean>;
   onToggleResults: () => void;
   onToggleChangeAnswer: () => void;
   onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [moderating, setModerating] = useState(false);
   const preparing = isPreparing(activity);
   const editBlock = activityEditBlockReason(activity, answers.length > 0);
 
@@ -665,6 +698,18 @@ function ActivityCard({
           {expanded ? 'Hide results' : 'View results'}
         </SmallButton>
 
+        {isFreeformActivity(activity) && (
+          <button
+            type="button"
+            aria-expanded={moderating}
+            aria-controls={`moderation-${activity.id}`}
+            onClick={() => setModerating((value) => !value)}
+            className="rounded-lg border border-admin-control-border px-3 py-1.5 text-sm font-medium text-admin-muted hover:bg-admin-canvas"
+          >
+            {moderating ? 'Close response management' : 'Manage responses'}
+          </button>
+        )}
+
         <button
           onClick={onDelete}
           className="rounded-lg px-3 py-1.5 text-xs font-medium text-admin-subtle transition-colors hover:text-admin-danger"
@@ -683,8 +728,25 @@ function ActivityCard({
           />
         </div>
       )}
+      {moderating && isFreeformActivity(activity) && (
+        <div id={`moderation-${activity.id}`}>
+          <ResponseModeration
+            activity={activity}
+            answers={answers}
+            busy={busy}
+            onDeleteResponse={onDeleteResponse}
+            onDeleteWord={onDeleteWord}
+          />
+        </div>
+      )}
     </article>
   );
+}
+
+function replacementWarning(activity: Activity): string {
+  return allowsMultipleSubmissions(activity)
+    ? ''
+    : 'Older replacement versions from the affected participants will also be deleted so they cannot reappear. ';
 }
 
 function TabButton({

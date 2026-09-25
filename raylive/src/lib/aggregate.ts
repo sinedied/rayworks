@@ -44,6 +44,10 @@ export interface WordCloudEntry {
   weight: number;
 }
 
+export function normalizeWordCloudText(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export interface RatingSummary {
   average: number;
   count: number;
@@ -177,7 +181,7 @@ export function buildWordCloud(answers: AnswerLike[]): WordCloudEntry[] {
     const raw = answer.textValue?.trim();
     if (!raw) continue;
 
-    const key = raw.toLowerCase();
+    const key = normalizeWordCloudText(raw);
     const group = groups.get(key) ?? { count: 0, spellings: new Map() };
     group.count += 1;
     group.spellings.set(raw, (group.spellings.get(raw) ?? 0) + 1);
