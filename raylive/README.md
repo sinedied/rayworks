@@ -33,6 +33,8 @@ the audience joins from a short link or QR code without signing in.
 - **Live Q&A** - collect, moderate, and upvote audience questions.
 - **Six activity types** - multiple choice, word cloud, rating, open text, ranking, and quiz.
 - **Presenter workflow** - prepare questions, go live, reveal answers, and show a leaderboard.
+- **Rehearsal reset and editing** - clear a room's audience content in one confirmed action,
+  and edit unanswered activities before running them again.
 - **Audience projection** - full-screen results, embeddable views, and room-specific branding.
 - **Phone remote** - owner-only controls for advancing a session away from the main screen.
 - **Accessible theming** - presets, custom colors, live preview, and WCAG contrast warnings.
@@ -79,6 +81,33 @@ The development and deployment scripts set the required anonymous-access feature
 
 Activities move through `draft -> live -> ended`, and only one can be live at a time. Quizzes add
 a prepare step so attendees can choose a nickname before the prompt and timer appear.
+
+### Edit activities and reset a rehearsal
+
+In the management console, **Edit** opens an existing activity with its current question,
+options, and settings. Its type stays fixed. Editing requires no stored responses (including
+hidden ones) and a Draft or Ended activity; end a live activity or quiz lobby first.
+**Clear responses** makes an answered activity editable again.
+
+**Reset all responses** asks for confirmation, then deletes all activity answers, Q&A questions,
+votes, and derived quiz standings in the room, even if Q&A is turned off. Activities return to
+Draft, quiz timers are cleared, and revealed answers become hidden again. The room, links,
+activity order, options, private quiz answer keys, theme, and open/closed setting are preserved.
+Previously connected attendees can answer again when you restart an activity without clearing
+their browser storage.
+
+Participation and presenter controls pause during reset. If a write fails, the console reports
+the incomplete reset and offers **Retry response reset**, including after a reload. Completed
+deletions cannot be undone. The original question-acceptance setting is restored only after
+the reset finishes.
+
+> [!IMPORTANT]
+> Reset and editing use separate Rayfin writes, not a database transaction. Fresh checks reject
+> stale forms and edits to answered activities, but cannot guarantee exclusion of simultaneous
+> direct API writes. Use resets between runs rather than during audience participation.
+>
+> Existing installations need the additive reset fields applied with `npm run rayfin:up`.
+> Apply the backend schema before serving the updated frontend.
 
 > [!NOTE]
 > Rayfin has no realtime subscriptions in this version. Audience and stage views poll every three

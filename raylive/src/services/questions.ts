@@ -2,8 +2,10 @@ import type { Question } from '../../rayfin/data/Question';
 import type { Room } from '../../rayfin/data/Room';
 
 import { getParticipantKey, rememberVote } from './identity';
+import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { createTolerantly } from './rayfinWrite';
+import { requireParticipatingRoom } from './rooms';
 
 const QUESTION_FIELDS = [
   'id',
@@ -30,6 +32,10 @@ export async function askQuestion(
   room: Pick<Room, 'id' | 'owner_id'>,
   input: { content: string; authorName?: string }
 ): Promise<Question> {
+  const current = await requireParticipatingRoom(room.id);
+  if (current.qnaEnabled === false || !current.isAcceptingQuestions) {
+    throw new Error('The presenter has paused new questions.');
+  }
   const client = getRayfinClient();
   const question = {
     id: crypto.randomUUID(),
@@ -39,7 +45,7 @@ export async function askQuestion(
     isHidden: false,
     createdAt: new Date(),
     room_id: room.id,
-    owner_id: room.owner_id,
+    owner_id: current.owner_id,
   };
 
   return createTolerantly(
@@ -50,10 +56,9 @@ export async function askQuestion(
 
 export async function listQuestions(roomId: string): Promise<Question[]> {
   const client = getRayfinClient();
-  const rows = await client.data.Question.select([...QUESTION_FIELDS])
+  const rows = await readAll(client.data.Question.select([...QUESTION_FIELDS])
     .where({ room_id: { eq: roomId } })
-    .orderBy({ createdAt: 'desc' })
-    .execute();
+    .orderBy({ createdAt: 'desc', id: 'asc' }));
 
   return rows.map(toQuestion);
 }
@@ -66,9 +71,9 @@ export async function listVotes(
   roomId: string
 ): Promise<{ id: string; question_id: string }[]> {
   const client = getRayfinClient();
-  const rows = await client.data.Vote.select(['id', 'question_id'])
+  const rows = await readAll(client.data.Vote.select(['id', 'question_id'])
     .where({ room_id: { eq: roomId } })
-    .execute();
+    .orderBy({ id: 'asc' }));
 
   return rows;
 }
@@ -76,14 +81,20 @@ export async function listVotes(
 export async function upvoteQuestion(
   question: Pick<Question, 'id' | 'room_id' | 'owner_id'>
 ): Promise<void> {
+  const room = await requireParticipatingRoom(question.room_id);
+  if (room.qnaEnabled === false) throw new Error('Q&A is turned off.');
   const client = getRayfinClient();
+  const rows = await client.data.Question.select(['id'])
+    .where({ id: { eq: question.id }, room_id: { eq: room.id }, isHidden: { eq: false } })
+    .first(1).execute();
+  if (!rows.length) throw new Error('This question is no longer available.');
   const vote = {
     id: crypto.randomUUID(),
     voterKey: getParticipantKey(),
     createdAt: new Date(),
     question_id: question.id,
     room_id: question.room_id,
-    owner_id: question.owner_id,
+    owner_id: room.owner_id,
   };
 
   await createTolerantly(
@@ -134,9 +145,9 @@ export async function setQuestionHidden(
 /** Votes reference the question, so they are removed first. */
 export async function deleteQuestion(id: string): Promise<void> {
   const client = getRayfinClient();
-  const votes = await client.data.Vote.select(['id'])
+  const votes = await readAll(client.data.Vote.select(['id'])
     .where({ question_id: { eq: id } })
-    .execute();
+    .orderBy({ id: 'asc' }));
 
   for (const vote of votes) {
     await client.data.Vote.delete({ id: vote.id });

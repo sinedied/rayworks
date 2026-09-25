@@ -44,6 +44,9 @@ export class Room {
   @boolean() isOpen!: boolean;
   /** Pauses new questions while keeping the live results visible. */
   @boolean() isAcceptingQuestions!: boolean;
+  /** Persists an interrupted reset so all clients stay paused until a retry succeeds. */
+  @boolean({ optional: true, default: false }) isResetting?: boolean;
+  @boolean({ optional: true }) resetResumeQuestions?: boolean;
   /**
    * Whether the Q&A feed is part of this room at all. Optional so the column can be added to
    * existing rows; `undefined` is treated as enabled.

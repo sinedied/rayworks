@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { Activity } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
@@ -18,7 +18,7 @@ import {
   revealAnswers,
   startPreparedActivity,
 } from '@/services/activities';
-import { updateRoom } from '@/services/rooms';
+import { requireManageableRoom, updateRoom } from '@/services/rooms';
 
 export interface RoomControls {
   current: Activity | null;
@@ -50,6 +50,7 @@ export function useRoomControls(
 ): RoomControls {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pending = useRef(false);
 
   const current = useMemo(() => currentActivity(activities), [activities]);
   const next = useMemo(() => nextActivity(activities), [activities]);
@@ -57,19 +58,23 @@ export function useRoomControls(
 
   const run = useCallback(
     async (action: () => Promise<void>) => {
-      if (busy) return;
+      if (pending.current) return;
+      pending.current = true;
       setBusy(true);
       try {
+        if (!room) throw new Error('Room not available.');
+        await requireManageableRoom(room.id);
         await action();
         await refresh();
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Action failed.');
       } finally {
+        pending.current = false;
         setBusy(false);
       }
     },
-    [busy, refresh]
+    [room, refresh]
   );
 
   const open = useCallback(
@@ -89,8 +94,8 @@ export function useRoomControls(
     hasNext: !!next,
     hasPrevious: !!previous,
     showJoinInfo: room?.showJoinInfo !== false,
-    busy,
-    error,
+    busy: busy || room?.isResetting === true,
+    error: error ?? (room?.isResetting ? 'Response reset pending. Retry from the management console.' : null),
 
     next: () =>
       run(async () => {

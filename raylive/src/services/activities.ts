@@ -5,8 +5,13 @@ import type {
 } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
 import type { Room } from '../../rayfin/data/Room';
+import type { RayLiveSchema } from '../../rayfin/data/schema';
 
+import { activityEditBlockReason } from '@/lib/activityEditing';
+
+import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
+import { requireManageableRoom } from './rooms';
 
 const ACTIVITY_FIELDS = [
   'id',
@@ -18,6 +23,7 @@ const ACTIVITY_FIELDS = [
   'allowMultiple',
   'allowChangeAnswer',
   'isPrepared',
+  'answerResetId',
   'maxRating',
   'timeLimitSeconds',
   'startedAt',
@@ -61,7 +67,7 @@ export function isSignedIn(): boolean {
   }
 }
 
-function toActivity(row: Activity): Activity {
+function toActivity(row: RayLiveSchema['Activity']): Activity {
   return {
     ...row,
     createdAt: new Date(row.createdAt),
@@ -71,12 +77,20 @@ function toActivity(row: Activity): Activity {
 
 export async function listActivities(roomId: string): Promise<Activity[]> {
   const client = getRayfinClient();
-  const rows = await client.data.Activity.select([...ACTIVITY_FIELDS])
+  const rows = await readAll(client.data.Activity.select([...ACTIVITY_FIELDS])
     .where({ room_id: { eq: roomId } })
-    .orderBy({ position: 'asc' })
-    .execute();
+    .orderBy({ position: 'asc', id: 'asc' }));
 
   return rows.map(toActivity);
+}
+
+export async function getActivity(id: string): Promise<Activity> {
+  const rows = await getRayfinClient().data.Activity.select([...ACTIVITY_FIELDS])
+    .where({ id: { eq: id } })
+    .first(1)
+    .execute();
+  if (!rows[0]) throw new Error('This activity is no longer available.');
+  return toActivity(rows[0]);
 }
 
 /**
@@ -91,24 +105,65 @@ export async function listOptions(roomId: string): Promise<ActivityOption[]> {
     ? ([...PUBLIC_OPTION_FIELDS, 'isCorrect'] as const)
     : PUBLIC_OPTION_FIELDS;
 
-  const rows = await client.data.ActivityOption.select([...fields])
+  const rows = await readAll(client.data.ActivityOption.select([...fields])
     .where({ room_id: { eq: roomId } })
-    .orderBy({ position: 'asc' })
-    .execute();
+    .orderBy({ position: 'asc', id: 'asc' }));
 
-  return rows as ActivityOption[];
+  return rows;
+}
+
+export interface ActivityOptionInput {
+  id: string;
+  label: string;
+  isCorrect: boolean;
 }
 
 export interface NewActivityInput {
+  /** Stable across retries of a partially-created draft. */
+  id?: string;
   kind: ActivityKind;
   prompt: string;
-  optionLabels?: string[];
-  correctLabels?: string[];
+  options?: ActivityOptionInput[];
   allowMultiple?: boolean;
   allowChangeAnswer?: boolean;
   maxRating?: number;
   timeLimitSeconds?: number;
   showResults?: boolean;
+}
+
+function normalizedInput(input: NewActivityInput) {
+  const prompt = input.prompt.trim();
+  if (!prompt || prompt.length > 500) {
+    throw new Error('Enter a question of 1 to 500 characters.');
+  }
+  const options = OPTION_BASED_KINDS.includes(input.kind)
+    ? (input.options ?? []).map((option) => ({ ...option, label: option.label.trim() }))
+    : [];
+  if (OPTION_BASED_KINDS.includes(input.kind) &&
+      (options.length < 2 || options.some((option) => !option.label || option.label.length > 200))) {
+    throw new Error('Add at least two options, each with 1 to 200 characters.');
+  }
+  const maxRating = input.maxRating ?? 5;
+  if (input.kind === 'rating' &&
+      (!Number.isInteger(maxRating) || maxRating < 2 || maxRating > 10)) {
+    throw new Error('The rating scale must be a whole number from 2 to 10.');
+  }
+  const timeLimitSeconds = input.timeLimitSeconds ?? 20;
+  if (input.kind === 'quiz' &&
+      (!Number.isInteger(timeLimitSeconds) || timeLimitSeconds < 0 || timeLimitSeconds > 300)) {
+    throw new Error('The quiz time limit must be a whole number from 0 to 300 seconds.');
+  }
+  return {
+    options,
+    configuration: {
+      prompt,
+      showResults: input.showResults ?? true,
+      allowMultiple: input.allowMultiple ?? false,
+      allowChangeAnswer: input.allowChangeAnswer ?? false,
+      ...(input.kind === 'rating' ? { maxRating } : {}),
+      ...(input.kind === 'quiz' ? { timeLimitSeconds } : {}),
+    },
+  };
 }
 
 /** Creates an activity in `draft` along with its options. */
@@ -117,16 +172,25 @@ export async function createActivity(
   input: NewActivityInput,
   position: number
 ): Promise<Activity> {
+  await requireManageableRoom(room.id);
+  const { options, configuration } = normalizedInput(input);
   const client = getRayfinClient();
+  const id = input.id ?? crypto.randomUUID();
+  const existing = await client.data.Activity.select([...ACTIVITY_FIELDS])
+    .where({ id: { eq: id } }).first(1).execute();
+  if (existing[0]) {
+    if (existing[0].room_id !== room.id || existing[0].state !== 'draft') {
+      throw new Error('This draft changed. Reopen the activity from the list.');
+    }
+    await saveActivityConfiguration(id, input);
+    return getActivity(id);
+  }
   const activity: Activity = {
-    id: crypto.randomUUID(),
+    id,
     kind: input.kind,
-    prompt: input.prompt.trim(),
+    ...configuration,
     state: 'draft',
     position,
-    showResults: input.showResults ?? true,
-    allowMultiple: input.allowMultiple ?? false,
-    allowChangeAnswer: input.allowChangeAnswer ?? false,
     isPrepared: false,
     maxRating: input.kind === 'rating' ? (input.maxRating ?? 5) : undefined,
     timeLimitSeconds:
@@ -139,17 +203,12 @@ export async function createActivity(
 
   await client.data.Activity.create(activity);
 
-  const labels = (input.optionLabels ?? [])
-    .map((label) => label.trim())
-    .filter(Boolean);
-  const correct = new Set(input.correctLabels?.map((label) => label.trim()));
-
-  for (const [index, label] of labels.entries()) {
+  for (const [index, option] of options.entries()) {
     await client.data.ActivityOption.create({
-      id: crypto.randomUUID(),
-      label,
+      id: option.id,
+      label: option.label,
       position: index,
-      isCorrect: correct.has(label),
+      isCorrect: input.kind === 'quiz' && option.isCorrect,
       revealedCorrect: false,
       activity_id: activity.id,
       room_id: room.id,
@@ -160,11 +219,72 @@ export async function createActivity(
   return activity;
 }
 
+export async function hasActivityAnswers(activityId: string): Promise<boolean> {
+  const rows = await getRayfinClient().data.Answer.select(['id'])
+    .where({ activity_id: { eq: activityId } })
+    .first(1)
+    .execute();
+  return rows.length > 0;
+}
+
+export async function saveActivityConfiguration(
+  activityId: string,
+  input: NewActivityInput
+): Promise<void> {
+  const { options, configuration } = normalizedInput(input);
+  const activity = await getActivity(activityId);
+  await requireManageableRoom(activity.room_id);
+  if (activity.kind !== input.kind) throw new Error('An activity type cannot be changed.');
+
+  const existing = (await listOptions(activity.room_id))
+    .filter((option) => option.activity_id === activity.id);
+  const existingIds = new Set(existing.map((option) => option.id));
+  const retainedIds = options.map((option) => option.id);
+  if (new Set(retainedIds).size !== retainedIds.length) {
+    throw new Error('Each option must have a unique ID.');
+  }
+  const client = getRayfinClient();
+  for (const id of retainedIds.filter((id) => !existingIds.has(id))) {
+    const rows = await client.data.ActivityOption.select(['id'])
+      .where({ id: { eq: id } }).first(1).execute();
+    if (rows.length) {
+      throw new Error('An option belongs to another activity. Reopen the editor.');
+    }
+  }
+  const latest = await getActivity(activityId);
+  await requireManageableRoom(activity.room_id);
+  const blocked = activityEditBlockReason(latest, await hasActivityAnswers(activityId));
+  if (blocked) throw new Error(blocked);
+
+  for (const [position, option] of options.entries()) {
+    const updates = {
+      label: option.label,
+      position,
+      isCorrect: input.kind === 'quiz' && option.isCorrect,
+      revealedCorrect: false,
+    };
+    if (existingIds.has(option.id)) {
+      await client.data.ActivityOption.update({ id: option.id }, updates);
+    } else {
+      await client.data.ActivityOption.create({
+        id: option.id, ...updates, activity_id: activityId,
+        room_id: activity.room_id, owner_id: activity.owner_id,
+      });
+    }
+  }
+  for (const option of existing) {
+    if (!retainedIds.includes(option.id)) {
+      await client.data.ActivityOption.delete({ id: option.id });
+    }
+  }
+  await updateActivity(activityId, configuration);
+}
+
 export async function updateActivity(
   id: string,
   updates: Partial<
     Pick<
-      Activity,
+      RayLiveSchema['Activity'],
       | 'prompt'
       | 'state'
       | 'position'
@@ -172,6 +292,7 @@ export async function updateActivity(
       | 'allowMultiple'
       | 'allowChangeAnswer'
       | 'isPrepared'
+      | 'answerResetId'
       | 'maxRating'
       | 'timeLimitSeconds'
       | 'startedAt'
@@ -264,11 +385,11 @@ export async function revealAnswers(
 export async function deleteActivity(activityId: string): Promise<void> {
   const client = getRayfinClient();
 
-  await clearAnswers(activityId);
+  await deleteActivityAnswers(activityId);
 
-  const options = await client.data.ActivityOption.select(['id'])
+  const options = await readAll(client.data.ActivityOption.select(['id'])
     .where({ activity_id: { eq: activityId } })
-    .execute();
+    .orderBy({ id: 'asc' }));
   for (const option of options) {
     await client.data.ActivityOption.delete({ id: option.id });
   }
@@ -282,11 +403,21 @@ export async function deleteActivity(activityId: string): Promise<void> {
  * anonymous participants cannot delete what they submitted.
  */
 export async function clearAnswers(activityId: string): Promise<void> {
+  const activity = await getActivity(activityId);
+  await requireManageableRoom(activity.room_id);
+  await deleteActivityAnswers(activityId);
+  await updateActivity(activityId, { answerResetId: crypto.randomUUID() });
+  if (await hasActivityAnswers(activityId)) {
+    throw new Error('New answers arrived during clearing. End the activity and retry.');
+  }
+}
+
+async function deleteActivityAnswers(activityId: string): Promise<void> {
   const client = getRayfinClient();
 
-  const answers = await client.data.Answer.select(['id'])
+  const answers = await readAll(client.data.Answer.select(['id'])
     .where({ activity_id: { eq: activityId } })
-    .execute();
+    .orderBy({ id: 'asc' }));
 
   for (const answer of answers) {
     await client.data.Answer.delete({ id: answer.id });

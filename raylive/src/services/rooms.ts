@@ -11,6 +11,8 @@ const ROOM_FIELDS = [
   'code',
   'isOpen',
   'isAcceptingQuestions',
+  'isResetting',
+  'resetResumeQuestions',
   'qnaEnabled',
   'brandTitle',
   'showJoinInfo',
@@ -113,6 +115,31 @@ export async function getRoomById(id: string): Promise<Room | null> {
   return row ? toRoom(row) : null;
 }
 
+export async function requireRoomOwner(id: string): Promise<Room> {
+  const room = await getRoomById(id);
+  if (!room || room.owner_id !== currentUserId()) {
+    throw new Error('Only the room owner can manage this room.');
+  }
+  return room;
+}
+
+export async function requireManageableRoom(id: string): Promise<Room> {
+  const room = await requireRoomOwner(id);
+  if (room.isResetting) {
+    throw new Error('A response reset is pending. Retry it from the management console.');
+  }
+  return room;
+}
+
+export async function requireParticipatingRoom(id: string): Promise<Room> {
+  const room = await getRoomById(id);
+  if (!room || !room.isOpen) throw new Error('This room is closed.');
+  if (room.isResetting) {
+    throw new Error('The presenter is resetting responses. Please wait.');
+  }
+  return room;
+}
+
 export async function updateRoom(
   id: string,
   updates: Partial<
@@ -122,6 +149,8 @@ export async function updateRoom(
       | 'description'
       | 'isOpen'
       | 'isAcceptingQuestions'
+      | 'isResetting'
+      | 'resetResumeQuestions'
       | 'qnaEnabled'
       | 'brandTitle'
       | 'showJoinInfo'

@@ -111,6 +111,16 @@ follow the presenter with no extra coordination state. See `SPEC.md`.
   are superseded — except word clouds and open text with `allowMultiple`, which intentionally
   accept several entries per person (that helper already handles it).
 - Only the presenter can delete answers (`clearAnswers`), which is the reset-after-rehearsal path.
+- `resetRoomResponses` in `src/services/roomReset.ts` clears a whole room, including Q&A, and
+  returns activities to Draft. Keep `Room.isResetting` and `resetResumeQuestions` durable until
+  successful completion; never resume participation after a partial failure.
+- Audience answer locks use `activityAnswerKey(id, answerResetId)`, not just the activity ID.
+  Rotate the optional `Activity.answerResetId` when clearing responses, not on every start.
+  Do not infer a reset from missing public answers: moderation also hides answers.
+- Content edits go through `saveActivityConfiguration`, which rechecks owner, non-live state,
+  and the absence of every stored answer. Preserve option IDs so partial saves can be retried.
+- Use `readAll` with stable ordering for complete collections. Collect deletion IDs before
+  deleting rows; `.execute()` alone only returns one page.
 - **Field-level `exclude` is static.** It cannot depend on row state, which is why revealing quiz
   answers copies `isCorrect` into the public `revealedCorrect` rather than relaxing a policy.
 - Never select a field an anonymous caller cannot read — currently only

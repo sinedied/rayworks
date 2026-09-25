@@ -72,6 +72,8 @@ export class Activity {
    * nickname without seeing the question. Cleared when the presenter starts the question.
    */
   @boolean({ optional: true, default: false }) isPrepared?: boolean;
+  /** Invalidates audience answer locks after the presenter clears responses. */
+  @uuid({ optional: true }) answerResetId?: string;
   /** Top of the rating scale; ignored by other kinds. */
   @int({ optional: true }) maxRating?: number;
   /** Quiz countdown in seconds; 0 or absent means untimed. */

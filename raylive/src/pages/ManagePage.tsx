@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import type { Activity } from '../../rayfin/data/Activity';
+import type { ActivityOption } from '../../rayfin/data/ActivityOption';
 
 import { ActivityBuilder } from '@/components/ActivityBuilder';
 import { AppHeader } from '@/components/AppHeader';
@@ -12,6 +13,7 @@ import { QrCode } from '@/components/QrCode';
 import { ThemePicker } from '@/components/ThemePicker';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { buildLeaderboard } from '@/lib/aggregate';
+import { activityEditBlockReason } from '@/lib/activityEditing';
 import { isPreparing } from '@/lib/quiz';
 import {
   ACTIVITY_LABELS,
@@ -26,6 +28,7 @@ import {
   setActivityState,
   swapPositions,
   updateActivity,
+  saveActivityConfiguration,
   type NewActivityInput,
 } from '@/services/activities';
 import {
@@ -33,7 +36,8 @@ import {
   setQuestionAnswered,
   setQuestionHidden,
 } from '@/services/questions';
-import { updateRoom } from '@/services/rooms';
+import { currentUserIdOrNull, requireManageableRoom, updateRoom } from '@/services/rooms';
+import { resetRoomResponses } from '@/services/roomReset';
 
 type Tab = 'activities' | 'qna' | 'leaderboard';
 
@@ -55,6 +59,10 @@ export function ManagePage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [showRemoteQr, setShowRemoteQr] = useState(false);
   const [busy, setBusy] = useState(false);
+  const pending = useRef(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ activity: Activity; options: ActivityOption[] } | null>(null);
+  const blocked = busy || room?.isResetting === true;
 
   const qnaEnabled = room?.qnaEnabled !== false;
   const joinUrl = `${window.location.origin}/r/${code ?? ''}`;
@@ -62,16 +70,30 @@ export function ManagePage() {
   const controlUrl = `${window.location.origin}/control/${code ?? ''}`;
   const embedSnippet = `<iframe src="${embedUrl}" width="100%" height="600" frameborder="0"></iframe>`;
 
-  const run = async (action: () => Promise<void>) => {
-    if (busy) return;
+  const run = async (
+    action: () => Promise<void>,
+    message?: string,
+    resetting = false
+  ): Promise<boolean> => {
+    if (pending.current) return false;
+    pending.current = true;
     setBusy(true);
+    setSuccess(null);
+    setActionError(null);
     try {
+      if (!room) throw new Error('Room not available.');
+      if (!resetting) await requireManageableRoom(room.id);
       await action();
-      await refresh();
+      await refresh(true);
       setActionError(null);
+      setSuccess(message ?? null);
+      return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Action failed.');
+      await refresh();
+      return false;
     } finally {
+      pending.current = false;
       setBusy(false);
     }
   };
@@ -89,10 +111,33 @@ export function ManagePage() {
     );
   }
 
+  if (currentUserIdOrNull() !== room.owner_id) {
+    return <Centered>Sign in as the room owner to manage this room.</Centered>;
+  }
+
   const handleCreate = async (input: NewActivityInput) => {
-    await run(async () => {
+    return run(async () => {
       await createActivity(room, input, activities.length);
-    });
+    }, 'Activity added.');
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm(
+      `Reset all responses in "${room.title}"? This permanently deletes every activity answer, Q&A question, vote, and quiz result. All activities return to Draft and revealed answers are hidden. Your activities, settings, and share links are kept. This cannot be undone.`
+    )) return;
+    await run(() => resetRoomResponses(room.id), 'All responses reset. Activities are ready in Draft.', true);
+  };
+
+  const currentEdit = editing && activities.find((activity) => activity.id === editing.activity.id);
+  const editBlock = editing
+    ? currentEdit
+      ? activityEditBlockReason(currentEdit, answersFor(currentEdit.id).length > 0)
+      : 'This activity is no longer available.'
+    : null;
+  const closeEditor = () => {
+    const id = editing?.activity.id;
+    setEditing(null);
+    window.requestAnimationFrame(() => document.getElementById(`edit-${id}`)?.focus());
   };
 
   const leaderboard = buildLeaderboard(
@@ -110,54 +155,72 @@ export function ManagePage() {
     <div className="admin-app min-h-screen">
       <AppHeader />
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mb-8 flex flex-col gap-4">
-        <div className="min-w-0">
-          <Link to="/" className="text-xs text-admin-subtle hover:text-admin-muted">
-            ← All rooms
-          </Link>
-          <h1 className="admin-page-title mt-1 break-words">{room.title}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() =>
-              void run(() =>
-                updateRoom(room.id, { qnaEnabled: !qnaEnabled })
-              )
-            }
-            className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
-          >
-            {qnaEnabled ? 'Turn Q&A off' : 'Turn Q&A on'}
-          </button>
-          {qnaEnabled && (
+        <div className="mb-8 flex flex-col gap-4">
+          <div className="min-w-0">
+            <Link to="/" className="text-xs text-admin-subtle hover:text-admin-muted">
+              ← All rooms
+            </Link>
+            <h1 className="admin-page-title mt-1 break-words">{room.title}</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <button
+              disabled={blocked}
               onClick={() =>
                 void run(() =>
-                  updateRoom(room.id, {
-                    isAcceptingQuestions: !room.isAcceptingQuestions,
-                  })
+                  updateRoom(room.id, { qnaEnabled: !qnaEnabled })
                 )
               }
               className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
             >
-              {room.isAcceptingQuestions ? 'Pause questions' : 'Resume questions'}
+              {qnaEnabled ? 'Turn Q&A off' : 'Turn Q&A on'}
             </button>
+            {qnaEnabled && (
+              <button
+                disabled={blocked}
+                onClick={() =>
+                  void run(() =>
+                    updateRoom(room.id, {
+                      isAcceptingQuestions: !room.isAcceptingQuestions,
+                    })
+                  )
+                }
+                className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
+              >
+                {room.isAcceptingQuestions ? 'Pause questions' : 'Resume questions'}
+              </button>
+            )}
+            <button
+              disabled={blocked}
+              onClick={() =>
+                void run(() => updateRoom(room.id, { isOpen: !room.isOpen }))
+              }
+              className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
+            >
+              {room.isOpen ? 'End room' : 'Reopen room'}
+            </button>
+            <button
+              onClick={() => void handleReset()}
+              disabled={busy}
+              className="min-h-11 rounded-lg border border-admin-danger px-3 py-2 text-sm font-medium text-admin-danger hover:bg-admin-danger-soft disabled:opacity-40"
+            >
+              {room.isResetting ? 'Retry response reset' : 'Reset all responses'}
+            </button>
+            <Link
+              to={`/present/${room.code}`}
+              className="admin-control rounded-lg admin-primary px-3 py-2 text-sm font-medium"
+            >
+              Present
+            </Link>
+          </div>
+          {room.isResetting && (
+            <p role="status" className="mb-6 rounded-lg bg-admin-warning-soft px-4 py-3 text-sm text-admin-warning">
+              Response reset pending. Participation and presenter controls are paused.
+              {busy ? ' Resetting responses...' : ' Retry the reset to finish and restore the question setting.'}
+            </p>
           )}
-          <button
-            onClick={() =>
-              void run(() => updateRoom(room.id, { isOpen: !room.isOpen }))
-            }
-            className="rounded-lg border border-admin-control-border px-3 py-2 text-sm font-medium text-admin-muted transition-colors hover:bg-admin-canvas"
-          >
-            {room.isOpen ? 'End room' : 'Reopen room'}
-          </button>
-          <Link
-            to={`/present/${room.code}`}
-            className="admin-control rounded-lg admin-primary px-3 py-2 text-sm font-medium"
-          >
-            Present
-          </Link>
+          {busy && !room.isResetting && <p role="status" className="mb-4 text-sm text-admin-muted">Saving changes...</p>}
+          {success && <p role="status" className="mb-4 text-sm text-admin-success">{success}</p>}
         </div>
-      </div>
         {!room.isOpen && (
           <p className="mb-6 rounded-lg bg-admin-warning-soft px-4 py-3 text-sm text-admin-warning">
             This room is closed — the audience can no longer see it. Reopen it
@@ -224,9 +287,9 @@ export function ManagePage() {
         <div className="mb-8">
           <ThemePicker
             room={room}
-            busy={busy}
-            onSave={(theme) =>
-              run(() =>
+            busy={blocked}
+            onSave={async (theme) => {
+              await run(() =>
                 updateRoom(room.id, {
                   brandTitle: theme.brandTitle || undefined,
                   themePreset: theme.preset,
@@ -234,14 +297,14 @@ export function ManagePage() {
                   themeText: theme.text,
                   themeAccent: theme.accent,
                 })
-              )
-            }
+              );
+            }}
           />
         </div>
 
         {(actionError || error) && (
-          <p className="mb-6 rounded-lg bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
-            {actionError ?? error}
+          <p role="alert" className="mb-6 rounded-lg bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
+            {[actionError, error].filter(Boolean).join(' ')}
           </p>
         )}
 
@@ -276,7 +339,9 @@ export function ManagePage() {
                 isLive={liveActivity?.id === activity.id}
                 options={optionsFor(activity.id)}
                 answers={answersFor(activity.id)}
-                busy={busy}
+                busy={blocked}
+                editing={editing !== null}
+                onEdit={() => setEditing({ activity, options: optionsFor(activity.id) })}
                 onGoLive={() => void run(() => goLive(activity.id, activities))}
                 onPrepare={() =>
                   void run(() => prepareActivity(activity.id, activities))
@@ -324,7 +389,25 @@ export function ManagePage() {
               />
             ))}
 
-            <ActivityBuilder onCreate={handleCreate} busy={busy} />
+            {editing ? (
+              <ActivityBuilder
+                key={editing.activity.id}
+                mode="edit"
+                activity={editing.activity}
+                options={editing.options}
+                busy={blocked}
+                blockedReason={editBlock}
+                onCancel={closeEditor}
+                onSave={async (input) => {
+                  const saved = await run(
+                    () => saveActivityConfiguration(editing.activity.id, input),
+                    'Activity updated.'
+                  );
+                  if (saved) closeEditor();
+                  return saved;
+                }}
+              />
+            ) : <ActivityBuilder onCreate={handleCreate} busy={blocked} />}
           </section>
         )}
 
@@ -338,13 +421,12 @@ export function ManagePage() {
               {questions.map((question) => (
                 <li
                   key={question.id}
-                  className={`rounded-lg border bg-white px-4 py-3 shadow-sm ${
-                    question.isHidden
+                  className={`rounded-lg border bg-white px-4 py-3 shadow-sm ${question.isHidden
                       ? 'border-admin-border opacity-60'
                       : question.isAnswered
                         ? 'border-green-200'
                         : 'border-admin-border'
-                  }`}
+                    }`}
                 >
                   <div className="flex gap-3">
                     <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-admin-canvas text-sm font-semibold text-admin-muted">
@@ -362,7 +444,7 @@ export function ManagePage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  <fieldset disabled={blocked} className="mt-3 flex flex-wrap justify-end gap-2 disabled:opacity-50">
                     <SmallButton
                       onClick={() =>
                         void run(() =>
@@ -387,7 +469,7 @@ export function ManagePage() {
                     >
                       Delete
                     </button>
-                  </div>
+                  </fieldset>
                 </li>
               ))}
             </ul>
@@ -422,6 +504,8 @@ function ActivityCard({
   options,
   answers,
   busy,
+  editing,
+  onEdit,
   onGoLive,
   onPrepare,
   onStart,
@@ -441,6 +525,8 @@ function ActivityCard({
   options: ReturnType<ReturnType<typeof useLiveRoom>['optionsFor']>;
   answers: ReturnType<ReturnType<typeof useLiveRoom>['answersFor']>;
   busy: boolean;
+  editing: boolean;
+  onEdit: () => void;
   onGoLive: () => void;
   onPrepare: () => void;
   onStart: () => void;
@@ -455,12 +541,12 @@ function ActivityCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const preparing = isPreparing(activity);
+  const editBlock = activityEditBlockReason(activity, answers.length > 0);
 
   return (
     <article
-      className={`rounded-lg border bg-white p-4 shadow-sm ${
-        isLive ? 'border-admin-accent-strong ring-1 ring-admin-accent-strong' : 'border-admin-border'
-      }`}
+      className={`rounded-lg border bg-white p-4 shadow-sm ${isLive ? 'border-admin-accent-strong ring-1 ring-admin-accent-strong' : 'border-admin-border'
+        }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -503,7 +589,16 @@ function ActivityCard({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <fieldset disabled={busy} className="mt-3 flex flex-wrap gap-2 disabled:opacity-50">
+        <button
+          id={`edit-${activity.id}`}
+          onClick={onEdit}
+          disabled={editing || !!editBlock}
+          aria-describedby={editBlock ? `edit-block-${activity.id}` : undefined}
+          className="min-h-11 rounded-lg border border-admin-control-border px-3 py-1.5 text-sm font-medium text-admin-muted disabled:opacity-40"
+        >
+          Edit
+        </button>
         {activity.state !== 'live' ? (
           <>
             {activity.kind === 'quiz' && (
@@ -576,7 +671,8 @@ function ActivityCard({
         >
           Delete
         </button>
-      </div>
+      </fieldset>
+      {editBlock && <p id={`edit-block-${activity.id}`} className="mt-2 text-xs text-admin-subtle">{editBlock}</p>}
 
       {expanded && (
         <div className="mt-4 border-t border-admin-border pt-4">
@@ -603,11 +699,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-        active
+      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${active
           ? 'admin-primary'
           : 'border border-admin-border bg-white text-admin-muted hover:bg-admin-canvas'
-      }`}
+        }`}
     >
       {children}
     </button>

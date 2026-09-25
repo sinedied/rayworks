@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Activity } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
@@ -29,7 +29,7 @@ export interface LiveRoomState {
   loading: boolean;
   notFound: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: (throwOnError?: boolean) => Promise<void>;
 }
 
 /**
@@ -53,17 +53,25 @@ export function useLiveRoom(
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const request = useRef(0);
+  const inFlight = useRef(0);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (throwOnError = false) => {
     if (!code) return;
+    const sequence = ++request.current;
+    inFlight.current++;
 
     try {
       const found = await getRoomByCode(code);
+      if (sequence !== request.current) return;
       if (!found) {
         setRoom(null);
         setQuestions([]);
         setActivities([]);
+        setOptions([]);
+        setAnswers([]);
         setNotFound(true);
+        setError(null);
         return;
       }
 
@@ -76,6 +84,7 @@ export function useLiveRoom(
           listAnswers(found.id),
         ]);
 
+      if (sequence !== request.current) return;
       setRoom(found);
       setNotFound(false);
       setQuestions(
@@ -86,9 +95,13 @@ export function useLiveRoom(
       setAnswers(answerRows);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load the room.');
+      if (sequence === request.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load the room.');
+      }
+      if (throwOnError) throw err;
     } finally {
-      setLoading(false);
+      inFlight.current--;
+      if (sequence === request.current) setLoading(false);
     }
   }, [code]);
 
@@ -97,7 +110,7 @@ export function useLiveRoom(
     void refresh();
 
     const timer = window.setInterval(() => {
-      if (!document.hidden) void refresh();
+      if (!document.hidden && inFlight.current === 0) void refresh();
     }, intervalMs);
 
     const onVisibilityChange = () => {

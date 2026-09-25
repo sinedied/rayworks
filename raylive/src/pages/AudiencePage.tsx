@@ -15,6 +15,7 @@ import {
 } from '@/lib/theme';
 import {
   getAnsweredActivityIds,
+  activityAnswerKey,
   getParticipantKey,
   getParticipantName,
   setParticipantName,
@@ -45,7 +46,7 @@ export function AudiencePage() {
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [answeredNow, setAnsweredNow] = useState<string[]>([]);
-  const [changing, setChanging] = useState(false);
+  const [changing, setChanging] = useState<string | null>(null);
   const [nickname, setNickname] = useState(() => getParticipantName());
 
   // Re-renders as a timed question runs out, so the form closes itself on the deadline.
@@ -102,14 +103,17 @@ export function AudiencePage() {
   const theme = resolveTheme(room);
   const qnaEnabled = room.qnaEnabled !== false;
   const liveAnswers = liveActivity ? answersFor(liveActivity.id) : [];
+  const answerKey = liveActivity
+    ? activityAnswerKey(liveActivity.id, liveActivity.answerResetId)
+    : '';
 
   // Answers are final unless the presenter allows changes, so the form locks once this
   // browser's participant is on record — locally or server-side.
   const answered =
     !!liveActivity &&
     (hasAnswered(liveAnswers, getParticipantKey()) ||
-      getAnsweredActivityIds().has(liveActivity.id) ||
-      answeredNow.includes(liveActivity.id));
+      getAnsweredActivityIds().has(answerKey) ||
+      answeredNow.includes(answerKey));
   const multipleAllowed = liveActivity
     ? allowsMultipleSubmissions(liveActivity)
     : false;
@@ -117,7 +121,7 @@ export function AudiencePage() {
   const preparing = !!liveActivity && isPreparing(liveActivity);
   const open = !!liveActivity && canAnswer(liveActivity);
   const showForm =
-    open && (!answered || multipleAllowed || (canChange && changing));
+    !room.isResetting && open && (!answered || multipleAllowed || (canChange && changing === answerKey));
 
   const activeTab: Tab = liveActivity ? tab : 'qna';
 
@@ -165,7 +169,11 @@ export function AudiencePage() {
           </p>
         )}
 
-        {liveActivity && preparing ? (
+        {room.isResetting ? (
+          <p role="status" className="py-12 text-center text-sm text-[var(--ia-muted)]">
+            The presenter is resetting responses. Participation is paused.
+          </p>
+        ) : liveActivity && preparing ? (
           /* Lobby: the prompt is deliberately not rendered, so nobody can think ahead. */
           <section className="py-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--ia-accent)]">
@@ -225,11 +233,12 @@ export function AudiencePage() {
 
             {showForm ? (
               <ActivityAnswerForm
+                key={answerKey}
                 activity={liveActivity}
                 options={optionsFor(liveActivity.id)}
                 onSubmitted={async () => {
-                  setAnsweredNow((current) => [...current, liveActivity.id]);
-                  setChanging(false);
+                  setAnsweredNow((current) => [...current, answerKey]);
+                  setChanging(null);
                   await refresh();
                 }}
               />
@@ -247,7 +256,7 @@ export function AudiencePage() {
                   </p>
                   {canChange && open && (
                     <button
-                      onClick={() => setChanging(true)}
+                      onClick={() => setChanging(answerKey)}
                       className="rounded-lg border border-[var(--ia-border)] px-3 py-1.5 text-xs font-medium text-[var(--ia-text)] hover:border-[var(--ia-accent)]"
                     >
                       Change my answer

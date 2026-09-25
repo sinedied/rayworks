@@ -81,11 +81,15 @@ export function rememberVote(questionId: string): void {
   addToIdSet(VOTED_STORAGE, questionId);
 }
 
-/** Activities this browser has already answered — answers are final, so this hides the form. */
+export function activityAnswerKey(activityId: string, resetId?: string): string {
+  return resetId ? `${activityId}:${resetId}` : activityId;
+}
+
+/** Legacy activities keep their original key until responses are explicitly reset. */
 export function getAnsweredActivityIds(): Set<string> {
   return readIdSet(ANSWERED_STORAGE);
 }
 
-export function rememberAnswered(activityId: string): void {
-  addToIdSet(ANSWERED_STORAGE, activityId);
+export function rememberAnswered(activityId: string, resetId?: string): void {
+  addToIdSet(ANSWERED_STORAGE, activityAnswerKey(activityId, resetId));
 }

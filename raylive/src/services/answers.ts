@@ -8,8 +8,11 @@ import {
 } from './identity';
 import { canAnswer } from '@/lib/quiz';
 
+import { getActivity } from './activities';
+import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { createTolerantly } from './rayfinWrite';
+import { requireParticipatingRoom } from './rooms';
 
 const PUBLIC_ANSWER_FIELDS = [
   'id',
@@ -36,11 +39,11 @@ function toAnswer(row: Answer): Answer {
 export async function listAnswers(roomId: string): Promise<Answer[]> {
   const client = getRayfinClient();
 
-  const rows = await client.data.Answer.select([...PUBLIC_ANSWER_FIELDS])
+  const rows = await readAll(client.data.Answer.select([...PUBLIC_ANSWER_FIELDS])
     .where({ room_id: { eq: roomId } })
-    .execute();
+    .orderBy({ id: 'asc' }));
 
-  return (rows as Answer[]).map(toAnswer);
+  return rows.map(toAnswer);
 }
 
 type AnswerDraft = Pick<
@@ -77,9 +80,16 @@ async function submitAll(
   activity: Activity,
   drafts: AnswerDraft[]
 ): Promise<void> {
-  // The deadline is enforced here as well as in the UI, so a stale form cannot slip an answer
-  // in after time. It keeps the quiz fair; it is not a security boundary.
-  if (!canAnswer(activity)) {
+  const [room, current] = await Promise.all([
+    requireParticipatingRoom(activity.room_id),
+    getActivity(activity.id),
+  ]);
+  if (current.room_id !== room.id ||
+      (current.answerResetId ?? '') !== (activity.answerResetId ?? '') ||
+      current.startedAt?.getTime() !== activity.startedAt?.getTime()) {
+    throw new Error('This activity changed. Wait for it to refresh before answering.');
+  }
+  if (!canAnswer(current)) {
     throw new Error('This question is closed.');
   }
 
@@ -87,14 +97,14 @@ async function submitAll(
   const submissionId = crypto.randomUUID();
 
   for (const draft of drafts) {
-    const answer = buildAnswer(activity, draft, submissionId);
+    const answer = buildAnswer(current, draft, submissionId);
     await createTolerantly(
       async () => await client.data.Answer.create(answer),
       answer
     );
   }
 
-  rememberAnswered(activity.id);
+  rememberAnswered(current.id, current.answerResetId);
 }
 
 /** Milliseconds since the activity went live, used for quiz speed scoring. */

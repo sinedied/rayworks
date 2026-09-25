@@ -54,6 +54,24 @@ draft ──(go live)──> live ──(end)──> ended
 The live view renders the live activity; when none is live it falls back to the Q&A feed.
 The presenter controls the room from the console, so the projected screen follows automatically.
 
+### Editing and response reset
+
+The owner can edit an activity's prompt, options, correctness, and builder settings while it is
+Draft or Ended and has no stored answers, including hidden or superseded submissions. Its kind,
+ID, position, and lifecycle are preserved. Live activities and prepared quiz lobbies must be
+ended before editing. Eligibility is checked again against fresh data on save.
+
+The management console's **Reset all responses** action requires confirmation and deletes all
+answers, Q&A questions, and votes for the room. Every activity returns to Draft; preparation,
+quiz start times, and public answer reveals are cleared. Room configuration and links, activity
+configuration and order, and private correctness are retained. Leaderboards empty naturally.
+
+Optional `Activity.answerResetId` scopes browser-local answer locks to the current run.
+Optional `Room.isResetting` and `Room.resetResumeQuestions` retain reset/recovery state across
+reloads. Participation and shared presenter controls are paused until a successful reset restores
+the original question setting. Failed multi-write operations are explicit and retryable, not
+transactional; client-side checks cannot exclude all concurrent API writes.
+
 ---
 
 ## 4. Activity types
