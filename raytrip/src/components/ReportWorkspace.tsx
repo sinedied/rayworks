@@ -98,7 +98,7 @@ export function ReportWorkspace({ tripId, initialReport }: {
       {!report ? (
         <div className="report-empty">
           <h3>Bring the trip together</h3>
-          <p>Generate one Markdown brief with a summary and key takeaways, up to 2,500 characters. You can edit it before sharing.</p>
+          <p>Generate a 250–300-word report with a brief summary, 2–3 key takeaways, and next steps when there are any. Ready to review and edit.</p>
           <button className="button button-primary" disabled={!!pending} onClick={() => void perform('generate')}>
             {pending ? 'Generating…' : 'Generate trip report'}
           </button>

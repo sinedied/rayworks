@@ -94,10 +94,12 @@ npm run dev
 4. Review or edit the Markdown without losing unsaved text when switching views.
 5. Choose **Save & finalize** to save and publish the report together.
 
-Generated reports aim for **about 100 words**, with a **120-word maximum**: one short summary,
+Generated reports aim for **250–300 words**, with a **300-word maximum**: a brief summary,
 2–3 key-takeaway bullets, and optional next steps already mentioned in the notes. Sparse notes
 can produce fewer takeaways rather than invented content. Generation avoids em dashes, filler,
 and repeated points, and makes at most one corrective attempt before reporting a failure.
+Important facts, blockers, decisions, and next steps use selective **bold emphasis**, not
+whole bold paragraphs or repeated labels.
 
 Manual edits still allow **2,500 characters**, including Markdown syntax, without the
 generation-only word or punctuation restrictions. Headings, lists,

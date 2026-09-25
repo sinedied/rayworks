@@ -72,4 +72,11 @@ describe('report editing workflow', () => {
     expect(container.querySelector('a[href^="javascript"]')).toBeNull();
     expect(screen.getByRole('link', { name: 'good' }).getAttribute('rel')).toBe('noopener noreferrer');
   });
+  it('renders important Markdown phrases as bold without emphasizing the entire bullet', () => {
+    render(<ReportMarkdown content={'## Key takeaways\n- **Access approval is pending**, so the trial cannot start yet.'} />);
+    expect(screen.getByText('Access approval is pending').tagName).toBe('STRONG');
+    const bullet = screen.getByRole('listitem');
+    expect(bullet.textContent).toBe('Access approval is pending, so the trial cannot start yet.');
+    expect(bullet.querySelector('strong')?.textContent).toBe('Access approval is pending');
+  });
 });

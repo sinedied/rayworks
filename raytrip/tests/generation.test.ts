@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { aiTourNotes, conciseAiTourReport } from './fixtures/concise-report';
 
 const mocks = vi.hoisted(() => ({ register: vi.fn() }));
 vi.mock('../rayfin/functions/node_modules/@microsoft/fabric-user-data-functions/dist/index.js', () => ({
@@ -61,18 +62,20 @@ describe('generateTripReport persistence', () => {
     const state = context();
     state.notes.builder.executePaginated
       .mockResolvedValueOnce({ items: [{ day: '2026-09-25', notes: 'Page one' }], hasNextPage: true, endCursor: 'next' })
-      .mockResolvedValueOnce({ items: [{ day: '2026-09-26', notes: 'Page two' }], hasNextPage: false });
+      .mockResolvedValueOnce({ items: [{ day: '2026-09-26', notes: aiTourNotes }], hasNextPage: false });
     const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      choices: [{ finish_reason: 'stop', message: { content: '## Summary\nComplete' } }],
+      choices: [{ finish_reason: 'stop', message: { content: conciseAiTourReport } }],
     })));
     vi.stubGlobal('fetch', fetch);
-    await expect(generate('t1', state.ctx)).resolves.toEqual({ reportId: 'r1', shareId: 's1', content: '## Summary\nComplete' });
+    await expect(generate('t1', state.ctx)).resolves.toEqual({ reportId: 'r1', shareId: 's1', content: conciseAiTourReport });
     expect(state.notes.builder.after).toHaveBeenCalledWith('next');
     const body = JSON.parse(fetch.mock.calls[0][1].body);
-    expect(body.messages[1].content).toContain('Page two');
+    expect(body.messages[1].content).toContain('maintenance workshop idea');
+    expect(body.messages[0].content).toContain('never exceed 300 words');
+    expect(body.messages[0].content).toContain('No em dashes');
     expect(body).not.toHaveProperty('temperature');
     expect(state.update).toHaveBeenCalledWith({ id: 'r1' }, {
-      title: 'Trip', content: '## Summary\nComplete', generatedAt: expect.any(Date), status: 'draft',
+      title: 'Trip', content: conciseAiTourReport, generatedAt: expect.any(Date), status: 'draft',
     });
   });
   it('rechecks finalization after inference before updating', async () => {
@@ -80,9 +83,21 @@ describe('generateTripReport persistence', () => {
     state.readReport.mockResolvedValueOnce([{ id: 'r1', shareId: 's1', status: 'draft' }])
       .mockResolvedValueOnce([{ id: 'r1', shareId: 's1', status: 'finalized' }]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      choices: [{ finish_reason: 'stop', message: { content: 'Valid' } }],
+      choices: [{ finish_reason: 'stop', message: { content: conciseAiTourReport } }],
     }))));
     await expect(generate('t1', state.ctx)).rejects.toThrow('finalized');
     expect(state.update).not.toHaveBeenCalled();
+  });
+  it('does not persist a report that still violates the format after correction', async () => {
+    const state = context();
+    const fetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify({
+      choices: [{ finish_reason: 'stop', message: { content: 'Generic prose \u2014 without key takeaways.' } }],
+    })));
+    vi.stubGlobal('fetch', fetch);
+    await expect(generate('t1', state.ctx)).rejects.toThrow('saved draft has not been replaced');
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetch.mock.calls[1][1].body).messages[0].content).toContain('Correct these issues');
+    expect(state.update).not.toHaveBeenCalled();
+    expect(state.create).not.toHaveBeenCalled();
   });
 });
