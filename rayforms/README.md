@@ -1,338 +1,195 @@
-# Ray|Forms
+<div align="center">
 
-A forms app in the spirit of Microsoft Forms / Google Forms, built on [Project Rayfin](http://aka.ms/rayfin/docs).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../docs/logos/rayforms-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="../docs/logos/rayforms.svg">
+  <img src="../docs/logos/rayforms.svg" alt="Ray|Forms" height="72">
+</picture>
 
-Create a form in the browser, share its unique link, and review the responses.
-Admins sign in with Fabric Entra SSO; **respondents fill in a shared form without any sign-in.**
+**Build forms, share public response links, and turn submissions into insight.**
+
+[![Built with Copilot](https://img.shields.io/badge/Built%20with-Copilot-8957E5?style=flat-square&logo=githubcopilot&logoColor=white)](https://github.com/features/copilot)
+[![Microsoft Fabric Apps](https://img.shields.io/badge/Microsoft-Fabric%20Apps-7FBA00?style=flat-square&logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/fabric/apps/overview)
+[![Rayfin SDK](https://img.shields.io/badge/Rayfin-SDK-00C2AB?style=flat-square)](https://aka.ms/rayfin/docs)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+[&larr; Ray|Works](../README.md) &middot;
+[Features](#features) &middot;
+[Getting started](#getting-started) &middot;
+[Security](#security-model) &middot;
+[Reference](#reference)
+
+</div>
+
+## Overview
+
+Ray|Forms is an enterprise form builder built with [Microsoft Fabric Apps](https://learn.microsoft.com/en-us/fabric/apps/overview)
+and [Project Rayfin](https://aka.ms/rayfin/docs). Admins create and manage forms with Fabric
+Entra SSO; respondents open a shared link and submit without signing in.
 
 ## Features
 
-- **Form builder** — add, reorder, and delete questions across seven question kinds
-  (short answer, paragraph, number, rating, date, single choice, multiple choice)
-- **Number bounds and ratings** — optional inclusive minimum/maximum for numbers;
-  configurable whole-number rating scales with endpoint help text
-- **Share links** — each form gets an unguessable token; recipients open `/f/<token>` with no
-  account and no workspace access
-- **QR sharing** — show a scannable code for the public form link, generated in your browser
-- **Open / closed forms** — close a form to stop accepting responses, reopen it any time
-- **Results view** — KPI strip, filters, per-question charts, and a foldable raw table
-  with CSV export
-- **Fabric Entra SSO** — Fabric sign-in in production, mock email/password locally
+- **Seven question types** - short answer, paragraph, number, rating, date, single choice, and
+  multiple choice.
+- **Flexible numeric input** - optional inclusive bounds and configurable whole-number rating
+  scales with endpoint labels.
+- **Public sharing** - unguessable form links and locally generated QR codes.
+- **Form lifecycle** - open or close collection without deleting the form.
+- **Response analysis** - KPIs, filters, per-question charts, raw responses, and CSV export.
+- **Authentication options** - Fabric Entra SSO and password auth are enabled in the deployment;
+  local development can use the mock sign-in service.
 
-### Number and rating questions
+## Getting started
 
-For **Number**, set either, both, or neither of the optional Minimum and Maximum bounds.
-Negative and decimal numbers are supported; bounds are inclusive and minimum may equal
-maximum. Clear a bound to remove it.
+### Prerequisites
 
-For **Rating**, Minimum, Maximum, and Interval default to **1, 5, and 1**. All three must
-be whole numbers, minimum must be less than maximum, and a positive interval must reach
-the maximum exactly. Add optional minimum/maximum help text, such as "Not useful" and
-"Extremely useful", independently of the question's general help text.
+- Node.js 20.19+, 22.12+, or 24.x
+- A Microsoft Fabric workspace with Fabric Apps enabled
 
-Scales with **five or fewer selectable values** use numbered buttons; larger scales use
-a slider. For example, 10–50 in steps of 10 uses five buttons, while 0–5 in steps of 1
-uses a slider. Ratings start unanswered, including sliders. Required ratings need an
-explicit selection; optional ratings can be cleared. Results use the existing numeric
-charts and export the selected number in CSV, not its endpoint label.
+Install dependencies, deploy with the required anonymous-access flag, and start the dev server:
 
-### Show a form's QR code
+```bash
+npm install
+RAYFIN_FEATURE_FLAGS=anonymous-data-access npm run dev
+```
 
-On **Your forms** or a form's **Results** page (including before any responses arrive),
-select **Show QR code** beside **Copy link**. The dialog shows the form title, its public
-URL, and a QR code for that exact URL. Copy link remains available, and the displayed URL
-can also be selected manually if clipboard access is blocked.
+Open the Vite URL shown in the terminal. Use `npm run dev:fabric` when the Fabric backend is
+already deployed and you only need the frontend dev server.
 
-QR codes are generated locally, without sending links to an external QR service. There
-is no download action. Scanning requires no attendee account; closing the form stops
-responses through its QR link just as it does through a copied link.
+## Security model
 
-## ⚠️ Security model — read this first
+> [!WARNING]
+> Respondents do not sign in. Anonymous access depends on the unsupported
+> `anonymous-data-access` Rayfin CLI feature flag, which may change or disappear in a future
+> release.
 
-> **Respondents do NOT need to sign in.** Anyone with the share link can open a form and submit
-> a response anonymously. Authentication is required only for admins who create and manage forms.
+The `rayfin:up` and `rayfin:db` scripts set the flag automatically. Commands that deploy or apply
+the schema without it fail with `AnonymousAccessBlockedError`.
 
-This works, but it depends on an **unsupported CLI feature flag**. Read this section before
-relying on the sample.
+Important boundaries:
 
-### Anonymous access requires an undocumented feature flag
+- **Anonymous callers can submit but cannot read responses.** Results remain owner-only.
+- **A share link is not an access boundary.** Direct API callers can enumerate open forms and
+  submit to them without knowing the link.
+- **There is no captcha or rate limiting.** Open forms can receive spam or repeated submissions.
+- **Closing a form is the kill switch.** Closed forms and questions disappear from anonymous
+  reads.
+- **Do not put confidential wording in questions.** Open form definitions are anonymously
+  readable.
+- **Validation and multi-row submissions are client-managed.** Direct clients can bypass field
+  validation, and a failed submission can leave partial data.
 
-By default the Rayfin CLI **refuses** to apply any configuration that grants the `anonymous`
-role: `rayfin up db apply` throws `AnonymousAccessBlockedError`. Import the stable
-`@anonymous()` decorator from `@microsoft/rayfin-core`.
+<details>
+<summary><strong>Detailed permissions and implementation caveats</strong></summary>
 
-The block is skipped when the `anonymous-data-access` feature flag is set:
+The feature flag can also be supplied explicitly:
 
 ```bash
 RAYFIN_FEATURE_FLAGS=anonymous-data-access npx rayfin up
 RAYFIN_FEATURE_FLAGS=anonymous-data-access npx rayfin up db apply
 ```
 
-The `npm run rayfin:up` and `npm run rayfin:db` scripts set it for you. **Deploys without it
-will fail** while the anonymous decorators are present.
-
-That flag's own source describes it as a **contributor-only escape hatch for internal test
-infrastructure**, deliberately not advertised to builders. Consequences you are accepting:
-
-- It is unsupported and may change or disappear in any Rayfin upgrade.
-- It disables the guard for the whole configuration, not per entity.
-- The Fabric data plane itself does honour anonymous permissions — verified against a live
-  deployment — so this is a tooling gate, not a server capability gate.
-
-If that trade-off is unacceptable, remove the `@anonymous(...)` decorators from
-`rayfin/data/*.ts` and drop the flag from the npm scripts. Sharing then falls back to
-"anyone signed in with the link", which requires giving every respondent workspace access.
-
-### Permissions
-
-| Entity | anonymous | authenticated |
+| Entity | Anonymous | Authenticated |
 | --- | --- | --- |
-| `Form` | `read` while the form is open | Owner CRUD; `create` binds `owner_id` to the caller |
-| `FormField` | `read` while the form is open | Owner CRUD |
-| `FormResponse` | `create` only | Owner + respondent read, owner delete |
-| `Answer` | `create` only | Owner + respondent read, owner delete |
+| `Form` | Read while open | Owner CRUD; create binds `owner_id` |
+| `FormField` | Read while open | Owner CRUD |
+| `FormResponse` | Create only | Owner and respondent read; owner delete |
+| `Answer` | Create only | Owner and respondent read; owner delete |
 
-The important guarantee holds: **anonymous callers can never read submissions.** Results are
-visible only to the form owner (and to a signed-in respondent for their own rows). This is
-verified — an unauthenticated query against `formResponses` returns `AUTH_NOT_AUTHORIZED`.
+- Anonymous writes commit even though DAB rejects the read-back. `RayfinResponseService`
+  generates IDs client-side and tolerates only that specific error.
+- `owner_id` and `isClosed` are denormalized because Rayfin policies cannot traverse
+  relationships. Closing a form updates both `Form` and `FormField`, but not transactionally.
+- Removed questions are soft-deleted to preserve `Answer.field_id` foreign keys.
+- Deleting a form permanently deletes its responses and answers.
+- The fluent client has no `count()`, so counts use array length.
+- `findById` selects only the primary key in this SDK version; explicit field selections are used
+  instead.
 
-### What the share link does *not* protect
+</details>
 
-**The link is not an access boundary.** Permissions are per-entity, not per-row-secret, so
-anyone on the internet can query the GraphQL endpoint directly to:
+## Product behavior
 
-- list every **open** form, including its `title`, `shareToken`, and questions, without the link;
-- submit responses to any open form they can name — there is no captcha or rate limiting, so
-  spam and ballot-stuffing are possible.
+<details>
+<summary><strong>Number and rating questions</strong></summary>
 
-Closing a form removes it and its questions from anonymous reads entirely, and is the only
-kill switch. **Do not put confidential wording in a form's questions.**
+Number questions support optional inclusive minimum and maximum values, including negative and
+decimal numbers. Rating questions default to `1-5` with an interval of `1`; all values must be
+whole numbers and the interval must reach the maximum exactly.
 
-Why the token cannot be checked server-side: the policy DSL can only reference the `sub`,
-`email`, and `role` claims with `eq`/`ne`/`and`/`or`. A share token arrives as a request
-parameter, not a claim, so no policy can express "return this row only if the caller supplied
-the matching token". Closing that hole needs a trusted server-side broker — see the preview
-Rayfin Functions feature (`RAYFIN_FEATURE_FLAGS=functions npx rayfin functions`), which this
-app deliberately does not depend on.
+Scales with five or fewer choices render numbered buttons; larger scales use a slider. Ratings
+start unanswered, required ratings need an explicit selection, and optional ratings can be
+cleared. Results and CSV exports store the selected number, not its endpoint label.
 
-### Anonymous writes cannot be read back
+</details>
 
-DAB rejects the *read-back* of a row an anonymous caller just wrote, even though the write
-commits. `RayfinResponseService` therefore generates response and answer IDs client-side and
-tolerates that specific error (`isWriteSucceededButUnreadable`), rather than granting anonymous
-read permission that would leak submissions.
+<details>
+<summary><strong>Sharing with QR codes</strong></summary>
 
-### Other caveats
+Use **Show QR code** from **Your forms** or **Results**. The browser generates the code locally
+for the exact public URL; no link is sent to an external QR service. Closing the form stops QR
+submissions just like copied links.
 
-- **`owner_id` is denormalized** onto `FormField`, `FormResponse`, and `Answer` because Rayfin
-  policies cannot traverse relationships. Nothing validates that a submitted `form_id` belongs to
-  the claimed `owner_id`, so a caller can attach rows to another user's form. Anonymous `create`
-  carries no policy at all, since an anonymous caller has no claims to bind.
-- **`FormField.isClosed` mirrors `Form.isClosed`** for the same reason, and is kept in sync by
-  `setFormClosed`. The two writes are not transactional.
-- **Submissions are not atomic.** `RayfinResponseService.submitResponse` writes the response and
-  then each answer in sequence; a failure part-way leaves a partial submission. Required-field
-  and numeric/rating validation is client-side only; direct API clients can bypass it.
-- **Editing a form soft-deletes removed questions** (`FormField.isDeleted`) rather than dropping
-  them, because `Answer.field_id` holds a foreign key. Results still show those columns.
-- **Deleting a form permanently deletes its responses and answers**, since they are FK-bound to it.
-- **`count()` is unavailable** on the fluent client, so counts are computed from array length.
-- **`findById` only selects the primary key** in this SDK version, so this app queries with an
-  explicit `.select(...).where({ id: { eq } })` instead.
+</details>
 
-## Getting started
+## Routes
 
-### Prerequisites
+| Route | Access | Purpose |
+| --- | --- | --- |
+| `/` | Signed in | List, create, edit, close, share, and delete forms |
+| `/forms/new` | Signed in | Create a form |
+| `/forms/:id/edit` | Signed in | Edit a form |
+| `/forms/:id/results` | Owner | Analyze and export responses |
+| `/f/:token` | **Public** | Fill in a shared form |
+| `/auth`, `/auth/callback` | Public | Sign-in and Entra callback |
 
-- Node.js 20+
-- A Microsoft Fabric workspace
+## Reference
 
-### Run it
-
-1. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-2. Deploy the app to Fabric and start the local dev server:
-
-   ```bash
-   npm run dev
-   ```
-
-3. Open the Vite dev server URL shown in the terminal.
-
-Subsequent deploys (including schema changes) are a single `npx rayfin up`.
-
-## Data model
-
-Four entities in `rayfin/data/`, registered in `rayfin/data/schema.ts`:
+### Data model
 
 ```text
 Form ──< FormField
   └──< FormResponse ──< Answer
 ```
 
-`Form` carries the share token and open/closed state:
+Every `@text()` field has a maximum length because unbounded `NVARCHAR(MAX)` columns break GraphQL
+schema generation on MSSQL. Choice arrays and numeric settings are stored as validated JSON.
+`Answer.fieldLabel` snapshots question text so historical results remain readable after edits.
 
-```typescript
-@entity()
-@authenticated('create', {
-  policy: (claims, item) => claims.sub.eq(item.owner_id),
-})
-@authenticated('read', {
-  policy: (claims, item) =>
-    claims.sub.eq(item.owner_id).or(item.isClosed.eq(false)),
-})
-@authenticated('update', {
-  policy: (claims, item) => claims.sub.eq(item.owner_id),
-})
-@authenticated('delete', {
-  policy: (claims, item) => claims.sub.eq(item.owner_id),
-})
-export class Form {
-  @uuid() id!: string;
-  @text({ min: 1, max: 200 }) title!: string;
-  @text({ optional: true, max: 2000 }) description?: string;
-  @text({ min: 8, max: 64, unique: true }) shareToken!: string;
-  @boolean() isClosed!: boolean;
-  @date() createdAt!: Date;
-  @date() updatedAt!: Date;
-  @text({ max: 200 }) owner_id!: string;
-  @many(() => FormField) fields?: FormField[];
-}
-```
-
-Notes on the modelling choices:
-
-- Every `@text()` sets `max` — on MSSQL an unbounded `NVARCHAR(MAX)` column breaks GraphQL
-  schema generation.
-- `FormField.choices` and multi-choice `Answer.value` store JSON-encoded string arrays, parsed
-  defensively via `src/lib/choices.ts`.
-- Optional `FormField.numericSettings` stores validated JSON for Number bounds or Rating
-  scales and endpoint labels. Existing Number questions without settings remain unbounded;
-  malformed settings produce an explicit error. Scalar answers remain strings, with blank
-  strings for skipped questions. Scale edits do not discard historical numeric answers.
-- `Answer.fieldLabel` snapshots the question text so old results stay readable after a form
-  is edited.
-- Editing a form updates questions in place and soft-deletes removed ones, preserving the
-  `Answer.field_id` foreign key.
-
-## Routes
-
-| Route | Access | Purpose |
-| --- | --- | --- |
-| `/` | Signed in | Your forms: create, edit, close, copy link, view results |
-| `/forms/new` | Signed in | Form builder |
-| `/forms/:id/edit` | Signed in | Edit an existing form |
-| `/forms/:id/results` | Form owner | Responses table |
-| `/f/:token` | **Public — no sign-in** | Fill in a shared form |
-| `/auth`, `/auth/callback` | Public | Sign-in and Entra OAuth callback |
-
-Share links work for anyone with the URL. Admin routes still redirect to `/auth`, stashing the
-destination so you return there after signing in.
-
-## Project structure
-
-```text
-forms/
-├── rayfin/
-│   ├── data/
-│   │   ├── Form.ts            # Form: share token, open/closed, owner policy
-│   │   ├── FormField.ts       # Questions, with kind + choices
-│   │   ├── FormResponse.ts    # One submission
-│   │   ├── Answer.ts          # One answer within a submission
-│   │   └── schema.ts          # Schema export for type safety
-│   └── rayfin.yml             # Rayfin configuration (auth and data enabled)
-├── src/
-│   ├── components/
-│   │   ├── ui/                # Radix-based UI components (shadcn)
-│   │   ├── results/           # Dashboard: charts, filters, raw table
-│   │   ├── AppHeader.tsx      # Masthead
-│   │   ├── AuthPage.tsx       # Fabric sign-in page
-│   │   ├── EmptyState.tsx     # Halftone blank-page state
-│   │   ├── FieldEditor.tsx    # Single-question editor
-│   │   ├── MockSignInDialog.tsx # Local dev mock sign-in dialog
-│   │   ├── PageShell.tsx      # Shared layout and page title
-│   │   ├── ShareLinkButton.tsx  # Copy-to-clipboard share link
-│   │   └── StatCard.tsx       # KPI tile
-│   ├── hooks/
-│   │   ├── AuthContext.tsx    # Authentication state management
-│   │   ├── useForms.ts        # List/create/close/delete your forms
-│   │   ├── useFormResults.ts  # Responses joined into rows
-│   │   └── usePublicForm.ts   # Resolve a share token to a form
-│   ├── lib/
-│   │   ├── choices.ts         # Defensive JSON array parsing
-│   │   ├── csv.ts             # CSV export and escaping
-│   │   └── results.ts         # Pure filtering and aggregation
-│   ├── pages/
-│   │   ├── AuthCallback.tsx   # Fabric Entra OAuth callback
-│   │   ├── Dashboard.tsx      # Your forms
-│   │   ├── FormEditor.tsx     # Create and edit forms
-│   │   ├── FormResults.tsx    # Results dashboard (lazy-loaded)
-│   │   └── PublicForm.tsx     # Fill in a shared form
-│   ├── services/
-│   │   ├── interfaces/        # IAuthService, IFormService, IResponseService
-│   │   ├── mock/              # MockAuthService (local dev)
-│   │   ├── rayfin/            # Rayfin client, auth, form and response services
-│   │   └── ServiceContainer.ts  # Service initialization with auth-mode detection
-│   ├── styles/
-│   │   ├── design.css         # Design tokens and shared primitives
-│   │   └── theme.css          # shadcn/Radix base tokens
-│   ├── App.tsx                # Router with protected and public routes
-│   └── main.tsx               # Entry point with AuthProvider
-└── package.json
-```
-
-## Design
-
-A clean, professional, blue-led light theme: white surfaces on a soft grey canvas, cool
-neutral text, and a single brand blue (`#2563EB`). Set in IBM Plex Sans, with IBM Plex Mono
-reserved for figures that benefit from aligning in columns. Tokens live in
-`src/styles/design.css`.
-
-Semantic tokens (`--surface`, `--text`, `--text-muted`, `--border-subtle`, `--brand`) map
-onto the shadcn token names, so the `ui/*` components stay on-palette without being forked.
-Shared primitives: `.card`, `.card-interactive`, `.font-heading`, `.font-data`,
-`.label-caps`, `.fade-in`.
-
-Two things to know before editing styles:
-
-- Tokens are declared on `:root:root`, not `:root`. `theme.css` declares the same shadcn
-  token names and is emitted later in the bundle, so a single `:root` loses the cascade and
-  the stock palette silently wins.
-- The results route is lazy-loaded. Recharts is large and only that page needs it; importing
-  it eagerly nearly doubles the bundle for respondents who only ever see the public form.
-
-## Scripts
+### Commands
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Deploy app to Fabric and start local dev server |
-| `npm run dev:fabric` | Start dev server against an already-deployed Fabric backend |
-| `npm run build` | Build for production |
-| `npm run test` | Run tests |
-| `npm run rayfin:up` | Deploy app to Fabric (no local dev server) |
-| `npm run rayfin:db` | Generate and apply database schema |
+| `npm run dev` | Deploy the backend and start Vite; set the anonymous-access flag in the shell |
+| `npm run dev:fabric` | Start Vite against an existing Fabric deployment |
+| `npm run build` | Type-check and build for production |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run Vitest |
+| `npm run test:coverage` | Run tests with text coverage |
+| `npm run rayfin:up` | Deploy to Fabric with anonymous access enabled |
+| `npm run rayfin:db` | Generate and apply the schema with anonymous access enabled |
 
-## Environment variables
+<details>
+<summary><strong>Environment and project layout</strong></summary>
 
-All Rayfin environment variables live in `rayfin/.env` using the `RAYFIN_PUBLIC_*` prefix.
-The `predev` hook runs `rayfin env --framework vite` to generate `.env.local` with
-Vite-compatible names.
+Rayfin stores deployment configuration in `rayfin/.env`. The `predev` hook generates the
+Vite-compatible `.env.local`; deployment metadata lives in `rayfin/.deployments.json`.
 
-| Source (`rayfin/.env`) | Vite variable (`.env.local`) | Description | Default |
-| --- | --- | --- | --- |
-| `RAYFIN_PUBLIC_API_URL` | `VITE_RAYFIN_API_URL` | Rayfin backend URL | `http://localhost:5168` |
-| `RAYFIN_PUBLIC_PUBLISHABLE_KEY` | `VITE_RAYFIN_PUBLISHABLE_KEY` | Rayfin publishable key | (generated on dev) |
-| `RAYFIN_PUBLIC_ITEM_ID` | `VITE_FABRIC_ITEM_ID` | Fabric item/project ID (written by `rayfin up`) | -- |
-| `RAYFIN_PUBLIC_WORKSPACE_ID` | `VITE_FABRIC_WORKSPACE_ID` | Fabric workspace ID for auth | -- |
-| `RAYFIN_PUBLIC_PORTAL_URL` | `VITE_FABRIC_PORTAL_URL` | Fabric portal URL for auth | -- |
+```text
+rayfin/data/          Form, field, response, and answer entities
+src/components/       App shell, form controls, sharing, and results UI
+src/hooks/            Authentication and form/result data hooks
+src/lib/              Choice parsing, CSV export, and aggregation
+src/pages/            Dashboard, editor, results, public form, and auth callback
+src/services/         Mock/Fabric auth and typed Rayfin data services
+src/styles/           Shared design tokens and shadcn/Radix theme
+```
 
-Deployment metadata (including the hosting URL) is stored in `rayfin/.deployments.json`.
-Use `rayfin up list` to view all deployments.
+</details>
 
-## License
+## More resources
 
-See the [LICENSE](LICENSE) file for details.
+- [Ray|Works design system](../DESIGN.md)
+- [Ray|Works logo guide](../docs/logo.md)
+- [Fabric Apps documentation](https://learn.microsoft.com/fabric/apps/)
+- [Rayfin SDK documentation](https://aka.ms/rayfin/docs)
