@@ -83,6 +83,8 @@ npm run dev
   owner-only.
 - Owners can reopen a finalized report after confirmation. The shared link is unavailable while
   it is a draft and works again at the same URL after finalization.
+- Report photo headers are opt-in: viewers receive a flattened collage, never access to the
+  original private photos or their SQL chunks.
 - Share links do not provide anonymous access; recipients must sign in. The current deployment
   supports Fabric SSO and password authentication.
 - The report function uses the caller's delegated Entra token for the separately managed Azure
@@ -122,6 +124,28 @@ or share links. Finalized legacy reports remain untouched unless the owner expli
 them; reopening preserves the full text, including reports longer than the current edit limit.
 
 </details>
+
+## Photo headers
+
+Choose **Choose header photos** on the trip banner and select up to **six** completed
+uploads. Their selection order is saved privately on the trip. A deterministic BSP-style
+mosaic adapts the tiles to the header dimensions; a navy overlay keeps the trip details
+readable. Clear the selection to restore the plain header.
+
+The draft report has a separate **Include photo header in shared report** option,
+**off by default**. Enabling it previews a flattened JPEG copy of the selected photos.
+Use **Update from trip photos** when you explicitly want to replace an existing cover.
+Changing or deleting source photos does not silently alter a saved report cover.
+
+The report snapshot is at most **32 KiB** and **1,200 × 360px**, stored in bounded text
+fields on the report row. Saving/finalizing publishes the content, setting, and image
+together under the same permissions. Turning the option off and saving clears the
+image fields. Reopening pauses access to both text and image while preserving them
+for editing; finalizing again restores the same link.
+
+On narrow screens the full collage appears as a photo band above the title. Prose
+regeneration leaves the cover settings unchanged. Failed image preparation must be
+retried or the option turned off before publishing.
 
 ## Photo storage
 
@@ -166,11 +190,11 @@ React + Vite
 
 | Entity | Purpose |
 | --- | --- |
-| `Trip` | Assignment details and owner |
+| `Trip` | Assignment details, owner, and private header-photo selection |
 | `TripDay` | Daily notes |
 | `TripPhoto` | Photo metadata, state, and integrity manifest |
 | `TripPhotoChunk` | Ordered image content |
-| `TripReport` | Markdown, legacy content, finalization, and share ID |
+| `TripReport` | Markdown, optional frozen photo cover, finalization, and share ID |
 
 ### Commands
 

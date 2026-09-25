@@ -704,6 +704,41 @@ select:focus {
   margin: 0;
 }
 
+.trip-header-actions { grid-column: 1 / -1; }
+.has-photo-mosaic {
+  background: var(--brand-navy);
+  min-height: 250px;
+}
+.has-photo-mosaic > :not(.photo-mosaic) { position: relative; z-index: 1; }
+.has-photo-mosaic .progress-track { position: absolute; }
+.has-photo-mosaic h1, .has-photo-mosaic p, .has-photo-mosaic .trip-dates { color: #ffffff; }
+.has-photo-mosaic .status-pill { background: var(--surface); color: var(--brand-navy); }
+.photo-mosaic { position: absolute; inset: 0; overflow: hidden; background: var(--brand-navy); }
+.has-photo-mosaic .photo-mosaic::after { content: ''; position: absolute; inset: 0; background: rgb(11 42 91 / 0.76); }
+.mosaic-tile { position: absolute; overflow: hidden; padding: 1px; }
+.mosaic-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mosaic-tile-error { color: #fff; font-size: 12px; padding: 8px; }
+.mosaic-picker-preview { position: relative; height: 180px; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+.header-photo-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-height: 320px; overflow-y: auto; padding: 4px; }
+.header-photo-choice { border: 2px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; align-content: start; }
+.header-photo-choice.is-selected { border-color: var(--accent-strong); background: var(--accent-tint); }
+.header-photo-choice > img, .header-photo-choice > span:first-child { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.header-photo-choice > span { padding: 8px; font-size: 13px; overflow-wrap: anywhere; }
+.header-photo-choice input[type='checkbox'], .checkbox-control input[type='checkbox'] { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--accent-strong); }
+.report-cover-controls { display: grid; gap: 12px; padding: 16px; margin-bottom: 20px; background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; }
+.report-cover-controls > button { justify-self: start; }
+.checkbox-control { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.report-cover-image { position: relative; min-height: 160px; background: var(--brand-navy); color: #fff; }
+.report-cover-image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.report-cover-image > span { display: block; padding: 24px; }
+.report-header-with-photo { position: relative; background: var(--brand-navy); border-radius: 8px; overflow: hidden; min-height: 230px; margin-bottom: 20px; }
+.shared-report .report-header-with-photo { padding: 0; }
+.report-header-with-photo .report-cover-image { position: absolute; inset: 0; }
+.report-header-with-photo .report-cover-image::after { content: ''; position: absolute; inset: 0; background: rgb(11 42 91 / 0.76); }
+.report-header-with-photo .shared-report-heading { position: relative; padding: 28px; color: #fff; }
+.report-header-with-photo .shared-report-heading :is(h1,h3,p) { color: #fff; }
+.report-header-with-photo > .inline-error { position: relative; margin: 12px; }
+
 .trip-dates {
   align-items: center;
   align-self: center;
@@ -1120,6 +1155,14 @@ select:focus {
     grid-template-columns: 1fr;
     padding: 22px;
   }
+  .has-photo-mosaic { min-height: 220px; }
+  .header-photo-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .header-photo-choice > span { min-height: 44px; }
+  .mosaic-picker-preview { height: 160px; }
+  .report-header-with-photo { min-height: 0; }
+  .report-header-with-photo .report-cover-image { position: relative; aspect-ratio: 10 / 3; min-height: 0; }
+  .report-header-with-photo .report-cover-image::after { display: none; }
+  .report-header-with-photo .shared-report-heading { padding: 20px; }
 
   .trip-dates {
     align-items: flex-start;

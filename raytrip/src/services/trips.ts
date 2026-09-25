@@ -4,6 +4,9 @@ import type { TripReportRecord as TripReport } from '../../rayfin/data/TripRepor
 
 import { getRayfinClient } from './rayfinClient';
 import { validateReportContent } from '@/lib/report';
+import { coverBlob } from '@/lib/report-cover';
+import { COVER_FIELDS, parseHeaderPhotoIds, reportCoverPayload, type ReportCover } from '../../rayfin/report-cover';
+import { listTripPhotos } from './photos';
 export { listTripPhotos, uploadTripPhoto, getTripPhotoUrl, deleteTripPhoto } from './photos';
 
 export type TripInput = Pick<
@@ -41,6 +44,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
     'createdAt',
     'updatedAt',
     'owner_id',
+    'headerPhotoIds',
   ])
     .where({ id: { eq: id } })
     .first(1)
@@ -70,6 +74,16 @@ export async function updateTrip(
     { id },
     { ...input, updatedAt: new Date() }
   );
+}
+
+export async function saveTripHeaderPhotos(id: string, ids: string[]): Promise<void> {
+  const encoded = JSON.stringify(ids);
+  parseHeaderPhotoIds(encoded);
+  const photos = ids.length ? await listTripPhotos(id) : [];
+  if (ids.some(photoId => !photos.some(photo =>
+    photo.id === photoId && photo.trip_id === id && photo.storageBackend === 'sql-v1' && photo.uploadState === 'ready'
+  ))) throw new Error('Some selected photos are unavailable. Refresh and choose again.');
+  await getRayfinClient().data.Trip.update({ id }, { headerPhotoIds: encoded, updatedAt: new Date() });
 }
 
 export async function deleteTrip(id: string): Promise<void> {
@@ -134,6 +148,7 @@ export async function getTripReport(
     'generatedAt',
     'finalizedAt',
     'trip_id',
+    ...COVER_FIELDS,
     'owner_id',
   ])
     .where({ trip_id: { eq: tripId } })
@@ -156,6 +171,7 @@ export async function getSharedReport(
     'generatedAt',
     'finalizedAt',
     'trip_id',
+    ...COVER_FIELDS,
   ])
     .where({ shareId: { eq: shareId }, status: { eq: 'finalized' } })
     .first(1)
@@ -169,17 +185,22 @@ export async function generateTripReport(tripId: string): Promise<void> {
 
 export async function saveTripReport(
   id: string,
-  content: string
+  content: string,
+  cover?: ReportCover | null
 ): Promise<void> {
+  const text = validateReportContent(content);
+  if (cover) await coverBlob(cover);
   await getRayfinClient().data.TripReport.update(
-    { id }, { content: validateReportContent(content) }
+    { id }, { content: text, ...(cover !== undefined ? reportCoverPayload(cover) : {}) }
   );
 }
 
-export async function finalizeTripReport(id: string, content: string): Promise<void> {
+export async function finalizeTripReport(id: string, content: string, cover?: ReportCover | null): Promise<void> {
+  const text = validateReportContent(content);
+  if (cover) await coverBlob(cover);
   await getRayfinClient().data.TripReport.update(
     { id },
-    { content: validateReportContent(content), status: 'finalized', finalizedAt: new Date() }
+    { content: text, status: 'finalized', finalizedAt: new Date(), ...(cover !== undefined ? reportCoverPayload(cover) : {}) }
   );
 }
 

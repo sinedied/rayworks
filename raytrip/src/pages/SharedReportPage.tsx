@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
@@ -8,12 +8,15 @@ import { ReportMarkdown } from '@/components/ReportMarkdown';
 import { formatDate } from '@/lib/dates';
 import { reportDocument } from '@/lib/report';
 import { getSharedReport } from '@/services/trips';
+import { ReportCoverImage } from '@/components/ReportCoverImage';
+import { readCoverState } from '@/lib/report-cover';
 
 export function SharedReportPage() {
   const { shareId = '' } = useParams();
   const [report, setReport] = useState<TripReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const cover = useMemo(() => readCoverState(report), [report]);
 
   useEffect(() => {
     let active = true;
@@ -48,7 +51,10 @@ export function SharedReportPage() {
           </div>
         ) : report ? (
           <article className="shared-report">
-            <header>
+            <header className={report.includePhotoHeader ? 'report-header-with-photo' : undefined}>
+              {cover.cover && <ReportCoverImage cover={cover.cover} />}
+              {cover.error && <p className="inline-error" role="alert">{cover.error}</p>}
+              <div className="shared-report-heading">
               <p className="eyebrow">Final trip report</p>
               <h1>{report.title}</h1>
               <p>
@@ -56,6 +62,7 @@ export function SharedReportPage() {
                   dateStyle: 'long',
                 })}
               </p>
+              </div>
             </header>
             <ReportMarkdown content={reportDocument(report)} />
             <footer>

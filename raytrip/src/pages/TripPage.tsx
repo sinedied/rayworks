@@ -7,40 +7,32 @@ import type { TripReportRecord as TripReport } from '../../rayfin/data/TripRepor
 import { AppHeader } from '@/components/AppHeader';
 import { Modal } from '@/components/Modal';
 import { ReportWorkspace } from '@/components/ReportWorkspace';
+import { HeaderPhotoPicker } from '@/components/HeaderPhotoPicker';
+import { PhotoMosaic } from '@/components/PhotoMosaic';
+import { TripPhotoCacheProvider } from '@/components/TripPhotoCache';
+import { useTripPhoto } from '@/hooks/useTripPhotos';
+import { parseHeaderPhotoIds } from '../../rayfin/report-cover';
 import { useAuth } from '@/hooks/AuthContext';
 import { formatDate, toDateInputValue, toValidDate } from '@/lib/dates';
 import {
-  deleteTripDay, deleteTripPhoto, getTrip, getTripPhotoUrl, getTripReport,
-  listTripDays, listTripPhotos, saveTripDay, updateTrip, uploadTripPhoto,
+  deleteTripDay, deleteTripPhoto, getTrip, getTripReport,
+  listTripDays, listTripPhotos, saveTripDay, saveTripHeaderPhotos, updateTrip, uploadTripPhoto,
 } from '@/services/trips';
 
 function PhotoTile({ photo, disabled, onDelete }: {
   photo: TripPhoto; disabled: boolean; onDelete: () => void;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [visible, setVisible] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const container = useRef<HTMLElement>(null);
+  const { url, error } = useTripPhoto(photo, visible, attempt);
   useEffect(() => {
-    let cancelled = false;
-    let objectUrl: string | undefined;
-    let started = false;
-    setUrl(null);
-    setError('');
-    const load = () => {
-      if (started || cancelled) return;
-      started = true;
-      getTripPhotoUrl(photo).then(value => {
-        if (cancelled) URL.revokeObjectURL(value);
-        else { objectUrl = value; setUrl(value); }
-      }).catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Could not load the photo.'); });
-    };
     const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting)) load();
+      setVisible(entries.some(entry => entry.isIntersecting));
     }, { rootMargin: '200px' });
     if (container.current) observer.observe(container.current);
-    return () => { cancelled = true; observer.disconnect(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [photo, attempt]);
+    return () => observer.disconnect();
+  }, []);
   return (
     <figure className="photo-tile" ref={container}>
       {url ? <img src={url} alt={photo.caption || 'Trip attachment'} /> : (
@@ -60,8 +52,13 @@ function PhotoTile({ photo, disabled, onDelete }: {
 export function TripPage() {
   const { tripId = '' } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
   // A fresh workspace per history entry keeps late async work out of subsequent visits.
-  return <TripWorkspace key={`${location.key}:${tripId}`} tripId={tripId} />;
+  return (
+    <TripPhotoCacheProvider key={`${user?.id}:${location.key}:${tripId}`}>
+      <TripWorkspace tripId={tripId} />
+    </TripPhotoCacheProvider>
+  );
 }
 
 function TripWorkspace({ tripId }: { tripId: string }) {
@@ -80,6 +77,9 @@ function TripWorkspace({ tripId }: { tripId: string }) {
   const [noteError, setNoteError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoProgress, setPhotoProgress] = useState('');
+  const [choosingHeader, setChoosingHeader] = useState(false);
+  const [headerLoadError, setHeaderLoadError] = useState('');
+  const [headerAttempt, setHeaderAttempt] = useState(0);
   const uploadController = useRef<AbortController | null>(null);
   const mounted = useRef(false);
   const request = useRef(0);
@@ -173,6 +173,12 @@ function TripWorkspace({ tripId }: { tripId: string }) {
   }
 
   const readyPhotos = photos.filter(photo => photo.storageBackend === 'sql-v1' && photo.uploadState === 'ready');
+  let headerIds: string[] = [];
+  let headerSelectionError = '';
+  try { headerIds = parseHeaderPhotoIds(trip?.headerPhotoIds); }
+  catch (reason) { headerSelectionError = reason instanceof Error ? reason.message : 'Header selection is invalid.'; }
+  const headerPhotos = headerIds.flatMap(id => readyPhotos.filter(photo => photo.id === id));
+  const missingHeaderPhotos = headerPhotos.length !== headerIds.length;
   const pendingPhotos = photos.filter(photo => photo.storageBackend !== 'sql-v1' || photo.uploadState !== 'ready');
   const start = toValidDate(trip?.startDate)?.getTime();
   const end = toValidDate(trip?.endDate)?.getTime();
@@ -194,15 +200,25 @@ function TripWorkspace({ tripId }: { tripId: string }) {
       ) : (
         <main className="trip-page">
           <Link className="back-link" to="/">← All trips</Link>
-          <section className="trip-masthead">
+          <section className={`trip-masthead${headerPhotos.length ? ' has-photo-mosaic' : ''}`}>
+            {!!headerPhotos.length && <PhotoMosaic key={headerAttempt} photos={headerPhotos} onError={setHeaderLoadError} />}
             <div>
               <span className={`status-pill status-${trip.status}`}>{trip.status}</span>
               <h1>{trip.title}</h1>
               <p>{trip.destination}</p>
             </div>
             <div className="trip-dates"><span>{formatDate(trip.startDate)}</span><span aria-hidden="true">—</span><span>{formatDate(trip.endDate)}</span></div>
+            <div className="trip-header-actions">
+              <button className="button button-secondary" disabled={busy} onClick={() => setChoosingHeader(true)}>
+                {headerPhotos.length ? 'Edit header photos' : 'Choose header photos'}
+              </button>
+            </div>
             <div className="progress-track" role="progressbar" aria-label="Trip timeline" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div>
           </section>
+          {(headerSelectionError || missingHeaderPhotos) && (
+            <p className="inline-error" role="alert">{headerSelectionError || 'Some header photos are no longer available. Edit the selection to update your header.'}</p>
+          )}
+          {headerLoadError && <p className="inline-error" role="alert">{headerLoadError} <button className="text-button" onClick={() => { setHeaderLoadError(''); setHeaderAttempt(value => value + 1); }}>Retry header photos</button></p>}
           <div className="trip-view-tabs" role="tablist" aria-label="Trip views">
             {(['notes', 'report'] as const).map((name, index) => (
               <button
@@ -300,10 +316,20 @@ function TripWorkspace({ tripId }: { tripId: string }) {
             )}
           </div>
           <div id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden={view !== 'report'}>
-            {reportLoaded ? <ReportWorkspace tripId={tripId} initialReport={report} /> : (
+            {reportLoaded ? <ReportWorkspace tripId={tripId} initialReport={report} headerPhotos={headerPhotos} /> : (
               <div className="page-state" role="alert"><h2>Report unavailable</h2><p>Load the saved report before generating a new one.</p><button className="secondary-button" onClick={() => void refresh()}>Retry report loading</button></div>
             )}
           </div>
+          {choosingHeader && (
+            <HeaderPhotoPicker photos={readyPhotos} selected={headerIds} onClose={() => setChoosingHeader(false)}
+              onSave={async ids => {
+                await saveTripHeaderPhotos(tripId, ids);
+                if (mounted.current) {
+                  setHeaderLoadError(''); setHeaderAttempt(value => value + 1);
+                  setTrip(current => current ? { ...current, headerPhotoIds: JSON.stringify(ids) } : current);
+                }
+              }} />
+          )}
           {(addingDay || editingDay) && (
             <Modal title={editingDay ? 'Edit daily note' : 'Add daily note'} wide onClose={() => { if (!busy) { setAddingDay(false); setEditingDay(null); } }}>
               <form className="form-stack" onSubmit={handleDay}>

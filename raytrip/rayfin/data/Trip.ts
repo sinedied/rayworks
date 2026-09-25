@@ -16,6 +16,7 @@ export class Trip {
   @text({ min: 1, max: 160 }) title!: string;
   @text({ max: 160 }) destination!: string;
   @text({ optional: true, max: 600 }) purpose?: string;
+  @text({ optional: true, max: 250 }) headerPhotoIds?: string;
   @date() startDate!: Date;
   @date() endDate!: Date;
   @set('draft', 'active', 'completed')

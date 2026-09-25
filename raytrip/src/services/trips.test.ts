@@ -120,6 +120,7 @@ describe('getTrip', () => {
       'createdAt',
       'updatedAt',
       'owner_id',
+      'headerPhotoIds',
     ]);
     expect(clientMocks.where).toHaveBeenCalledWith({
       id: { eq: 'trip-1' },

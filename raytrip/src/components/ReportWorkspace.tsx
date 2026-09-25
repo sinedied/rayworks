@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useBeforeUnload, useBlocker } from 'react-router-dom';
 import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
+import type { TripPhoto } from '../../rayfin/data/TripPhoto';
+import { reportCoverPayload } from '../../rayfin/report-cover';
+import { createReportCover, readCoverState } from '@/lib/report-cover';
+import { ReportCoverImage } from './ReportCoverImage';
+import { useTripPhotoCache } from '@/hooks/useTripPhotos';
 import { formatDate } from '@/lib/dates';
 import { reportDocument, REPORT_MAX_LENGTH, validateReportContent } from '@/lib/report';
 import { finalizeTripReport, generateTripReport, getTripReport, reopenTripReport, saveTripReport } from '@/services/trips';
@@ -9,13 +14,21 @@ import { ReportMarkdown } from './ReportMarkdown';
 
 type ReportAction = 'generate' | 'save' | 'finalize' | 'reopen';
 
-export function ReportWorkspace({ tripId, initialReport }: {
+export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
   tripId: string;
   initialReport: TripReport | null;
+  headerPhotos?: readonly TripPhoto[];
 }) {
   const [report, setReport] = useState(initialReport);
   const [saved, setSaved] = useState(initialReport ? reportDocument(initialReport) : '');
   const [content, setContent] = useState(saved);
+  const [coverState, setCoverState] = useState(() => readCoverState(initialReport));
+  const [includeCover, setIncludeCover] = useState(initialReport?.includePhotoHeader === true);
+  const [savedCoverKey, setSavedCoverKey] = useState(initialReport?.includePhotoHeader ? initialReport.headerImageHash || 'invalid' : '');
+  const [preparingCover, setPreparingCover] = useState(false);
+  const coverBusy = useRef(false);
+  const cache = useTripPhotoCache();
+  const coverRequest = useRef(0);
   const [mode, setMode] = useState<'edit' | 'preview'>('preview');
   const [pending, setPending] = useState<ReportAction | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,15 +40,39 @@ export function ReportWorkspace({ tripId, initialReport }: {
   const inFlight = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const finalized = report?.status === 'finalized';
-  const dirty = !finalized && content !== saved;
-  const blocker = useBlocker(dirty || pending !== null);
+  const coverKey = includeCover ? coverState.cover?.sha256 || 'invalid' : '';
+  const dirty = !finalized && (content !== saved || coverKey !== savedCoverKey);
+  const blocker = useBlocker(dirty || pending !== null || preparingCover);
   useBeforeUnload(event => {
-    if (dirty || pending) { event.preventDefault(); event.returnValue = ''; }
+    if (dirty || pending || preparingCover) { event.preventDefault(); event.returnValue = ''; }
   });
-  const invalid = !content.trim() || content.trim().length > REPORT_MAX_LENGTH;
+  const invalid = !content.trim() || content.trim().length > REPORT_MAX_LENGTH
+    || (includeCover && (!coverState.cover || !!coverState.error)) || preparingCover;
+
+  async function prepareCover() {
+    if (coverBusy.current || inFlight.current) return;
+    coverBusy.current = true;
+    const requestId = ++coverRequest.current;
+    setPreparingCover(true);
+    setCoverState(current => ({ ...current, error: '' }));
+    const leases: ReturnType<typeof cache.acquire>[] = [];
+    try {
+      for (const photo of headerPhotos) leases.push(cache.acquire(photo));
+      const cover = await createReportCover(await Promise.all(leases.map(lease => lease.promise)));
+      if (alive.current && requestId === coverRequest.current) setCoverState({ cover, error: '' });
+    } catch (reason) {
+      if (alive.current && requestId === coverRequest.current) {
+        setCoverState(current => ({ ...current, error: reason instanceof Error ? reason.message : 'Could not prepare the header.' }));
+      }
+    } finally {
+      leases.forEach(lease => lease.release());
+      coverBusy.current = false;
+      if (alive.current && requestId === coverRequest.current) setPreparingCover(false);
+    }
+  }
 
   async function perform(action: ReportAction) {
-    if (inFlight.current) return;
+    if (inFlight.current || coverBusy.current) return;
     inFlight.current = true;
     setPending(action);
     setError(null);
@@ -50,6 +87,7 @@ export function ReportWorkspace({ tripId, initialReport }: {
         setReport(next);
         setSaved(text);
         setContent(text);
+        // Prose regeneration does not replace the owner's pending or saved cover.
         setMode('preview');
         setNotice('Draft generated and saved. Review it before finalizing.');
       } else if (action === 'reopen') {
@@ -63,11 +101,14 @@ export function ReportWorkspace({ tripId, initialReport }: {
       } else {
         if (!report) throw new Error('Generate a report first.');
         const text = validateReportContent(content);
-        if (action === 'save') await saveTripReport(report.id, text);
-        else await finalizeTripReport(report.id, text);
+        if (includeCover && (!coverState.cover || coverState.error)) throw new Error('Prepare a valid photo header or turn the option off.');
+        const cover = includeCover ? coverState.cover : null;
+        if (action === 'save') await saveTripReport(report.id, text, cover);
+        else await finalizeTripReport(report.id, text, cover);
         if (!alive.current) return;
-        setReport({ ...report, content: text, ...(action === 'finalize' ? { status: 'finalized', finalizedAt: new Date() } : {}) });
+        setReport({ ...report, content: text, ...reportCoverPayload(cover), ...(action === 'finalize' ? { status: 'finalized', finalizedAt: new Date() } : {}) });
         setSaved(text);
+        setSavedCoverKey(cover?.sha256 || '');
         setContent(text);
         if (action === 'finalize') setMode('preview');
         setNotice(action === 'save' ? 'Changes saved.' : 'Report finalized. It is ready to share.');
@@ -98,7 +139,7 @@ export function ReportWorkspace({ tripId, initialReport }: {
           <p className="report-meta">{report ? `${finalized ? 'Finalized' : 'Draft'} · ${formatDate(finalized ? report.finalizedAt : report.generatedAt)}` : 'A concise brief from your notes and photo captions.'}</p>
         </div>
         {report && !finalized && (
-          <button className="button button-secondary" disabled={!!pending} onClick={() => setConfirmRegenerate(true)}>
+          <button className="button button-secondary" disabled={!!pending || preparingCover} onClick={() => setConfirmRegenerate(true)}>
             Regenerate
           </button>
         )}
@@ -117,6 +158,36 @@ export function ReportWorkspace({ tripId, initialReport }: {
         </div>
       ) : (
         <>
+          {!finalized && (
+            <div className="report-cover-controls">
+              <label className="checkbox-control">
+                <input type="checkbox" checked={includeCover} disabled={!!pending || preparingCover}
+                  onChange={event => {
+                    const checked = event.target.checked;
+                    setIncludeCover(checked);
+                    if (checked && !coverState.cover) void prepareCover();
+                  }} />
+                Include photo header in shared report
+              </label>
+              <p className="report-meta">Shares a flattened copy of your selected header photos. Original photos stay private.</p>
+              {includeCover && (
+                <>
+                  {!headerPhotos.length && <p className="report-meta">Choose photos in the trip header to create or update this cover. An existing saved cover can still be kept.</p>}
+                  <button className="button button-secondary" disabled={!!pending || preparingCover || !headerPhotos.length} onClick={() => void prepareCover()}>
+                    {preparingCover ? 'Preparing header…' : 'Update from trip photos'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          {includeCover && coverState.error && <p className="inline-error" role="alert">{coverState.error}</p>}
+          {includeCover && coverState.cover && (
+            <div className="report-header-with-photo">
+              <ReportCoverImage cover={coverState.cover} />
+              <div className="shared-report-heading"><h3>{report.title}</h3><p>{finalized ? 'Final trip report' : 'Header preview'}</p></div>
+            </div>
+          )}
+          {preparingCover && <p role="status">Preparing a small, shareable photo header…</p>}
           {!finalized && (
             <div className="editor-toolbar">
               <div className="view-switch" aria-label="Report display">
@@ -196,7 +267,7 @@ export function ReportWorkspace({ tripId, initialReport }: {
       )}
       {confirmRegenerate && (
         <Modal title="Replace this draft?" onClose={() => setConfirmRegenerate(false)}>
-          <p>Generating again replaces the saved report{dirty ? ' and your unsaved edits' : ''}. The current draft is kept if generation fails.</p>
+          <p>Generating again replaces the report text{content !== saved ? ' and your unsaved text edits' : ''}. Your photo header settings are kept. The current draft is kept if generation fails.</p>
           <div className="button-row">
             <button className="button button-secondary" onClick={() => setConfirmRegenerate(false)}>Keep draft</button>
             <button className="button button-primary" onClick={() => { setConfirmRegenerate(false); void perform('generate'); }}>Regenerate report</button>

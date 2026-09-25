@@ -5,11 +5,13 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ReportWorkspace } from '../src/components/ReportWorkspace';
 import { ReportMarkdown } from '../src/components/ReportMarkdown';
 import type { TripReportRecord as TripReport } from '../rayfin/data/TripReport';
+import { TripPhotoCacheProvider } from '../src/components/TripPhotoCache';
 
 const api = vi.hoisted(() => ({
   saveTripReport: vi.fn(), finalizeTripReport: vi.fn(),
   generateTripReport: vi.fn(), getTripReport: vi.fn(),
   reopenTripReport: vi.fn(),
+  getTripPhotoUrl: vi.fn(),
 }));
 vi.mock('@/services/trips', () => api);
 const report: TripReport = {
@@ -19,7 +21,7 @@ const report: TripReport = {
 };
 function mount(initialReport: TripReport | null = report) {
   const router = createMemoryRouter([{ path: '*', element: <ReportWorkspace tripId="trip-1" initialReport={initialReport} /> }]);
-  render(<RouterProvider router={router} />);
+  render(<TripPhotoCacheProvider><RouterProvider router={router} /></TripPhotoCacheProvider>);
 }
 
 beforeEach(() => {
@@ -39,7 +41,7 @@ describe('report editing workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit', exact: true }));
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('## Summary\nUpdated');
     fireEvent.click(screen.getByRole('button', { name: 'Save & finalize' }));
-    await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', '## Summary\nUpdated'));
+    await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', '## Summary\nUpdated', null));
     expect(await screen.findByRole('button', { name: 'Copy share link' })).toBeTruthy();
   });
   it('keeps a failed save editable and does not publish', async () => {
@@ -48,6 +50,27 @@ describe('report editing workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save & finalize' }));
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Save failed');
     expect(screen.queryByRole('button', { name: 'Copy share link' })).toBeNull();
+  });
+  it('keeps report photo sharing off for existing reports and clears an invalid cover on opt-out', async () => {
+    mount();
+    expect(screen.getByRole('checkbox', { name: 'Include photo header in shared report' })).toHaveProperty('checked', false);
+    expect(api.getTripPhotoUrl).not.toHaveBeenCalled();
+    cleanup();
+    mount({ ...report, includePhotoHeader: true, headerImageHash: 'invalid' });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include photo header in shared report' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(api.saveTripReport).toHaveBeenCalledWith('report-1', report.content, null));
+    expect(screen.getByRole('checkbox', { name: 'Include photo header in shared report' })).toHaveProperty('checked', false);
+  });
+  it('requires an actual snapshot when photo sharing is enabled', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include photo header in shared report' }));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Choose one to six header photos first.');
+    expect(screen.getByRole('button', { name: 'Save & finalize' })).toHaveProperty('disabled', true);
+    expect(api.finalizeTripReport).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include photo header in shared report' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save & finalize' })).toHaveProperty('disabled', false);
   });
   it('confirms regeneration and replaces controlled text with the saved result', async () => {
     api.getTripReport.mockResolvedValueOnce({ ...report, content: '## Summary\nRegenerated' });
@@ -114,7 +137,7 @@ describe('report editing workflow', () => {
 
       fireEvent.change(editor, { target: { value: 'Revised report.' } });
       fireEvent.click(screen.getByRole('button', { name: 'Save & finalize' }));
-      await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', 'Revised report.'));
+      await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', 'Revised report.', null));
       expect((await screen.findByRole('link', { name: 'Open shared report' })).getAttribute('href')).toBe('/reports/shared');
       expect(screen.queryByRole('textbox')).toBeNull();
     });
