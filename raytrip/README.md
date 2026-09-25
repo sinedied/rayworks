@@ -1,170 +1,200 @@
 <div align="center">
 
-# Ray|Trip
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../docs/logos/raytrip-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="../docs/logos/raytrip.svg">
+  <img src="../docs/logos/raytrip.svg" alt="Ray|Trip" height="72">
+</picture>
 
 **Capture business travel as it happens, then turn the trail into a focused report.**
 
+[![Built with Copilot](https://img.shields.io/badge/Built%20with-Copilot-8957E5?style=flat-square&logo=githubcopilot&logoColor=white)](https://github.com/features/copilot)
+[![Microsoft Fabric Apps](https://img.shields.io/badge/Microsoft-Fabric%20Apps-7FBA00?style=flat-square&logo=microsoft&logoColor=white)](https://learn.microsoft.com/en-us/fabric/apps/overview)
+[![Rayfin SDK](https://img.shields.io/badge/Rayfin-SDK-00C2AB?style=flat-square)](https://aka.ms/rayfin/docs)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+[&larr; Ray|Works](../README.md) &middot;
+[Features](#features) &middot;
+[Getting started](#getting-started) &middot;
+[Access](#access-model) &middot;
+[Reference](#reference)
+
 </div>
 
-Ray|Trip is a Microsoft Fabric application built with Rayfin, React, and
-TypeScript. Trip owners keep private daily notes and photos, generate a draft
-summary through an Azure Foundry model, review the result, and publish a unique
-link for other authenticated Fabric users.
+## Overview
+
+Ray|Trip is a private business-travel workspace built with
+[Microsoft Fabric Apps](https://learn.microsoft.com/en-us/fabric/apps/overview) and
+[Project Rayfin](https://aka.ms/rayfin/docs). Trip owners capture daily notes and photos,
+generate a report with an Azure Foundry model, revise the Markdown, and publish an authenticated
+read-only link.
 
 ## Features
 
-- **Owner-protected trips** with destination, purpose, dates, and lifecycle state.
-- **Daily field notes** organized into a chronological travel journal.
-- **Private SQL-backed photos** with optional captions and day associations.
-- **Azure Foundry briefs** generated as one editable Markdown document by a typed Rayfin function using Entra delegated access.
-- **Review and finalization** before a report becomes shareable.
-- **Authenticated share links** that are read-only for everyone except the trip owner.
+- **Owner-protected trips** - destination, purpose, dates, lifecycle, notes, and photos.
+- **Daily field journal** - chronological notes organized by trip day.
+- **Private photo capture** - optimized images stored in owner-protected Rayfin SQL rows.
+- **AI-assisted reports** - typed Rayfin Functions call an Azure Foundry model with delegated
+  Entra access.
+- **Markdown review** - edit and preview one focused report before finalizing it.
+- **Authenticated sharing** - finalized reports are read-only for other signed-in users.
+- **Responsive workflow** - mobile-friendly capture, editing, dialogs, and touch targets.
 
-## Trip workflow
+## Getting started
 
-Use **Notes & photos** to capture the trip, then switch to **Report** directly
-below the trip header. Generate a brief, review its Markdown preview, and use
-**Edit** to revise the single report field. Switching views keeps unsaved edits.
-Regeneration asks before replacing a draft; failed generation keeps the previous
-report. **Save & finalize** saves the current text and publishes it together.
+### Prerequisites
 
-New and revised reports allow **2,500 characters**, including Markdown markup
-(after trimming surrounding whitespace). Headings, lists, links, and tables
-render in both preview and shared reports. Raw HTML and remote images are not
-rendered.
-
-Existing two-field reports remain readable in full as one combined document.
-Their content, finalization state, and share links are preserved. Longer legacy
-drafts must be shortened before saving a revision; finalized legacy reports are
-not changed.
-
-Phone layouts use wrapping toolbars, full-width report editing, 44px touch
-targets, and viewport-aware dialogs. Headers retain the shared Ray|Works shell
-geometry and Ray|Trip coral/navy branding.
-
-## Photo storage
-
-Native Rayfin Storage is experimental and **not available on Microsoft Fabric**.
-Ray|Trip therefore stores optimized photos in the existing Rayfin SQL database;
-it does not require an Azure Blob Storage account.
-
-- Select a browser-decodable raster image up to **20 MiB**. JPEG, PNG, and WebP
-  are typical inputs. If the browser cannot decode a format such as HEIC,
-  convert it to JPEG or PNG first. SVG uploads are rejected.
-- The browser preserves aspect ratio/orientation and saves a JPEG copy up to
-  **1,600 pixels** on its longest side and **512 KiB**. Originals and source
-  metadata are not retained; transparency is flattened onto white.
-- Image bytes are Base64-encoded into bounded 4,000-character SQL chunk rows
-  (at most 175 per photo), protected by owner-only permissions. SQL/Base64 has
-  more storage and request overhead than blob storage; the optimization limit
-  and lazy downloads keep that overhead bounded.
-- The upload becomes visible only after a Rayfin function validates every part,
-  byte count, SHA-256 digest, and JPEG dimensions. Only completed photo captions
-  are included in report generation.
-- Interrupted uploads and deletions appear under **Photos needing attention**.
-  Discard an incomplete upload before selecting the image again. Failed cleanup
-  is reported explicitly and can be retried after reconnecting.
-- Legacy native-storage records are retained, but their image bytes cannot be
-  recovered through Fabric's unsupported native storage service. Re-upload the
-  source image and remove the old record when appropriate.
-
-Finalized report sharing does not grant access to the private photos or chunks.
-
-## Architecture
-
-```text
-React + Vite
-  ├── Fabric SSO through Rayfin Auth
-  ├── Typed CRUD through Rayfin Data
-  ├── Photo bytes through owner-protected Rayfin SQL chunks
-  ├── Upload validation and cleanup through Rayfin Functions
-  └── Typed report generation through Rayfin Functions
-        └── Azure Foundry model deployment (managed separately)
-```
-
-The main entities live under `rayfin/data/`:
-
-| Entity | Purpose |
-|---|---|
-| `Trip` | Assignment details and owner |
-| `TripDay` | One daily note within a trip |
-| `TripPhoto` | Photo metadata, upload state, and integrity manifest |
-| `TripPhotoChunk` | Ordered, owner-protected image content |
-| `TripReport` | Markdown content, retained legacy text, finalization state, and share ID |
-
-Row-level policies keep trips, notes, and photos owner-only. A finalized
-`TripReport` grants read access to authenticated users while retaining
-owner-only update and delete access.
-
-## Prerequisites
-
-- Node.js 20, 22, or 24
+- Node.js 20.19+, 22.12+, or 24.x
 - Git
-- Access to a Microsoft Fabric workspace with Fabric Apps enabled
+- A Microsoft Fabric workspace with Fabric Apps enabled
 - An Azure Foundry model deployment that accepts Entra authentication
 
-## Configure Azure Foundry
+Install dependencies and deploy the app:
 
-The Rayfin function reads the OpenAI-compatible `/openai/v1/` base URL from the
-`AZURE_FOUNDRY_ENDPOINT` deployment secret and the deployment name from
-`AZURE_AI_MODEL_DEPLOYMENT_NAME`. Report generation intentionally fails until
-both are present.
+```bash
+npm install
+npm run rayfin:up
+```
 
-After the first Fabric deployment, set it with:
+After the first deployment, configure the model endpoint and deployment name:
 
 ```bash
 npx -y @microsoft/rayfin-cli secret set AZURE_FOUNDRY_ENDPOINT
 npx -y @microsoft/rayfin-cli secret set AZURE_AI_MODEL_DEPLOYMENT_NAME
 ```
 
-The function declares an `AudienceType.AzureAI` connection and sends the
-delegated Entra token with the inference request. The calling users and Fabric
-item must have the required Azure AI access to the separately managed model.
+Use the OpenAI-compatible `/openai/v1/` base URL for `AZURE_FOUNDRY_ENDPOINT` and the deployed
+model name for `AZURE_AI_MODEL_DEPLOYMENT_NAME`.
 
-## Commands
-
-Install dependencies if needed:
+Then start the local frontend against the deployed services:
 
 ```bash
-npm install
+npm run dev
 ```
 
-Build and validate:
+> [!IMPORTANT]
+> Report generation intentionally fails until both deployment secrets exist and the calling user
+> and Fabric item have the required Azure AI permissions.
 
-```bash
-npm run build
-npm test
-npm run lint
-npm run test:responsive
-```
+## Access model
 
-Responsive tests use isolated fixtures with the real UI, not production auth or
-data. They require Google Chrome (configured in `playwright.config.ts`) and
-start a test-only Vite server automatically. Desktop/phone emulation does not
-replace a physical iOS/Android keyboard check.
+- Trips, notes, photo metadata, and photo chunks are owner-only.
+- Finalizing a report grants authenticated read access while keeping updates and deletion
+  owner-only.
+- Share links do not provide anonymous access; recipients must sign in. The current deployment
+  supports Fabric SSO and password authentication.
+- The report function uses the caller's delegated Entra token for the separately managed Azure
+  Foundry deployment.
 
-Deploy the app, SQL schema, static frontend, and functions:
+## Trip workflow
 
-```bash
-npm run rayfin:up
-```
+1. Create a trip with its destination, purpose, and dates.
+2. Capture daily notes and photos under **Notes & photos**.
+3. Open **Report** and generate a draft from the trip trail.
+4. Review or edit the Markdown without losing unsaved text when switching views.
+5. Choose **Save & finalize** to save and publish the report together.
+
+Generated reports aim for **about 100 words**, with a **120-word maximum**: one short summary,
+2–3 key-takeaway bullets, and optional next steps already mentioned in the notes. Sparse notes
+can produce fewer takeaways rather than invented content. Generation avoids em dashes, filler,
+and repeated points, and makes at most one corrective attempt before reporting a failure.
+
+Manual edits still allow **2,500 characters**, including Markdown syntax, without the
+generation-only word or punctuation restrictions. Headings, lists,
+links, and tables render in previews and shared reports; raw HTML and remote images do not.
+Existing legacy reports remain readable, but an over-limit legacy draft must be shortened before
+it can be saved again.
+
+<details>
+<summary><strong>Report replacement and compatibility behavior</strong></summary>
+
+Regeneration asks before replacing a draft, and a failed generation keeps the previous report.
+Existing two-field reports render as one combined document without changing their finalized state
+or share links. Finalized legacy reports remain untouched.
+
+</details>
+
+## Photo storage
 
 > [!NOTE]
-> The app requires Rayfin data and Fabric authentication, so the static
-> no-backend preview from the starter is no longer representative. Follow the
-> deployment and development workflow generated by Rayfin when you are ready
-> to run it.
+> Native Rayfin Storage is experimental and unavailable on Microsoft Fabric. Ray|Trip stores
+> optimized photos in the existing Rayfin SQL database and does not require Azure Blob Storage.
 
-## Project structure
+- Browser-decodable raster images can be up to **20 MiB**; SVG is rejected and formats such as
+  HEIC must be converted first.
+- The browser saves an oriented JPEG up to **1,600 pixels** and **512 KiB**.
+- Base64 data is split into bounded SQL chunks protected by owner-only permissions.
+- A Rayfin function validates chunk order, byte count, SHA-256 digest, and JPEG dimensions before
+  publishing the upload.
+- Finalized report access never grants access to private photos or chunks.
+
+<details>
+<summary><strong>Photo recovery and storage trade-offs</strong></summary>
+
+SQL/Base64 storage has more overhead than blob storage, so images are optimized and downloaded
+lazily. Interrupted uploads and failed deletions appear under **Photos needing attention** and can
+be retried or discarded.
+
+Legacy native-storage records are retained, but Fabric cannot recover their image bytes through
+the unsupported storage service. Re-upload the original image and remove the old record when
+appropriate.
+
+</details>
+
+## Reference
+
+### Architecture
 
 ```text
-rayfin/
-  data/                  # Decorated data entities and schema registration
-  functions/             # Photo validation/cleanup and AzureAI report generation
-  rayfin.yml              # Auth, SQL data, functions, and hosting services
-src/
-  components/            # Shared application UI
-  pages/                 # Dashboard, trip workspace, shared report
-  services/              # Typed Rayfin client and trip operations
-  hooks/                 # Fabric authentication context
+React + Vite
+  ├── Fabric SSO through Rayfin Auth
+  ├── Typed CRUD through Rayfin Data
+  ├── Photo content in owner-protected SQL chunks
+  ├── Upload validation and cleanup through Rayfin Functions
+  └── Report generation through Rayfin Functions
+        └── Azure Foundry model deployment
 ```
+
+| Entity | Purpose |
+| --- | --- |
+| `Trip` | Assignment details and owner |
+| `TripDay` | Daily notes |
+| `TripPhoto` | Photo metadata, state, and integrity manifest |
+| `TripPhotoChunk` | Ordered image content |
+| `TripReport` | Markdown, legacy content, finalization, and share ID |
+
+### Commands
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Deploy backend changes and start Vite |
+| `npm run build` | Type-check and build for production |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run Vitest |
+| `npm run test:responsive` | Run Playwright responsive tests in Chrome |
+| `npm run rayfin:up` | Deploy auth, SQL data, functions, and hosting |
+
+Responsive tests use isolated fixtures and start a test-only Vite server. Browser emulation does
+not replace checking a physical mobile keyboard.
+
+<details>
+<summary><strong>Project layout</strong></summary>
+
+```text
+rayfin/data/          Trip, day, photo, chunk, and report entities
+rayfin/functions/     Photo validation/cleanup and Azure AI report generation
+rayfin/rayfin.yml     Auth, SQL data, functions, and hosting
+src/components/       Shared application and report UI
+src/pages/            Dashboard, trip workspace, and shared report
+src/services/         Typed Rayfin clients and trip operations
+src/hooks/            Fabric authentication context
+```
+
+</details>
+
+## More resources
+
+- [Ray|Works design system](../DESIGN.md)
+- [Ray|Works logo guide](../docs/logo.md)
+- [Fabric Apps documentation](https://learn.microsoft.com/fabric/apps/)
+- [Rayfin SDK documentation](https://aka.ms/rayfin/docs)
