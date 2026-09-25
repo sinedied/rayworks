@@ -89,14 +89,6 @@ the line between analytics and software to create entirely new experiences on en
   </tbody>
 </table>
 
-## Built with
-
-- **[Microsoft Fabric Apps](https://learn.microsoft.com/en-us/fabric/apps/overview)** and
-  **[Project Rayfin](https://aka.ms/rayfin/docs)** for authentication, data, storage, functions,
-  and hosting.
-- **React 19, TypeScript, and Vite** for the application frontends.
-- **App-specific architecture** so each product can be developed and deployed independently.
-
 ## Getting started
 
 Use a supported Node.js LTS release and a Microsoft Fabric workspace with Fabric Apps enabled.
@@ -110,6 +102,14 @@ npm run dev
 
 Read that application's README before deploying. It documents its prerequisites, Rayfin services,
 commands, security model, and any additional configuration.
+
+## Built with
+
+- **[Microsoft Fabric Apps](https://learn.microsoft.com/en-us/fabric/apps/overview)** and
+  **[Project Rayfin](https://aka.ms/rayfin/docs)** for authentication, data, storage, functions,
+  and hosting.
+- **React 19, TypeScript, and Vite** for the application frontends.
+- **App-specific architecture** so each product can be developed and deployed independently.
 
 ## More resources
 
