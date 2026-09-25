@@ -35,6 +35,9 @@ export interface IAuthService {
    * any UI. Returns `null` when not running inside a Fabric iframe.
    */
   initEmbeddedAuth(): Promise<AuthUser | null>;
+
+  /** Subscribe to login, refresh, expiry, cross-tab sign-out, and logout. */
+  onSessionChange(callback: (user: AuthUser | null) => void): () => void;
 }
 
 /** Map the raw session user shape to the trimmed view used in the UI. */

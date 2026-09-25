@@ -19,6 +19,7 @@
     "test": "vitest run",
     "rayfin:up": "rayfin up",
     "pack:add": "node scripts/scaffold.mjs",
+    "pregallery": "rayfin env --framework vite",
     "gallery": "vite"
   },
   "dependencies": {

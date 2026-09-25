@@ -74,6 +74,18 @@ only when you're on the analytics path.
 - Follow the root `DESIGN.md` for editor chrome; retain purple accents, dark mode, and slide
   typography. The active stylesheet is `src/global.css`, not the template `src/main.css`.
 
+- **Ray|Deck is private.** Fabric SSO is wired at the app root and every surface
+  (editor, presenter, slideshow, and audience popup) requires authentication.
+  Static hosting must remain `assetAccess: protected`, and password auth must
+  remain disabled. Do not add a public route or anonymous deck access without
+  explicit product/security approval.
+- Audience windows restore the same-origin Fabric session before joining the
+  presenter protocol. Never mount `AudienceView`, `App`, deck drafts, or view
+  preferences before the auth guard succeeds.
+- Browser-local drafts and view preferences intentionally survive sign-out.
+  They are private to the browser profile, not to an individual Fabric account;
+  preserve this behavior unless the product explicitly changes the policy.
+
 - **Make the requested code changes only**, and keep the project building —
   prefer small, correct increments.
 - **Deploy to Fabric with `npm run rayfin:up`** (i.e. `rayfin up`) when you want
@@ -86,11 +98,8 @@ only when you're on the analytics path.
   one.
 - **Installing npm modules is expected** — install what a pack needs; don't
   pre-install everything.
-- **Auth follows data.** Rayfin data is always accessed as an authenticated user
-  (no anonymous access on Fabric), so **wire authentication whenever the app uses
-  or connects to data** — `data-modeling`, per-user rows, row-level security. A
-  **static page over public data** needs no auth. (Analytics reads its Power BI
-  model through the Fabric embed proxy, which Fabric authenticates.)
+- **Auth is always required**, even though Rayfin data is disabled. If data is
+  added later, keep auth wired and add explicit entity permissions.
 
 When you finish a capability, build and deploy (`npm run rayfin:up`) to see it on
 Fabric.

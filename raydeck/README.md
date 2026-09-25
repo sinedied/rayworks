@@ -5,6 +5,34 @@ into a concise, editable 3–10 slide narrative. The included five-slide sample
 runs with bundled data, supports inline text editing and browser-local drafts,
 and includes a distraction-free presentation mode.
 
+## Private Fabric access
+
+Ray|Deck is private at runtime: the editor, presenter console, slideshow, and
+separate audience window all require Microsoft Fabric Entra SSO. The deployment
+also declares Rayfin's protected static-hosting posture
+(`assetAccess: protected`, sent to the workload as `anonymousAccess: false`).
+
+- Inside the Fabric portal, Ray|Deck attempts silent embedded SSO.
+- In a standalone hosted window, **Sign in with Microsoft** opens the Fabric
+  broker and restores the requested editor or audience role afterward.
+- Audience windows are same-browser private companion windows, not public share
+  links. They restore the Fabric session before joining presenter synchronization.
+- Local development/gallery uses the active deployed Rayfin environment and
+  still requires Fabric sign-in; there is no password or mock-auth bypass.
+
+Static-host enforcement is controlled by the Fabric tenant/host. If a direct
+anonymous request can still retrieve the static bundle despite the protected
+posture, do not bake confidential customer deck content into
+`src/deck/sampleDeck.ts`; treat that as a hosting-policy issue to resolve before
+using bundled content as the private data boundary. Browser-edited drafts and
+speaker notes remain local to the browser and are never uploaded with the static
+bundle.
+
+Signing out removes the Fabric session but intentionally retains browser-local
+deck drafts and presenter preferences. On a shared browser profile, the next
+authenticated Ray|Deck user can see that local data. Clear site data or reset the
+deck before signing out when device-local retention is not appropriate.
+
 ## Edit, save, and reintegrate
 
 Edit the eyebrow, title, or body directly on a slide. The thumbnail, editor, and
@@ -113,13 +141,14 @@ Ray|Works brand assets and must remain exact copies.
 Rayfin packages and the analytics pack's Rayfin declarations use the **1.35.1** stable
 baseline, with resolved versions recorded in `package-lock.json`. The upgrade preserves
 the offline sample, existing browser-local drafts, and presenter/audience behavior.
-It does not enable app sign-in or Rayfin data, and the empty Fabric model profile remains
-unchanged. Client factories use their configured absolute backend URL directly; the
+Rayfin data remains disabled, while Fabric SSO and protected static hosting secure every
+surface. The empty Fabric model profile remains unchanged. Client factories use their
+configured absolute backend URL directly; the
 deprecated no-op `useProxy` option is omitted.
 
-Static hosting explicitly uses `assetAccess: public` to preserve the existing direct-link
-and audience-window access. CLI 1.35.1 otherwise defaults an unspecified value to protected.
-This does not enable anonymous data access; Rayfin data remains disabled.
+Static hosting explicitly uses `assetAccess: protected`; password auth is disabled.
+Do not revert either setting to support direct links—the authenticated audience popup
+restores the same-origin Fabric session.
 
 Use a supported Node LTS version (20, 22, or 24). After upgrading the CLI, preview and
 refresh its managed guidance with `npx rayfin init ai-files install --dry-run --json`
@@ -131,7 +160,7 @@ checking, so it is not a replacement for the checked build.
 
 | Command | Description |
 | --- | --- |
-| `npm run gallery` | Open the sample deck in a local Vite preview |
+| `npm run gallery` | Generate active deployment env, then open the private app locally |
 | `npm run build` | Type-check and create the production build |
 | `npm run preview -- --spec <file>` | Render one Graphein spec to PNG and diagnostics |
 | `npm test` | Run the project test suite |

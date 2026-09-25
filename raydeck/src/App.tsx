@@ -48,7 +48,17 @@ function Thumbnail({
   );
 }
 
-function App() {
+function App({
+  identity,
+  onSignOut,
+  signingOut = false,
+  authError = null,
+}: {
+  identity?: string;
+  onSignOut?: () => Promise<void>;
+  signingOut?: boolean;
+  authError?: string | null;
+}) {
   const theme = useAppTheme();
   const { slides, saveState, updateSlide, resetDeck } = useDeckDraft();
   const view = useViewPreferences();
@@ -124,7 +134,7 @@ function App() {
           </div>
           <div className="header-actions">
             <SaveMenu saveState={saveState} changes={changes} />
-            {!session.active && <button className="icon-button" onClick={() => { resetDeck(); setActiveIndex(0); }}
+            {!session.active && <button className="icon-button reset-deck-button" onClick={() => { resetDeck(); setActiveIndex(0); }}
               aria-label="Reset sample deck" title="Reset sample deck" type="button">
               <Icon name="reset" />
             </button>}
@@ -132,6 +142,19 @@ function App() {
               <Icon name={theme.isDark ? 'sun' : 'moon'} />
             </button>
             {!session.active && <PresentMenu trigger={presentButton} onPresent={() => void enter()} onPresenter={session.open} />}
+            {identity && onSignOut && <div className="app-account">
+              <span className="app-identity" title={identity}>{identity}</span>
+              <button
+                aria-label="Sign out"
+                className="sign-out-button"
+                disabled={signingOut}
+                onClick={() => void onSignOut().catch(() => {})}
+                type="button"
+              >
+                <Icon name="logout" size={16} />
+                <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+              </button>
+            </div>}
           </div>
         </header>}
 
@@ -153,6 +176,7 @@ function App() {
             {!presenting && (
               <div className="stage-notices">
                 {session.error && <p className="notice notice-error" role="alert">{session.error}</p>}
+                {authError && <p className="notice notice-error" role="alert">{authError}</p>}
                 {view.notice && <p className="notice notice-warning" role="status">{view.notice}</p>}
                 {saveState.status === 'error' && <p className="notice notice-error" role="alert">{saveState.message}</p>}
                 {overflowing.length > 0 && (

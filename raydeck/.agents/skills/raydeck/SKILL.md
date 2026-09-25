@@ -22,6 +22,21 @@ data, while Fabric-connected visuals can replace individual sample charts.
 5. Edit visual tokens in `src/global.css`.
 6. Build with `npm run build`. Do not start or deploy unless explicitly asked.
 
+## Private access invariant
+
+- Ray|Deck is Fabric-SSO-only. Every editor, presenter, slideshow, and audience
+  surface is gated by `SecureRoot` before draft or presentation code mounts.
+- Keep `services.staticHosting.assetAccess: protected`,
+  `services.auth.fabric.enabled: true`, and password auth disabled.
+- The separate audience window is a private same-origin companion window, not a
+  public share link. It restores auth independently before starting the presenter
+  handshake.
+- Browser-local drafts and view preferences survive sign-out by product choice.
+  Do not describe them as account-isolated storage.
+- When changing startup/auth code, preserve the early
+  `bridgeFabricCallback()` path and test embedded, standalone, audience-hash,
+  session-expiry, and sign-out behavior.
+
 ## Branding workflow
 
 - Product branding uses the exact files in `public/raydeck.svg`,

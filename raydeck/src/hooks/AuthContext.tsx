@@ -18,6 +18,8 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
   fabricAuthEnabled: boolean;
+  signingIn: boolean;
+  signingOut: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -31,29 +33,45 @@ export function AuthProvider({ children, authService }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    authService
-      .initEmbeddedAuth()
+    const unsubscribe = authService.onSessionChange((current) => {
+      if (cancelled) return;
+      setUser(current);
+      setError(null);
+      setLoading(false);
+    });
+
+    void authService.initEmbeddedAuth()
       .then((embedded) => embedded ?? authService.getCurrentUser())
       .then((current) => {
-        if (!cancelled && current) setUser(current);
+        if (!cancelled) setUser(current);
       })
-      .catch(() => {
-        if (!cancelled) setUser(null);
+      .catch((reason) => {
+        if (!cancelled) {
+          setUser(null);
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'Could not restore the Fabric session.'
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, [authService]);
 
   const signIn = useCallback(async () => {
     setError(null);
-    setLoading(true);
+    setSigningIn(true);
     try {
       const loggedInUser = await authService.signIn();
       setUser(loggedInUser);
@@ -63,17 +81,23 @@ export function AuthProvider({ children, authService }: AuthProviderProps) {
       setError(message);
       throw err;
     } finally {
-      setLoading(false);
+      setSigningIn(false);
     }
   }, [authService]);
 
   const signOut = useCallback(async () => {
+    setError(null);
+    setSigningOut(true);
     try {
       await authService.signOut();
       setUser(null);
-      setError(null);
     } catch (err) {
       console.error('Logout error:', err);
+      const message = err instanceof Error ? err.message : 'Sign out failed';
+      setError(message);
+      throw err;
+    } finally {
+      setSigningOut(false);
     }
   }, [authService]);
 
@@ -86,8 +110,10 @@ export function AuthProvider({ children, authService }: AuthProviderProps) {
       signOut,
       isAuthenticated: !!user,
       fabricAuthEnabled: authService.fabricAuthEnabled,
+      signingIn,
+      signingOut,
     }),
-    [user, loading, error, signIn, signOut, authService]
+    [user, loading, error, signIn, signOut, signingIn, signingOut, authService]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

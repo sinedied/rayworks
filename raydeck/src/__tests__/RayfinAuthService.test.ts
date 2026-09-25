@@ -49,4 +49,29 @@ describe('Fabric auth wrapper compatibility', () => {
     await expect(service.signOut()).rejects.toBe(failure);
     expect(signOut).toHaveBeenCalledOnce();
   });
+
+  it('maps SDK session changes to app users and sign-out', () => {
+    const unsubscribe = vi.fn();
+    let emit: Parameters<typeof client.auth.onSessionChange>[0] = () => {};
+    const onSessionChange = vi.spyOn(client.auth, 'onSessionChange')
+      .mockImplementation((callback) => {
+        emit = callback;
+        return unsubscribe;
+      });
+    const listener = vi.fn();
+    expect(service.onSessionChange(listener)).toBe(unsubscribe);
+    emit({
+      isAuthenticated: true,
+      isAnonymous: false,
+      user: { id: 'u1', email: 'alex@contoso.com' },
+    });
+    emit(null);
+    expect(onSessionChange).toHaveBeenCalledOnce();
+    expect(listener).toHaveBeenNthCalledWith(1, {
+      id: 'u1',
+      email: 'alex@contoso.com',
+      name: 'alex',
+    });
+    expect(listener).toHaveBeenNthCalledWith(2, null);
+  });
 });

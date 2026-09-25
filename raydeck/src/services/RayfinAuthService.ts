@@ -56,4 +56,14 @@ export class RayfinAuthService implements IAuthService {
     if (!session?.isAuthenticated || !session.user) return null;
     return toAuthUser(session.user);
   }
+
+  onSessionChange(callback: (user: AuthUser | null) => void): () => void {
+    return this.client.auth.onSessionChange((session) => {
+      callback(
+        session?.isAuthenticated && session.user
+          ? toAuthUser(session.user)
+          : null
+      );
+    });
+  }
 }

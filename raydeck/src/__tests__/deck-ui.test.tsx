@@ -31,8 +31,8 @@ async function click(button: HTMLButtonElement) {
   await act(async () => button.click());
 }
 
-async function mount() {
-  await act(async () => root.render(<App />));
+async function mount(element = <App />) {
+  await act(async () => root.render(element));
 }
 
 async function startPresentation() {
@@ -89,6 +89,30 @@ afterEach(async () => {
 });
 
 describe('local save and prompt menu', () => {
+  it('shows the authenticated identity and surfaces sign-out state and failures', async () => {
+    const signOut = vi.fn().mockRejectedValue(new Error('Sign out failed'));
+    await mount(
+      <App
+        authError="Sign out failed"
+        identity="alex@contoso.com"
+        onSignOut={signOut}
+      />
+    );
+    expect(container.querySelector('.app-identity')?.textContent).toBe('alex@contoso.com');
+    await click(getButton('Sign out'));
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('Sign out failed');
+    await mount(
+      <App
+        identity="alex@contoso.com"
+        onSignOut={vi.fn().mockResolvedValue(undefined)}
+        signingOut
+      />
+    );
+    expect(getButton('Sign out').disabled).toBe(true);
+    expect(getButton('Sign out').textContent).toContain('Signing out');
+  });
+
   it('saves edits, shows the success state, and disables export for unchanged text', async () => {
     await mount();
     const trigger = getButton('Saved locally. Open save menu');
