@@ -2,9 +2,9 @@
      role="img" aria-labelledby="raystick-favicon-title" aria-describedby="raystick-favicon-desc"
      focusable="false">
   <title id="raystick-favicon-title">Ray|Stick favicon</title>
-  <desc id="raystick-favicon-desc">A bold near-white S beside a small near-white peeled sticker on a dark-gold rounded tile. The sticker's lifted lower-right corner is cut out in the tile color for strong contrast at browser-tab size. The outer canvas is transparent.</desc>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="#854D0E"/>
-  <path fill="#F8FAFC" d="
+  <desc id="raystick-favicon-desc">A bold navy S beside a round navy sticker on a yellow rounded tile. The sticker has a diagonally clipped lower-right edge and an inward-folded navy flap distinguished by a broad curved near-white seam, simplified for browser-tab size. The outer canvas is transparent.</desc>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#FFC629"/>
+  <path fill="#0B2A5B" d="
     M 37 17 Q 38 18 37 19
     L 32.6 23.6 Q 31.8 24.4 30.9 23.7
     C 27.9 21.3 25 20 21.9 20
@@ -21,11 +21,15 @@
     C 12.2 34.5 7.8 31.1 7.8 24.3
     C 7.8 16.9 13.9 12.2 22.9 12.2
     C 28.5 12.2 33.4 13.9 37 17 Z"/>
+  <path fill="#0B2A5B" d="
+    M 50 10
+    C 55.5 10 60 14.5 60 20
+    L 50 30
+    C 44.5 30 40 25.5 40 20
+    C 40 14.5 44.5 10 50 10 Z"/>
   <path fill="#F8FAFC" d="
-    M 44 10 H 55 Q 58 10 58 13 V 20
-    C 58 26.2 54.2 30 48 30 H 44
-    Q 41 30 41 27 V 13 Q 41 10 44 10 Z"/>
-  <path fill="#854D0E" d="
-    M 49 27 V 22 Q 49 19 52 19 H 56
-    C 55.5 23 53 26 49 27 Z"/>
+    M 60 20
+    C 55 15.4 45.4 25 50 30
+    L 52.5 27.5
+    C 50.4 22.1 52.1 20.4 57.5 22.5 Z"/>
 </svg>

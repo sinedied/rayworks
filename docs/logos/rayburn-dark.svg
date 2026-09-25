@@ -3,7 +3,7 @@
      role="img" aria-labelledby="rayburn-dark-title" aria-describedby="rayburn-dark-desc"
      focusable="false">
   <title id="rayburn-dark-title">Ray|Burn - Dark-background variant</title>
-  <desc id="rayburn-dark-desc">The Ray|Burn wordmark for dark backgrounds: near-white Ray lettering with an orange vertical separator and orange Burn lettering. A small solid near-white flame sits inside the larger lower counter of the uppercase B. The background and remaining counter space are transparent.</desc>
+  <desc id="rayburn-dark-desc">The Ray|Burn wordmark for dark backgrounds: near-white Ray lettering with an orange vertical separator and orange Burn lettering. A tall asymmetric near-white flame sits in the open space inside the lowercase u, separated from both stems and the curved bowl. The uppercase B counters, background, and space around the flame are transparent.</desc>
 
   <g fill="#F8FAFC" fill-rule="evenodd">
     <path d="
@@ -101,11 +101,11 @@
   </g>
 
   <path fill="#F8FAFC" d="
-    M 511 381
-    C 514 391 525 393 525 401
-    C 525 407 519 411 511 411
-    C 503 411 497 407 497 400
-    C 497 394 501 390 505 387
-    C 504 393 505 396 508 398
-    C 511 393 513 387 511 381 Z"/>
+    M 626 344
+    C 630 361 640 372 640 385
+    C 640 396 633 404 624 404
+    C 615 404 609 397 609 387
+    C 609 377 614 367 619 361
+    C 617 373 619 379 623 382
+    C 629 370 628 355 626 344 Z"/>
 </svg>

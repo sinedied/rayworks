@@ -3,7 +3,7 @@
      role="img" aria-labelledby="raystick-dark-title" aria-describedby="raystick-dark-desc"
      focusable="false">
   <title id="raystick-dark-title">Ray|Stick - Dark-background variant</title>
-  <desc id="raystick-dark-desc">The Ray|Stick wordmark for dark backgrounds: near-white Ray lettering with a yellow vertical separator and yellow Stick lettering. A small near-white rounded sticker with a lifted yellow lower-right corner replaces the lowercase i dot. The background and letter counters are transparent.</desc>
+  <desc id="raystick-dark-desc">The Ray|Stick wordmark for dark backgrounds: near-white Ray lettering with a yellow vertical separator and yellow Stick lettering. A round near-white sticker replaces the lowercase i dot, with a diagonally clipped lower-right edge and a large inward-folded flap outlined by a broad curved yellow seam. The background and letter counters are transparent.</desc>
 
   <g fill="#F8FAFC" fill-rule="evenodd">
     <path d="
@@ -116,10 +116,14 @@
   </g>
 
   <path fill="#F8FAFC" d="
-    M 635 289 H 665 Q 672 289 672 296 V 312
-    C 672 325 664 333 651 333 H 635
-    Q 628 333 628 326 V 296 Q 628 289 635 289 Z"/>
+    M 650 287
+    C 663.3 287 674 297.7 674 311
+    L 650 335
+    C 636.7 335 626 324.3 626 311
+    C 626 297.7 636.7 287 650 287 Z"/>
   <path fill="#FFC629" d="
-    M 652 328 V 319 Q 652 313 658 313 H 669
-    C 667 321 661 326 652 328 Z"/>
+    M 674 311
+    C 662 300 639 323 650 335
+    L 655 330
+    C 650 317 656 311 669 316 Z"/>
 </svg>

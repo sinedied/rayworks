@@ -52,15 +52,16 @@ shades and interaction states.
 | Ray\|Live | Broadcast beacon as the `i` dot |
 | Ray\|Trip | Location pin as the `i` dot |
 | Ray\|Deck | Slide-content lines inside the `D` |
-| Ray\|Stick | Peeled sticker with a lifted corner replacing the `i` dot |
-| Ray\|Burn | Flame inside the lower `B` counter |
+| Ray\|Stick | Round sticker with a large peeled-back corner replacing the `i` dot |
+| Ray\|Burn | Enlarged flame inside the open space of the lowercase `u` |
 
 ## Favicons
 
 Canonical favicons live in `docs/favicons/`. Full wordmarks are not legible at browser-tab size, so
-each favicon uses a product-family rounded tile, a near-white product initial, and a simplified
-motif. Stick and Burn darken only their tiles to maintain initial contrast; their motifs use
-tile-colored cutouts instead of navy on dark backgrounds.
+each favicon uses a product-color rounded tile, a contrasting product initial, and a simplified
+motif. Works, Forms, Live, Trip, and Deck retain near-white initials. Stick and Burn use navy
+`#0B2A5B` initials on their original yellow/orange tiles, with near-white `#F8FAFC` peel/flame
+details against the navy shapes.
 
 | Product | Initial | Tile | Motif |
 | --- | --- | --- | --- |
@@ -69,7 +70,9 @@ tile-colored cutouts instead of navy on dark backgrounds.
 | Ray\|Live | `L` | Teal | Broadcast beacon |
 | Ray\|Trip | `T` | Coral | Location pin |
 | Ray\|Deck | `D` | Purple | Slide-content lines |
-| Ray\|Stick | `S` | Dark gold `#854D0E` | Peeled sticker |
-| Ray\|Burn | `B` | Burnt orange `#9A3412` | Flame-shaped counter |
+| Ray\|Stick | `S` | Yellow `#FFC629` | Round peeled sticker |
+| Ray\|Burn | `B` | Orange `#F97316` | Flame-shaped counter |
 
+Burn's standalone favicon retains the `B` with a near-white flame in its lower counter; only the
+full wordmark places the flame in `u`.
 App-local `favicon.svg` files must be exact copies of these canonical assets.
