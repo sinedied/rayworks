@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import type { Trip } from '../../rayfin/data/Trip';
 import type { TripDay } from '../../rayfin/data/TripDay';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
-import type { TripReport } from '../../rayfin/data/TripReport';
+import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 import { AppHeader } from '@/components/AppHeader';
 import { Modal } from '@/components/Modal';
 import { ReportWorkspace } from '@/components/ReportWorkspace';

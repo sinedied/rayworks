@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useBeforeUnload, useBlocker } from 'react-router-dom';
-import type { TripReport } from '../../rayfin/data/TripReport';
+import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 import { formatDate } from '@/lib/dates';
 import { reportDocument, REPORT_MAX_LENGTH, validateReportContent } from '@/lib/report';
-import { finalizeTripReport, generateTripReport, getTripReport, saveTripReport } from '@/services/trips';
+import { finalizeTripReport, generateTripReport, getTripReport, reopenTripReport, saveTripReport } from '@/services/trips';
 import { Modal } from './Modal';
 import { ReportMarkdown } from './ReportMarkdown';
+
+type ReportAction = 'generate' | 'save' | 'finalize' | 'reopen';
 
 export function ReportWorkspace({ tripId, initialReport }: {
   tripId: string;
@@ -15,10 +17,12 @@ export function ReportWorkspace({ tripId, initialReport }: {
   const [saved, setSaved] = useState(initialReport ? reportDocument(initialReport) : '');
   const [content, setContent] = useState(saved);
   const [mode, setMode] = useState<'edit' | 'preview'>('preview');
-  const [pending, setPending] = useState<'generate' | 'save' | 'finalize' | null>(null);
+  const [pending, setPending] = useState<ReportAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
+  const keepFinalizedButton = useRef<HTMLButtonElement>(null);
   const alive = useRef(true);
   const inFlight = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -30,7 +34,7 @@ export function ReportWorkspace({ tripId, initialReport }: {
   });
   const invalid = !content.trim() || content.trim().length > REPORT_MAX_LENGTH;
 
-  async function perform(action: 'generate' | 'save' | 'finalize') {
+  async function perform(action: ReportAction) {
     if (inFlight.current) return;
     inFlight.current = true;
     setPending(action);
@@ -48,6 +52,14 @@ export function ReportWorkspace({ tripId, initialReport }: {
         setContent(text);
         setMode('preview');
         setNotice('Draft generated and saved. Review it before finalizing.');
+      } else if (action === 'reopen') {
+        if (!report) throw new Error('Report not found. Reload the trip and try again.');
+        await reopenTripReport(report.id);
+        if (!alive.current) return;
+        setReport({ ...report, status: 'draft', finalizedAt: null });
+        setMode('edit');
+        setConfirmReopen(false);
+        setNotice('Report reopened for editing. Sharing is paused until you finalize it again.');
       } else {
         if (!report) throw new Error('Generate a report first.');
         const text = validateReportContent(content);
@@ -91,9 +103,9 @@ export function ReportWorkspace({ tripId, initialReport }: {
           </button>
         )}
       </header>
-      {error && <div className="inline-error" role="alert">{error}</div>}
+      {error && !confirmReopen && <div className="inline-error" role="alert">{error}</div>}
       <div className="report-feedback" role="status">
-        {pending === 'generate' ? 'Generating your brief. Your previous draft is kept until the new one is saved.' : pending === 'save' ? 'Saving changes…' : pending === 'finalize' ? 'Saving and finalizing…' : notice}
+        {pending === 'generate' ? 'Generating your brief. Your previous draft is kept until the new one is saved.' : pending === 'save' ? 'Saving changes…' : pending === 'finalize' ? 'Saving and finalizing…' : pending === 'reopen' ? 'Reopening report…' : notice}
       </div>
       {!report ? (
         <div className="report-empty">
@@ -125,6 +137,7 @@ export function ReportWorkspace({ tripId, initialReport }: {
               <textarea
                 aria-describedby="markdown-help"
                 rows={16}
+                autoFocus
                 value={content}
                 disabled={!!pending}
                 onChange={event => setContent(event.target.value)}
@@ -135,8 +148,18 @@ export function ReportWorkspace({ tripId, initialReport }: {
           <footer className="report-actions">
             {finalized ? (
               <>
-                <button className="button button-primary" onClick={() => void copyLink()}>Copy share link</button>
-                <Link className="button button-secondary" to={`/reports/${report.shareId}`}>Open shared report</Link>
+                <button className="button button-primary" disabled={!!pending} onClick={() => void copyLink()}>Copy share link</button>
+                <Link
+                  className="button button-secondary"
+                  to={`/reports/${report.shareId}`}
+                  aria-disabled={!!pending}
+                  onClick={event => { if (pending) event.preventDefault(); }}
+                >Open shared report</Link>
+                <button
+                  className="button button-secondary"
+                  disabled={!!pending}
+                  onClick={() => { setError(null); setConfirmReopen(true); }}
+                >Reopen for editing</button>
               </>
             ) : (
               <>
@@ -146,6 +169,30 @@ export function ReportWorkspace({ tripId, initialReport }: {
             )}
           </footer>
         </>
+      )}
+      {confirmReopen && (
+        <Modal
+          title="Reopen this report?"
+          initialFocusRef={keepFinalizedButton}
+          closeDisabled={pending === 'reopen'}
+          onClose={() => { setConfirmReopen(false); setError(null); }}
+        >
+          <p>This will return the report to draft. The shared link will be unavailable until you finalize it again. Your content and share URL will be kept.</p>
+          {error && <div className="inline-error" role="alert">{error}</div>}
+          <div className="button-row">
+            <button
+              className="button button-secondary"
+              disabled={!!pending}
+              ref={keepFinalizedButton}
+              onClick={() => { setConfirmReopen(false); setError(null); }}
+            >Keep finalized</button>
+            <button
+              className="button button-primary"
+              disabled={!!pending}
+              onClick={() => void perform('reopen')}
+            >{pending === 'reopen' ? 'Reopening…' : 'Reopen for editing'}</button>
+          </div>
+        </Modal>
       )}
       {confirmRegenerate && (
         <Modal title="Replace this draft?" onClose={() => setConfirmRegenerate(false)}>

@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { ReportWorkspace } from '../src/components/ReportWorkspace';
 import { ReportMarkdown } from '../src/components/ReportMarkdown';
-import type { TripReport } from '../rayfin/data/TripReport';
+import type { TripReportRecord as TripReport } from '../rayfin/data/TripReport';
 
 const api = vi.hoisted(() => ({
   saveTripReport: vi.fn(), finalizeTripReport: vi.fn(),
   generateTripReport: vi.fn(), getTripReport: vi.fn(),
+  reopenTripReport: vi.fn(),
 }));
 vi.mock('@/services/trips', () => api);
 const report: TripReport = {
@@ -78,5 +79,92 @@ describe('report editing workflow', () => {
     const bullet = screen.getByRole('listitem');
     expect(bullet.textContent).toBe('Access approval is pending, so the trial cannot start yet.');
     expect(bullet.querySelector('strong')?.textContent).toBe('Access approval is pending');
+  });
+
+  describe('reopening a finalized report', () => {
+    function openConfirmation(initial: TripReport = { ...report, status: 'finalized', finalizedAt: new Date('2026-09-25') }) {
+      mount(initial);
+      expect(screen.queryByRole('textbox')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Reopen for editing' }));
+      return screen.getByRole('dialog', { name: 'Reopen this report?' });
+    }
+
+    it.each(['Keep finalized', 'Close dialog'])('does not update the report when choosing %s', label => {
+      const dialog = openConfirmation();
+      expect(within(dialog).getByText(/shared link will be unavailable/)).toBeTruthy();
+      expect(api.reopenTripReport).not.toHaveBeenCalled();
+      fireEvent.click(within(dialog).getByRole('button', { name: label }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.queryByRole('textbox')).toBeNull();
+      expect(api.reopenTripReport).not.toHaveBeenCalled();
+      expect(screen.getByRole('link', { name: 'Open shared report' }).getAttribute('href')).toBe('/reports/shared');
+    });
+
+    it('opens the unchanged Markdown in Edit and can finalize the same link again', async () => {
+      const dialog = openConfirmation();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Reopen for editing' }));
+      await waitFor(() => expect(api.reopenTripReport).toHaveBeenCalledExactlyOnceWith('report-1'));
+      const editor = await screen.findByRole('textbox');
+      expect((editor as HTMLTextAreaElement).value).toBe(report.content);
+      expect(screen.getByRole('status').textContent).toContain('Sharing is paused');
+      expect(screen.queryByRole('link', { name: 'Open shared report' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true);
+      expect(api.generateTripReport).not.toHaveBeenCalled();
+      expect(api.saveTripReport).not.toHaveBeenCalled();
+
+      fireEvent.change(editor, { target: { value: 'Revised report.' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save & finalize' }));
+      await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', 'Revised report.'));
+      expect((await screen.findByRole('link', { name: 'Open shared report' })).getAttribute('href')).toBe('/reports/shared');
+      expect(screen.queryByRole('textbox')).toBeNull();
+    });
+
+    it('keeps the report finalized and shows failures inside the confirmation', async () => {
+      api.reopenTripReport.mockRejectedValueOnce(new Error('Could not unpublish'));
+      const dialog = openConfirmation();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Reopen for editing' }));
+      expect(await within(dialog).findByRole('alert')).toHaveProperty('textContent', 'Could not unpublish');
+      expect(screen.queryByRole('textbox')).toBeNull();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Keep finalized' }));
+      expect(screen.getByRole('link', { name: 'Open shared report' })).toBeTruthy();
+    });
+
+    it('waits for persisted success, blocks duplicate submissions and prevents closing while pending', async () => {
+      let finish!: () => void;
+      api.reopenTripReport.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+      const dialog = openConfirmation();
+      const confirm = within(dialog).getByRole('button', { name: 'Reopen for editing' });
+      fireEvent.click(confirm);
+      fireEvent.click(confirm);
+      expect(api.reopenTripReport).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('textbox')).toBeNull();
+      expect(within(dialog).getByRole('button', { name: 'Close dialog' })).toHaveProperty('disabled', true);
+      expect(within(dialog).getByRole('button', { name: 'Keep finalized' })).toHaveProperty('disabled', true);
+      fireEvent(dialog, new Event('cancel', { cancelable: true }));
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      await act(async () => finish());
+      expect(await screen.findByRole('textbox')).toBeTruthy();
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('cancels with the dialog Escape event before submission', () => {
+      const dialog = openConfirmation();
+      fireEvent(dialog, new Event('cancel', { cancelable: true }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(api.reopenTripReport).not.toHaveBeenCalled();
+    });
+
+    it('reopens long legacy text without truncating it or applying save validation', async () => {
+      const dialog = openConfirmation({
+        ...report, content: undefined, summary: 'L'.repeat(3000),
+        keyTakeaways: 'Legacy takeaway', status: 'finalized',
+      });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Reopen for editing' }));
+      const editor = await screen.findByRole('textbox');
+      expect((editor as HTMLTextAreaElement).value).toContain('L'.repeat(3000));
+      expect((editor as HTMLTextAreaElement).value).toContain('Legacy takeaway');
+      expect(screen.getByRole('button', { name: 'Save & finalize' })).toHaveProperty('disabled', true);
+      expect(api.saveTripReport).not.toHaveBeenCalled();
+    });
   });
 });

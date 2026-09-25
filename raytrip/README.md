@@ -81,6 +81,8 @@ npm run dev
 - Trips, notes, photo metadata, and photo chunks are owner-only.
 - Finalizing a report grants authenticated read access while keeping updates and deletion
   owner-only.
+- Owners can reopen a finalized report after confirmation. The shared link is unavailable while
+  it is a draft and works again at the same URL after finalization.
 - Share links do not provide anonymous access; recipients must sign in. The current deployment
   supports Fabric SSO and password authentication.
 - The report function uses the caller's delegated Entra token for the separately managed Azure
@@ -93,6 +95,10 @@ npm run dev
 3. Open **Report** and generate a draft from the trip trail.
 4. Review or edit the Markdown without losing unsaved text when switching views.
 5. Choose **Save & finalize** to save and publish the report together.
+
+To revise a finalized report, choose **Reopen for editing** and confirm the warning.
+Its content and share URL are preserved, but sharing pauses until you finalize again.
+Canceling leaves it finalized. Reopening cannot retract copies already viewed or saved.
 
 Generated reports aim for **250–300 words**, with a **300-word maximum**: a brief summary,
 2–3 key-takeaway bullets, and optional next steps already mentioned in the notes. Sparse notes
@@ -112,7 +118,8 @@ it can be saved again.
 
 Regeneration asks before replacing a draft, and a failed generation keeps the previous report.
 Existing two-field reports render as one combined document without changing their finalized state
-or share links. Finalized legacy reports remain untouched.
+or share links. Finalized legacy reports remain untouched unless the owner explicitly reopens
+them; reopening preserves the full text, including reports longer than the current edit limit.
 
 </details>
 

@@ -22,12 +22,12 @@ vi.mock('./rayfinClient', () => ({
       TripDay: {
         create: clientMocks.createTripDay,
       },
-      TripReport: { update: clientMocks.updateReport },
+      TripReport: { update: clientMocks.updateReport, select: clientMocks.select },
     },
   }),
 }));
 
-import { finalizeTripReport, getTrip, saveTripDay, saveTripReport } from './trips';
+import { finalizeTripReport, getSharedReport, getTrip, reopenTripReport, saveTripDay, saveTripReport } from './trips';
 
 describe('single report mutations', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -43,6 +43,23 @@ describe('single report mutations', () => {
     await expect(saveTripReport('r1', '')).rejects.toThrow();
     await expect(finalizeTripReport('r1', 'x'.repeat(2501))).rejects.toThrow();
     expect(clientMocks.updateReport).not.toHaveBeenCalled();
+  });
+  it('reopens with one status/timestamp update without changing content or the link', async () => {
+    await reopenTripReport('r1');
+    expect(clientMocks.updateReport).toHaveBeenCalledExactlyOnceWith(
+      { id: 'r1' }, { status: 'draft', finalizedAt: null }
+    );
+  });
+  it('propagates a failed reopen rather than claiming the report is editable', async () => {
+    clientMocks.updateReport.mockRejectedValueOnce(new Error('Update denied'));
+    await expect(reopenTripReport('r1')).rejects.toThrow('Update denied');
+  });
+  it('reads shared links only when the report is finalized', async () => {
+    clientMocks.execute.mockResolvedValueOnce([]);
+    await expect(getSharedReport('shared')).resolves.toBeNull();
+    expect(clientMocks.where).toHaveBeenCalledWith({
+      shareId: { eq: 'shared' }, status: { eq: 'finalized' },
+    });
   });
 });
 

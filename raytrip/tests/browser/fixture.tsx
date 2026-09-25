@@ -15,7 +15,7 @@ const auth = {
   signIn: async () => user,
   signOut: async () => {},
 };
-const router = createMemoryRouter([
+export const router = createMemoryRouter([
   { path: '/', element: <HomePage /> },
   { path: '/auth', element: <AuthPage /> },
   { path: '/trips/:tripId', element: <TripPage /> },

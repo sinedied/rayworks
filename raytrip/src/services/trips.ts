@@ -1,6 +1,6 @@
 import type { Trip } from '../../rayfin/data/Trip';
 import type { TripDay } from '../../rayfin/data/TripDay';
-import type { TripReport } from '../../rayfin/data/TripReport';
+import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 
 import { getRayfinClient } from './rayfinClient';
 import { validateReportContent } from '@/lib/report';
@@ -180,5 +180,12 @@ export async function finalizeTripReport(id: string, content: string): Promise<v
   await getRayfinClient().data.TripReport.update(
     { id },
     { content: validateReportContent(content), status: 'finalized', finalizedAt: new Date() }
+  );
+}
+
+export async function reopenTripReport(id: string): Promise<void> {
+  await getRayfinClient().data.TripReport.update(
+    { id },
+    { status: 'draft', finalizedAt: null }
   );
 }

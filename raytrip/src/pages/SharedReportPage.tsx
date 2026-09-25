@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import type { TripReport } from '../../rayfin/data/TripReport';
+import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 
 import { AppHeader } from '@/components/AppHeader';
 import { ReportMarkdown } from '@/components/ReportMarkdown';

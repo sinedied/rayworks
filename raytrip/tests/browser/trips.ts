@@ -1,7 +1,7 @@
 import type { Trip } from '../../rayfin/data/Trip';
 import type { TripDay } from '../../rayfin/data/TripDay';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
-import type { TripReport } from '../../rayfin/data/TripReport';
+import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 const scenario = new URLSearchParams(location.search).get('scenario');
 const date = new Date('2026-09-25');
 const trip: Trip = {
@@ -36,7 +36,9 @@ export async function listTripPhotos(): Promise<TripPhoto[]> {
 }
 export async function getTripPhotoUrl() { return URL.createObjectURL(new Blob(['<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#FF6B6B"/></svg>'], { type: 'image/svg+xml' })); }
 export async function getTripReport() { return report; }
-export async function getSharedReport() { return report; }
+export async function getSharedReport(shareId: string) {
+  return report?.shareId === shareId && report.status === 'finalized' ? report : null;
+}
 export async function generateTripReport() {
   await new Promise(resolve => setTimeout(resolve, 250));
   if (scenario === 'error') throw new Error('Generation failed.');
@@ -47,6 +49,10 @@ export async function saveTripReport(_id: string, content: string) { if (report)
 export async function finalizeTripReport(_id: string, content: string) {
   if (scenario === 'error') throw new Error('Could not finalize.');
   if (report) report = { ...report, content, status: 'finalized', finalizedAt: date };
+}
+export async function reopenTripReport() {
+  if (!report) throw new Error('Report not found.');
+  report = { ...report, status: 'draft', finalizedAt: null };
 }
 export async function updateTrip() {}
 export async function deleteTripDay(id: string) { days = days.filter(day => day.id !== id); }

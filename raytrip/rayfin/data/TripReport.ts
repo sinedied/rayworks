@@ -35,3 +35,8 @@ export class TripReport {
   @one(() => Trip, { optional: true }) trip?: Trip;
   @text({ max: 200 }) owner_id!: string;
 }
+
+// The SDK date decorator accepts Date | undefined, but nullable SQL values also use null.
+export type TripReportRecord = Omit<TripReport, 'finalizedAt'> & {
+  finalizedAt?: Date | null;
+};
