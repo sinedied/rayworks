@@ -9,6 +9,12 @@ for (const width of [390, 1280]) {
     await page.getByRole('button', { name: 'Reopen for editing' }).click();
     const dialog = page.getByRole('dialog', { name: 'Reopen this report?' });
     await expect(dialog).toContainText('The shared link will be unavailable');
+    const actionGap = await dialog.locator(':scope > .button-row').evaluate(row => {
+      const content = row.previousElementSibling;
+      if (!content) throw new Error('Confirmation text is missing.');
+      return row.getBoundingClientRect().top - content.getBoundingClientRect().bottom;
+    });
+    expect(actionGap).toBeGreaterThanOrEqual(24);
     await expect(dialog.getByRole('button', { name: 'Keep finalized' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);

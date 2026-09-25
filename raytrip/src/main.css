@@ -568,6 +568,10 @@ h3 {
   width: min(760px, calc(100vw - 32px));
 }
 
+.modal-card > .button-row {
+  margin-top: 24px;
+}
+
 .dialog-heading {
   display: flex;
   align-items: flex-start;
