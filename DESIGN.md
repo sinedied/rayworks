@@ -56,8 +56,10 @@ normal text); meaningful control boundaries and focus indicators need 3:1 contra
   Let the page toolbar wrap, not the header. Content widths may differ by task.
 - Deck may keep its document context and reset/theme/Present controls in the header; hide
   nonessential context first on small screens. Do not add account UI to an unauthenticated app.
-- Auth pages use the same brand-only header geometry, without account controls. Their content
-  layouts can differ. Audience, embedded, remote, and slideshow views need no management header.
+- Auth pages use the same brand-only header geometry, without account controls. On wide screens,
+  pair a concise product introduction with a sign-in card; stack them on smaller screens. Copy
+  and product accents remain app-specific. Audience, embedded, remote, and slideshow views need
+  no management header.
 
 ## UI
 
