@@ -5,7 +5,8 @@
 - Use `docs/logos/rayworks.svg` on light backgrounds and `docs/logos/rayworks-dark.svg` on dark
   backgrounds. Keep their proportions, clear space, and colors intact; do not recreate them with a
   font.
-- Product names follow the `Ray|Name` pattern: Ray|Forms, Ray|Live, Ray|Trip, Ray|Deck.
+- Product names follow the `Ray|Name` pattern: Ray|Forms, Ray|Live, Ray|Trip, Ray|Deck, Ray|Stick,
+  Ray|Burn.
 - Prefer the full wordmark on primary brand surfaces. Use a compact text treatment only where the
   full mark would not fit.
 - See [`docs/logo.md`](docs/logo.md) for app-logo construction rules and product color assignments.
@@ -20,12 +21,13 @@
 | Purple | `#7C3AED` |
 | Yellow | `#FFC629` |
 | Coral | `#FF6B6B` |
+| Orange | `#F97316` |
 | Light neutral | `#E5E7EB` |
 | Dark neutral | `#1F2937` |
 
 Each app uses its logo's accent for primary actions and selected states: Forms blue, Live teal,
-Trip coral, Deck purple. Keep secondary controls neutral and semantic colors independent of
-product accents. Never recolor logos to match a UI state.
+Trip coral, Deck purple, Stick yellow, Burn orange. Keep secondary controls neutral and semantic
+colors independent of product accents. Never recolor logos to match a UI state.
 
 | Shared UI role | Color |
 | --- | --- |
@@ -43,6 +45,10 @@ shades may differ from the logo: Forms uses `#246BDB` with white action labels; 
 coral use navy labels; Deck purple uses white. Check hover/pressed states too. Use strong accent
 shades for links and focus, not low-contrast decorative colors. Text must meet WCAG AA (4.5:1 for
 normal text); meaningful control boundaries and focus indicators need 3:1 contrast.
+
+Stick and Burn use navy labels on their accents, with dark gold and burnt-orange functional shades.
+See [product themes](docs/themes.md) for their interaction-state colors, contrast pairs, and visual
+direction; both inherit the shared shell below.
 
 ## App shell
 

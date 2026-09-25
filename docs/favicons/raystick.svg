@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="raystick-favicon-title" aria-describedby="raystick-favicon-desc"
+     focusable="false">
+  <title id="raystick-favicon-title">Ray|Stick favicon</title>
+  <desc id="raystick-favicon-desc">A bold near-white S beside a small near-white peeled sticker on a dark-gold rounded tile. The sticker's lifted lower-right corner is cut out in the tile color for strong contrast at browser-tab size. The outer canvas is transparent.</desc>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#854D0E"/>
+  <path fill="#F8FAFC" d="
+    M 37 17 Q 38 18 37 19
+    L 32.6 23.6 Q 31.8 24.4 30.9 23.7
+    C 27.9 21.3 25 20 21.9 20
+    C 18.1 20 16.2 21.5 16.2 23.8
+    C 16.2 25.9 18 26.9 22.5 27.9 L 26 28.7
+    C 35 30.7 39.5 34.5 39.5 41.1
+    C 39.5 49 33.1 53.5 23.8 53.5
+    C 17 53.5 11.6 51.3 7.5 47.3
+    Q 6.8 46.6 7.5 45.9
+    L 12 41.1 Q 12.7 40.4 13.4 41.1
+    C 16.6 44.2 20.1 45.7 24 45.7
+    C 28.4 45.7 30.8 44.2 30.8 41.8
+    C 30.8 39.6 29 38.4 24.4 37.3 L 20.5 36.4
+    C 12.2 34.5 7.8 31.1 7.8 24.3
+    C 7.8 16.9 13.9 12.2 22.9 12.2
+    C 28.5 12.2 33.4 13.9 37 17 Z"/>
+  <path fill="#F8FAFC" d="
+    M 44 10 H 55 Q 58 10 58 13 V 20
+    C 58 26.2 54.2 30 48 30 H 44
+    Q 41 30 41 27 V 13 Q 41 10 44 10 Z"/>
+  <path fill="#854D0E" d="
+    M 49 27 V 22 Q 49 19 52 19 H 56
+    C 55.5 23 53 26 49 27 Z"/>
+</svg>

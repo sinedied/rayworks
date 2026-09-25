@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="rayburn-favicon-title" aria-describedby="rayburn-favicon-desc"
+     focusable="false">
+  <title id="rayburn-favicon-title">Ray|Burn favicon</title>
+  <desc id="rayburn-favicon-desc">A bold near-white B on a burnt-orange rounded tile. Its upper counter is rounded and its enlarged lower counter is a simple flame-shaped cutout revealing the tile color for strong contrast at browser-tab size. The outer canvas is transparent.</desc>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#9A3412"/>
+  <path fill="#F8FAFC" fill-rule="evenodd" d="
+    M 14.5 10 H 32.5
+    C 45.5 10 52 15 52 22.2
+    C 52 26.7 49.7 30 46.2 31.8
+    C 51.2 33.5 54 37 54 42.1
+    C 54 50.2 47 55 34.6 55 H 14.5
+    Q 13 55 13 53.5 V 11.5 Q 13 10 14.5 10 Z
+    M 23 19 V 28 H 32.7
+    C 38.5 28 41.5 26.6 41.5 23.5
+    C 41.5 20.4 38.5 19 32.7 19 Z
+    M 33 31
+    C 35 35.5 42 37.7 42 42
+    C 42 46.3 38.5 49 33.5 49
+    C 28.5 49 25 46 25 42
+    C 25 38.5 27.3 35.8 30 33.5
+    C 29.5 37 30.5 39 32 40
+    C 34 37.3 34 34 33 31 Z"/>
+</svg>

@@ -36,9 +36,12 @@ favicon when only a compact square is available.
 | Ray\|Live | `#0B2A5B` | `#F8FAFC` | Teal `#00C2AB` |
 | Ray\|Trip | `#0B2A5B` | `#F8FAFC` | Coral `#FF6B6B` |
 | Ray\|Deck | `#0B2A5B` | `#F8FAFC` | Purple `#7C3AED` |
+| Ray\|Stick | `#0B2A5B` | `#F8FAFC` | Yellow `#FFC629` |
+| Ray\|Burn | `#0B2A5B` | `#F8FAFC` | Orange `#F97316` |
 
-Yellow `#FFC629` is currently unused. Check its contrast before assigning it as lettering on a
-light background.
+Yellow is assigned to Stick; orange extends the palette for Burn. These bright logo accents are
+not normal UI text colors on white. See [product themes](themes.md) for accessible functional
+shades and interaction states.
 
 ## Product motifs
 
@@ -49,12 +52,15 @@ light background.
 | Ray\|Live | Broadcast beacon as the `i` dot |
 | Ray\|Trip | Location pin as the `i` dot |
 | Ray\|Deck | Slide-content lines inside the `D` |
+| Ray\|Stick | Peeled sticker with a lifted corner replacing the `i` dot |
+| Ray\|Burn | Flame inside the lower `B` counter |
 
 ## Favicons
 
 Canonical favicons live in `docs/favicons/`. Full wordmarks are not legible at browser-tab size, so
-each favicon uses a product-color rounded tile, a near-white product initial, and a simplified navy
-motif.
+each favicon uses a product-family rounded tile, a near-white product initial, and a simplified
+motif. Stick and Burn darken only their tiles to maintain initial contrast; their motifs use
+tile-colored cutouts instead of navy on dark backgrounds.
 
 | Product | Initial | Tile | Motif |
 | --- | --- | --- | --- |
@@ -63,5 +69,7 @@ motif.
 | Ray\|Live | `L` | Teal | Broadcast beacon |
 | Ray\|Trip | `T` | Coral | Location pin |
 | Ray\|Deck | `D` | Purple | Slide-content lines |
+| Ray\|Stick | `S` | Dark gold `#854D0E` | Peeled sticker |
+| Ray\|Burn | `B` | Burnt orange `#9A3412` | Flame-shaped counter |
 
 App-local `favicon.svg` files must be exact copies of these canonical assets.
