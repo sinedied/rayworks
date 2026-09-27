@@ -127,15 +127,27 @@ them; reopening preserves the full text, including reports longer than the curre
 
 ## Photo headers
 
-Choose **Choose header photos** on the trip banner and select up to **six** completed
-uploads. Their selection order is saved privately on the trip. A deterministic BSP-style
-mosaic adapts the tiles to the header dimensions; a navy overlay keeps the trip details
-readable. Clear the selection to restore the plain header.
+The trip banner automatically uses the **earliest six completed uploads** until you
+save a custom selection. Newer uploads do not displace those photos. Choose
+**Edit header photos** to select up to six in your preferred order, or save an empty
+selection for a plain header. Canceling keeps the existing selection mode. Custom
+selections stay fixed rather than being automatically refilled when photos are deleted.
+A deterministic BSP-style mosaic adapts the tiles to the header dimensions, with a
+navy overlay keeping the trip details readable.
 
-The draft report has a separate **Include photo header in shared report** option,
-**off by default**. Enabling it previews a flattened JPEG copy of the selected photos.
+The draft report has a separate **Include photo header in shared report** option in
+a compact row below the report body, **off by default**. Automatic trip-header
+photos are not automatically shared. Enabling the option previews a flattened JPEG
+copy of the selected photos, below the Edit/Preview controls.
 Use **Update from trip photos** when you explicitly want to replace an existing cover.
 Changing or deleting source photos does not silently alter a saved report cover.
+
+The editor and shared report use the same header layout: a prominent title and the
+**trip date or date range**, not the date the report was generated or finalized.
+Trip dates are saved on the report when generating, saving, or finalizing a draft,
+so readers do not need access to the private trip. Older finalized reports without
+saved trip dates remain readable without a date until the owner reopens and
+finalizes them again; they are never rewritten automatically.
 
 The report snapshot is at most **32 KiB** and **1,200 × 360px**, stored in bounded text
 fields on the report row. Saving/finalizing publishes the content, setting, and image

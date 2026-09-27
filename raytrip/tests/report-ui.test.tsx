@@ -19,8 +19,9 @@ const report: TripReport = {
   title: 'Conference', content: '## Summary\nOriginal', shareId: 'shared',
   generatedAt: new Date('2026-09-25'), status: 'draft',
 };
+const tripDates = { startDate: new Date('2026-03-11'), endDate: new Date('2026-03-11') };
 function mount(initialReport: TripReport | null = report) {
-  const router = createMemoryRouter([{ path: '*', element: <ReportWorkspace tripId="trip-1" initialReport={initialReport} /> }]);
+  const router = createMemoryRouter([{ path: '*', element: <ReportWorkspace tripId="trip-1" initialReport={initialReport} tripDates={tripDates} /> }]);
   render(<TripPhotoCacheProvider><RouterProvider router={router} /></TripPhotoCacheProvider>);
 }
 
@@ -32,6 +33,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('report editing workflow', () => {
+  it('shows current trip dates on a draft and saved trip dates on finalized reports', () => {
+    mount();
+    expect(document.querySelector('.report-trip-date')?.textContent).toBe('Mar 11, 2026');
+    expect(document.querySelector('.report-document-header')?.textContent).not.toContain('Sep 25');
+    cleanup();
+    mount({ ...report, status: 'finalized', tripStartDate: new Date('2026-02-10'), tripEndDate: new Date('2026-02-12') });
+    expect(document.querySelector('.report-trip-date')?.textContent).toBe('Feb 10, 2026 – Feb 12, 2026');
+  });
+  it('does not substitute generated or finalized dates for legacy reports without trip dates', () => {
+    mount({ ...report, status: 'finalized', finalizedAt: new Date('2026-09-26') });
+    expect(document.querySelector('.report-trip-date')).toBeNull();
+    expect(api.saveTripReport).not.toHaveBeenCalled();
+    expect(document.querySelector('.report-document-header')?.textContent).not.toContain('Header preview');
+  });
   it('preserves edits between edit and preview and finalizes current text', async () => {
     mount();
     fireEvent.click(screen.getByRole('button', { name: 'Edit', exact: true }));
@@ -41,7 +56,7 @@ describe('report editing workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit', exact: true }));
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('## Summary\nUpdated');
     fireEvent.click(screen.getByRole('button', { name: 'Save & finalize' }));
-    await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', '## Summary\nUpdated', null));
+    await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', '## Summary\nUpdated', null, tripDates));
     expect(await screen.findByRole('button', { name: 'Copy share link' })).toBeTruthy();
   });
   it('keeps a failed save editable and does not publish', async () => {
@@ -59,7 +74,7 @@ describe('report editing workflow', () => {
     mount({ ...report, includePhotoHeader: true, headerImageHash: 'invalid' });
     fireEvent.click(screen.getByRole('checkbox', { name: 'Include photo header in shared report' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    await waitFor(() => expect(api.saveTripReport).toHaveBeenCalledWith('report-1', report.content, null));
+    await waitFor(() => expect(api.saveTripReport).toHaveBeenCalledWith('report-1', report.content, null, tripDates));
     expect(screen.getByRole('checkbox', { name: 'Include photo header in shared report' })).toHaveProperty('checked', false);
   });
   it('requires an actual snapshot when photo sharing is enabled', async () => {
@@ -137,9 +152,10 @@ describe('report editing workflow', () => {
 
       fireEvent.change(editor, { target: { value: 'Revised report.' } });
       fireEvent.click(screen.getByRole('button', { name: 'Save & finalize' }));
-      await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', 'Revised report.', null));
+      await waitFor(() => expect(api.finalizeTripReport).toHaveBeenCalledWith('report-1', 'Revised report.', null, tripDates));
       expect((await screen.findByRole('link', { name: 'Open shared report' })).getAttribute('href')).toBe('/reports/shared');
       expect(screen.queryByRole('textbox')).toBeNull();
+      expect(document.querySelector('.report-trip-date')?.textContent).toBe('Mar 11, 2026');
     });
 
     it('keeps the report finalized and shows failures inside the confirmation', async () => {

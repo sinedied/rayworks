@@ -3,12 +3,13 @@ import type { TripDay } from '../../rayfin/data/TripDay';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
 import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 import { reportCoverPayload, type ReportCover } from '../../rayfin/report-cover';
+import { snapshotTripDates, type TripDates } from '../../rayfin/report-dates';
 const scenario = new URLSearchParams(location.search).get('scenario');
 const date = new Date('2026-09-25');
 const trip: Trip = {
   id: 'trip-1', title: `Conference and customer visits ${'LongTitle'.repeat(12)}`,
   destination: 'Seattle', purpose: 'Product meetings and customer feedback',
-  startDate: date, endDate: date, status: 'active', owner_id: 'owner',
+  startDate: new Date('2026-03-11'), endDate: new Date('2026-03-11'), status: 'active', owner_id: 'owner',
   createdAt: date, updatedAt: date,
 };
 let days: TripDay[] = [{
@@ -18,9 +19,11 @@ let days: TripDay[] = [{
 let report: TripReport | null = scenario === 'empty' ? null : {
   id: 'report-1', title: trip.title, content: '## Summary\n\nA useful trip.\n\n## Key takeaways\n\n- Follow up with the team.',
   shareId: 'share-1', generatedAt: date, trip_id: trip.id, owner_id: 'owner',
+  ...snapshotTripDates(trip),
   status: scenario === 'finalized' ? 'finalized' : 'draft',
 };
 if (scenario === 'legacy' && report) {
+  report.tripStartDate = undefined; report.tripEndDate = undefined;
   report.content = undefined;
   report.summary = 'Legacy report '.repeat(300);
   report.keyTakeaways = 'Original takeaways';
@@ -33,9 +36,15 @@ export async function listTripDays() { return days; }
 let photos: TripPhoto[] = Array.from({ length: scenario === 'cover' ? 7 : 1 }, (_, index) => ({
   id: `00000000-0000-4000-8000-00000000000${index + 1}`, storageName: 'photo.jpg', contentType: 'image/jpeg',
   storageBackend: 'sql-v1', uploadState: 'ready', width: 400, height: 300,
-  caption: scenario === 'cover' ? `Photo ${index + 1}` : 'Caption'.repeat(60), createdAt: date, trip_id: trip.id, owner_id: 'owner',
+  caption: scenario === 'cover' ? `Photo ${index + 1}` : 'Caption'.repeat(60), createdAt: new Date(date.getTime() + index * 1000), trip_id: trip.id, owner_id: 'owner',
 }));
-export async function listTripPhotos() { return photos; }
+export async function listTripPhotos() { return [...photos].reverse(); }
+export function addFixturePhoto() {
+  const next = photos.length + 1;
+  const added = { ...photos[0], id: `00000000-0000-4000-8000-${String(next).padStart(12, '0')}`, caption: `Photo ${next}`, createdAt: new Date(date.getTime() + next * 1000) };
+  photos.push(added);
+  return added;
+}
 export async function saveTripHeaderPhotos(_id: string, ids: string[]) { trip.headerPhotoIds = JSON.stringify(ids); }
 let photoRequests = 0;
 export function photoRequestCount() { return photoRequests; }
@@ -59,14 +68,15 @@ export async function generateTripReport() {
   await new Promise(resolve => setTimeout(resolve, 250));
   if (scenario === 'error') throw new Error('Generation failed.');
   report = { ...report, id: 'report-1', title: trip.title, content: '## Summary\n\nGenerated brief.\n\n## Key takeaways\n\n- Follow up.',
+    ...snapshotTripDates(trip),
     status: 'draft', trip_id: trip.id, shareId: 'share-1', generatedAt: date, owner_id: 'owner' };
 }
-export async function saveTripReport(_id: string, content: string, cover?: ReportCover | null) {
-  if (report) report = { ...report, content, ...(cover !== undefined ? reportCoverPayload(cover) : {}) };
+export async function saveTripReport(_id: string, content: string, cover: ReportCover | null | undefined, dates: TripDates) {
+  if (report) report = { ...report, content, ...snapshotTripDates(dates), ...(cover !== undefined ? reportCoverPayload(cover) : {}) };
 }
-export async function finalizeTripReport(_id: string, content: string, cover?: ReportCover | null) {
+export async function finalizeTripReport(_id: string, content: string, cover: ReportCover | null | undefined, dates: TripDates) {
   if (scenario === 'error') throw new Error('Could not finalize.');
-  if (report) report = { ...report, content, status: 'finalized', finalizedAt: date, ...(cover !== undefined ? reportCoverPayload(cover) : {}) };
+  if (report) report = { ...report, content, status: 'finalized', finalizedAt: date, ...snapshotTripDates(dates), ...(cover !== undefined ? reportCoverPayload(cover) : {}) };
 }
 export async function reopenTripReport() {
   if (!report) throw new Error('Report not found.');

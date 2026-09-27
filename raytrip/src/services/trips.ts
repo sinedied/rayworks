@@ -6,6 +6,7 @@ import { getRayfinClient } from './rayfinClient';
 import { validateReportContent } from '@/lib/report';
 import { coverBlob } from '@/lib/report-cover';
 import { COVER_FIELDS, parseHeaderPhotoIds, reportCoverPayload, type ReportCover } from '../../rayfin/report-cover';
+import { snapshotTripDates, type TripDates } from '../../rayfin/report-dates';
 import { listTripPhotos } from './photos';
 export { listTripPhotos, uploadTripPhoto, getTripPhotoUrl, deleteTripPhoto } from './photos';
 
@@ -147,6 +148,8 @@ export async function getTripReport(
     'shareId',
     'generatedAt',
     'finalizedAt',
+    'tripStartDate',
+    'tripEndDate',
     'trip_id',
     ...COVER_FIELDS,
     'owner_id',
@@ -170,6 +173,8 @@ export async function getSharedReport(
     'shareId',
     'generatedAt',
     'finalizedAt',
+    'tripStartDate',
+    'tripEndDate',
     'trip_id',
     ...COVER_FIELDS,
   ])
@@ -186,21 +191,24 @@ export async function generateTripReport(tripId: string): Promise<void> {
 export async function saveTripReport(
   id: string,
   content: string,
-  cover?: ReportCover | null
+  cover: ReportCover | null | undefined,
+  dates: TripDates
 ): Promise<void> {
   const text = validateReportContent(content);
+  const tripDates = snapshotTripDates(dates);
   if (cover) await coverBlob(cover);
   await getRayfinClient().data.TripReport.update(
-    { id }, { content: text, ...(cover !== undefined ? reportCoverPayload(cover) : {}) }
+    { id }, { content: text, ...tripDates, ...(cover !== undefined ? reportCoverPayload(cover) : {}) }
   );
 }
 
-export async function finalizeTripReport(id: string, content: string, cover?: ReportCover | null): Promise<void> {
+export async function finalizeTripReport(id: string, content: string, cover: ReportCover | null | undefined, dates: TripDates): Promise<void> {
   const text = validateReportContent(content);
+  const tripDates = snapshotTripDates(dates);
   if (cover) await coverBlob(cover);
   await getRayfinClient().data.TripReport.update(
     { id },
-    { content: text, status: 'finalized', finalizedAt: new Date(), ...(cover !== undefined ? reportCoverPayload(cover) : {}) }
+    { content: text, status: 'finalized', finalizedAt: new Date(), ...tripDates, ...(cover !== undefined ? reportCoverPayload(cover) : {}) }
   );
 }
 

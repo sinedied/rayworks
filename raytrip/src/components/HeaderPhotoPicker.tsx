@@ -18,8 +18,13 @@ function Choice({ photo, checked, disabled, onChange }: {
   const { url, error } = useTripPhoto(photo, visible);
   return (
     <label ref={ref} className={`header-photo-choice${checked ? ' is-selected' : ''}`}>
-      {url ? <img src={url} alt="" loading="lazy" /> : <span>{error || 'Loading…'}</span>}
-      <span><input type="checkbox" aria-label={photo.caption || photo.fileName || 'Trip photo'} checked={checked} disabled={disabled} onChange={onChange} />{photo.caption || photo.fileName || 'Trip photo'}</span>
+      <div className="header-photo-thumbnail">
+        {url ? <img src={url} alt="" loading="lazy" /> : <span className="header-photo-placeholder">{error || 'Loading…'}</span>}
+      </div>
+      <span className="header-photo-caption">
+        <input type="checkbox" aria-label={photo.caption || photo.fileName || 'Trip photo'} checked={checked} disabled={disabled} onChange={onChange} />
+        <span className="header-photo-caption-text">{photo.caption || photo.fileName || 'Trip photo'}</span>
+      </span>
     </label>
   );
 }
@@ -34,7 +39,7 @@ export function HeaderPhotoPicker({ photos, selected, onSave, onClose }: {
   const chosen = ids.flatMap(id => photos.filter(photo => photo.id === id));
   return (
     <Modal title="Choose header photos" wide closeDisabled={saving} onClose={onClose}>
-      <p>Choose up to six photos. Selection order determines their placement. Remove all to use a plain header.</p>
+      <p>The earliest six uploads are used automatically until you save a custom selection. Choose up to six photos in your preferred order, or remove all for a plain header.</p>
       <p className="report-meta" role="status">{ids.length} / {HEADER_PHOTO_LIMIT} selected</p>
       {!!chosen.length && <div className="mosaic-picker-preview"><PhotoMosaic photos={chosen} /></div>}
       <div className="header-photo-choices">

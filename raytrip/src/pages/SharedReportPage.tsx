@@ -5,10 +5,9 @@ import type { TripReportRecord as TripReport } from '../../rayfin/data/TripRepor
 
 import { AppHeader } from '@/components/AppHeader';
 import { ReportMarkdown } from '@/components/ReportMarkdown';
-import { formatDate } from '@/lib/dates';
 import { reportDocument } from '@/lib/report';
 import { getSharedReport } from '@/services/trips';
-import { ReportCoverImage } from '@/components/ReportCoverImage';
+import { ReportHeader } from '@/components/ReportHeader';
 import { readCoverState } from '@/lib/report-cover';
 
 export function SharedReportPage() {
@@ -51,19 +50,8 @@ export function SharedReportPage() {
           </div>
         ) : report ? (
           <article className="shared-report">
-            <header className={report.includePhotoHeader ? 'report-header-with-photo' : undefined}>
-              {cover.cover && <ReportCoverImage cover={cover.cover} />}
-              {cover.error && <p className="inline-error" role="alert">{cover.error}</p>}
-              <div className="shared-report-heading">
-              <p className="eyebrow">Final trip report</p>
-              <h1>{report.title}</h1>
-              <p>
-                Finalized {formatDate(report.finalizedAt || report.generatedAt, {
-                  dateStyle: 'long',
-                })}
-              </p>
-              </div>
-            </header>
+            <ReportHeader title={report.title} startDate={report.tripStartDate} endDate={report.tripEndDate}
+              cover={cover.cover} coverError={cover.error} headingLevel={1} />
             <ReportMarkdown content={reportDocument(report)} />
             <footer>
               Shared securely with authenticated Ray|Trip users · ID {report.shareId}

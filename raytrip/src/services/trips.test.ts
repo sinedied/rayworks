@@ -28,20 +28,27 @@ vi.mock('./rayfinClient', () => ({
 }));
 
 import { finalizeTripReport, getSharedReport, getTrip, reopenTripReport, saveTripDay, saveTripReport } from './trips';
+const tripDates = { startDate: new Date('2026-03-11'), endDate: new Date('2026-03-12') };
+const dateSnapshot = { tripStartDate: tripDates.startDate, tripEndDate: tripDates.endDate };
 
 describe('single report mutations', () => {
   beforeEach(() => vi.clearAllMocks());
   it('saves only the new field and finalizes the same text atomically', async () => {
-    await saveTripReport('r1', '  ## Summary\nSaved  ');
-    expect(clientMocks.updateReport).toHaveBeenCalledWith({ id: 'r1' }, { content: '## Summary\nSaved' });
-    await finalizeTripReport('r1', '## Summary\nFinal');
+    await saveTripReport('r1', '  ## Summary\nSaved  ', undefined, tripDates);
+    expect(clientMocks.updateReport).toHaveBeenCalledWith({ id: 'r1' }, { content: '## Summary\nSaved', ...dateSnapshot });
+    await finalizeTripReport('r1', '## Summary\nFinal', undefined, tripDates);
     expect(clientMocks.updateReport).toHaveBeenLastCalledWith({ id: 'r1' }, {
-      content: '## Summary\nFinal', status: 'finalized', finalizedAt: expect.any(Date),
+      content: '## Summary\nFinal', status: 'finalized', finalizedAt: expect.any(Date), ...dateSnapshot,
     });
   });
   it('does not persist empty or over-limit content', async () => {
-    await expect(saveTripReport('r1', '')).rejects.toThrow();
-    await expect(finalizeTripReport('r1', 'x'.repeat(2501))).rejects.toThrow();
+    await expect(saveTripReport('r1', '', undefined, tripDates)).rejects.toThrow();
+    await expect(finalizeTripReport('r1', 'x'.repeat(2501), undefined, tripDates)).rejects.toThrow();
+    expect(clientMocks.updateReport).not.toHaveBeenCalled();
+  });
+  it('does not publish a report with invalid trip dates', async () => {
+    await expect(finalizeTripReport('r1', 'Report', null, { startDate: 'invalid', endDate: '2026-03-11' })).rejects.toThrow('trip dates');
+    await expect(saveTripReport('r1', 'Report', null, { startDate: '2026-03-12', endDate: '2026-03-11' })).rejects.toThrow('trip dates');
     expect(clientMocks.updateReport).not.toHaveBeenCalled();
   });
   it('reopens with one status/timestamp update without changing content or the link', async () => {

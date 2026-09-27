@@ -6,6 +6,7 @@ import {
 
 import type { UniversalAppSchema } from '../../data/schema.js';
 import { generateBrief, reportGenerationPrompt } from './report-document.js';
+import { snapshotTripDates } from '../../report-dates.js';
 import './photo-functions.js';
 
 const udf = new UserDataFunctions();
@@ -28,6 +29,7 @@ udf.func(
     ]).where({ id: { eq: tripId } }).first(1).execute();
     const trip = trips[0];
     if (!trip) throw new Error('Trip not found or you do not have access to it.');
+    const tripDates = snapshotTripDates(trip);
 
     const findReport = async () => {
       const reports = await data.TripReport.select(['id', 'shareId', 'status'])
@@ -100,13 +102,13 @@ udf.func(
     const generatedAt = new Date();
     if (existing) {
       await data.TripReport.update({ id: existing.id }, {
-        title: trip.title, content, generatedAt, status: 'draft',
+        title: trip.title, content, generatedAt, status: 'draft', ...tripDates,
       });
       return { reportId: existing.id, shareId: existing.shareId, content };
     }
     const shareId = crypto.randomUUID().replaceAll('-', '');
     const report = await data.TripReport.create({
-      title: trip.title, content, status: 'draft', shareId, generatedAt,
+      title: trip.title, content, status: 'draft', shareId, generatedAt, ...tripDates,
       trip_id: tripId, owner_id: trip.owner_id,
     });
     return { reportId: report.id, shareId, content };

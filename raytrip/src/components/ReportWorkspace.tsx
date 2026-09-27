@@ -3,10 +3,10 @@ import { Link, useBeforeUnload, useBlocker } from 'react-router-dom';
 import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
 import { reportCoverPayload } from '../../rayfin/report-cover';
+import { snapshotTripDates, type TripDates } from '../../rayfin/report-dates';
 import { createReportCover, readCoverState } from '@/lib/report-cover';
-import { ReportCoverImage } from './ReportCoverImage';
+import { ReportHeader } from './ReportHeader';
 import { useTripPhotoCache } from '@/hooks/useTripPhotos';
-import { formatDate } from '@/lib/dates';
 import { reportDocument, REPORT_MAX_LENGTH, validateReportContent } from '@/lib/report';
 import { finalizeTripReport, generateTripReport, getTripReport, reopenTripReport, saveTripReport } from '@/services/trips';
 import { Modal } from './Modal';
@@ -14,10 +14,11 @@ import { ReportMarkdown } from './ReportMarkdown';
 
 type ReportAction = 'generate' | 'save' | 'finalize' | 'reopen';
 
-export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
+export function ReportWorkspace({ tripId, initialReport, headerPhotos = [], tripDates }: {
   tripId: string;
   initialReport: TripReport | null;
   headerPhotos?: readonly TripPhoto[];
+  tripDates: TripDates;
 }) {
   const [report, setReport] = useState(initialReport);
   const [saved, setSaved] = useState(initialReport ? reportDocument(initialReport) : '');
@@ -101,12 +102,13 @@ export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
       } else {
         if (!report) throw new Error('Generate a report first.');
         const text = validateReportContent(content);
+        const dateSnapshot = snapshotTripDates(tripDates);
         if (includeCover && (!coverState.cover || coverState.error)) throw new Error('Prepare a valid photo header or turn the option off.');
         const cover = includeCover ? coverState.cover : null;
-        if (action === 'save') await saveTripReport(report.id, text, cover);
-        else await finalizeTripReport(report.id, text, cover);
+        if (action === 'save') await saveTripReport(report.id, text, cover, tripDates);
+        else await finalizeTripReport(report.id, text, cover, tripDates);
         if (!alive.current) return;
-        setReport({ ...report, content: text, ...reportCoverPayload(cover), ...(action === 'finalize' ? { status: 'finalized', finalizedAt: new Date() } : {}) });
+        setReport({ ...report, content: text, ...dateSnapshot, ...reportCoverPayload(cover), ...(action === 'finalize' ? { status: 'finalized', finalizedAt: new Date() } : {}) });
         setSaved(text);
         setSavedCoverKey(cover?.sha256 || '');
         setContent(text);
@@ -136,7 +138,7 @@ export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
       <header className="report-toolbar">
         <div>
           <h2 id="report-title">Trip report</h2>
-          <p className="report-meta">{report ? `${finalized ? 'Finalized' : 'Draft'} · ${formatDate(finalized ? report.finalizedAt : report.generatedAt)}` : 'A concise brief from your notes and photo captions.'}</p>
+          <p className="report-meta">{report ? (finalized ? 'Finalized' : 'Draft') : 'A concise brief from your notes and photo captions.'}</p>
         </div>
         {report && !finalized && (
           <button className="button button-secondary" disabled={!!pending || preparingCover} onClick={() => setConfirmRegenerate(true)}>
@@ -159,36 +161,6 @@ export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
       ) : (
         <>
           {!finalized && (
-            <div className="report-cover-controls">
-              <label className="checkbox-control">
-                <input type="checkbox" checked={includeCover} disabled={!!pending || preparingCover}
-                  onChange={event => {
-                    const checked = event.target.checked;
-                    setIncludeCover(checked);
-                    if (checked && !coverState.cover) void prepareCover();
-                  }} />
-                Include photo header in shared report
-              </label>
-              <p className="report-meta">Shares a flattened copy of your selected header photos. Original photos stay private.</p>
-              {includeCover && (
-                <>
-                  {!headerPhotos.length && <p className="report-meta">Choose photos in the trip header to create or update this cover. An existing saved cover can still be kept.</p>}
-                  <button className="button button-secondary" disabled={!!pending || preparingCover || !headerPhotos.length} onClick={() => void prepareCover()}>
-                    {preparingCover ? 'Preparing header…' : 'Update from trip photos'}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-          {includeCover && coverState.error && <p className="inline-error" role="alert">{coverState.error}</p>}
-          {includeCover && coverState.cover && (
-            <div className="report-header-with-photo">
-              <ReportCoverImage cover={coverState.cover} />
-              <div className="shared-report-heading"><h3>{report.title}</h3><p>{finalized ? 'Final trip report' : 'Header preview'}</p></div>
-            </div>
-          )}
-          {preparingCover && <p role="status">Preparing a small, shareable photo header…</p>}
-          {!finalized && (
             <div className="editor-toolbar">
               <div className="view-switch" aria-label="Report display">
                 <button type="button" aria-pressed={mode === 'edit'} onClick={() => setMode('edit')}>Edit</button>
@@ -199,6 +171,13 @@ export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
               </span>
             </div>
           )}
+          <ReportHeader
+            title={report.title}
+            startDate={finalized ? report.tripStartDate : tripDates.startDate}
+            endDate={finalized ? report.tripEndDate : tripDates.endDate}
+            cover={includeCover ? coverState.cover : null}
+            coverError={includeCover ? coverState.error : ''}
+          />
           {!finalized && content.trim().length > REPORT_MAX_LENGTH && (
             <p className="inline-error" role="alert">This report is preserved in full. Shorten it to 2,500 characters before saving a revision or finalizing.</p>
           )}
@@ -216,6 +195,32 @@ export function ReportWorkspace({ tripId, initialReport, headerPhotos = [] }: {
               <span id="markdown-help">Use headings, lists, and links. The limit includes Markdown formatting.</span>
             </label>
           ) : <ReportMarkdown content={content} />}
+          {!finalized && (
+            <div className="report-cover-controls">
+              <div className="report-cover-option">
+                <label className="checkbox-control">
+                  <input type="checkbox" checked={includeCover} disabled={!!pending || preparingCover}
+                    aria-describedby="cover-privacy-hint"
+                    onChange={event => {
+                      const checked = event.target.checked;
+                      setIncludeCover(checked);
+                      if (checked && !coverState.cover) void prepareCover();
+                    }} />
+                  Include photo header in shared report
+                </label>
+                <p className="report-meta" id="cover-privacy-hint">Shares a collage only; original photos stay private.</p>
+              </div>
+              {includeCover && (
+                <button className="text-button" disabled={!!pending || preparingCover || !headerPhotos.length} onClick={() => void prepareCover()}>
+                  {preparingCover ? 'Preparing header…' : 'Update from trip photos'}
+                </button>
+              )}
+              {includeCover && !headerPhotos.length && (
+                <p className="report-meta cover-help">Choose trip header photos to create or update the collage. A saved cover can still be kept.</p>
+              )}
+              {preparingCover && <p className="report-meta cover-help" role="status">Preparing a small, shareable photo header…</p>}
+            </div>
+          )}
           <footer className="report-actions">
             {finalized ? (
               <>

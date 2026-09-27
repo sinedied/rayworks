@@ -26,7 +26,10 @@ function context(status = 'draft') {
   };
   const notes = query(vi.fn());
   const data = {
-    Trip: query(vi.fn().mockResolvedValue([{ id: 't1', title: 'Trip', owner_id: 'owner' }])),
+    Trip: query(vi.fn().mockResolvedValue([{
+      id: 't1', title: 'Trip', owner_id: 'owner',
+      startDate: new Date('2026-03-11'), endDate: new Date('2026-03-12'),
+    }])),
     TripReport: { ...query(readReport), update, create },
     TripDay: notes,
     TripPhoto: query(vi.fn()),
@@ -36,7 +39,7 @@ function context(status = 'draft') {
     getDataClient: () => data,
     getToken: () => 'test-token',
   };
-  return { ctx, update, create, readReport, notes };
+  return { ctx, update, create, readReport, notes, tripQuery: data.Trip.builder.execute };
 }
 
 beforeEach(() => { vi.unstubAllGlobals(); });
@@ -76,7 +79,28 @@ describe('generateTripReport persistence', () => {
     expect(body).not.toHaveProperty('temperature');
     expect(state.update).toHaveBeenCalledWith({ id: 'r1' }, {
       title: 'Trip', content: conciseAiTourReport, generatedAt: expect.any(Date), status: 'draft',
+      tripStartDate: new Date('2026-03-11'), tripEndDate: new Date('2026-03-12'),
     });
+  });
+  it('captures trip dates for newly generated reports without using the generation date', async () => {
+    const state = context();
+    state.readReport.mockResolvedValue([]);
+    state.create.mockResolvedValue({ id: 'new-report' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ finish_reason: 'stop', message: { content: conciseAiTourReport } }],
+    }))));
+    await generate('t1', state.ctx);
+    expect(state.create).toHaveBeenCalledWith(expect.objectContaining({
+      tripStartDate: new Date('2026-03-11'), tripEndDate: new Date('2026-03-12'),
+    }));
+  });
+  it('rejects invalid trip dates before calling the model', async () => {
+    const state = context();
+    state.tripQuery.mockResolvedValue([{ id: 't1', title: 'Trip', startDate: null, endDate: 'bad' }]);
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    await expect(generate('t1', state.ctx)).rejects.toThrow('trip dates');
+    expect(fetch).not.toHaveBeenCalled();
   });
   it('rechecks finalization after inference before updating', async () => {
     const state = context();

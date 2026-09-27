@@ -720,23 +720,34 @@ select:focus {
 .mosaic-tile-error { color: #fff; font-size: 12px; padding: 8px; }
 .mosaic-picker-preview { position: relative; height: 180px; border-radius: 8px; overflow: hidden; margin: 16px 0; }
 .header-photo-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-height: 320px; overflow-y: auto; padding: 4px; }
-.header-photo-choice { border: 2px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; align-content: start; }
+.header-photo-choice { border: 2px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; align-content: start; gap: 0; }
 .header-photo-choice.is-selected { border-color: var(--accent-strong); background: var(--accent-tint); }
-.header-photo-choice > img, .header-photo-choice > span:first-child { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
-.header-photo-choice > span { padding: 8px; font-size: 13px; overflow-wrap: anywhere; }
-.header-photo-choice input[type='checkbox'], .checkbox-control input[type='checkbox'] { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--accent-strong); }
-.report-cover-controls { display: grid; gap: 12px; padding: 16px; margin-bottom: 20px; background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; }
-.report-cover-controls > button { justify-self: start; }
+.header-photo-thumbnail { width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-muted); }
+.header-photo-thumbnail img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.header-photo-placeholder { display: grid; place-items: center; width: 100%; height: 100%; padding: 8px; color: var(--text-muted); font-size: 13px; }
+.header-photo-caption { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: 8px; padding: 12px 8px; min-height: 44px; font-size: 14px; line-height: 20px; }
+.header-photo-caption-text { min-width: 0; overflow-wrap: anywhere; }
+.header-photo-choice input[type='checkbox'], .checkbox-control input[type='checkbox'] {
+  width: 20px; height: 20px; min-width: 20px; min-height: 20px; padding: 0; margin: 0;
+  flex-shrink: 0; accent-color: var(--accent-strong); resize: none;
+}
+.report-cover-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 24px; }
+.report-cover-option { flex: 1 1 260px; min-width: 0; }
+.report-cover-option .report-meta { padding-left: 32px; font-size: 12px; }
+.cover-help { flex-basis: 100%; }
 .checkbox-control { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
 .report-cover-image { position: relative; min-height: 160px; background: var(--brand-navy); color: #fff; }
 .report-cover-image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .report-cover-image > span { display: block; padding: 24px; }
-.report-header-with-photo { position: relative; background: var(--brand-navy); border-radius: 8px; overflow: hidden; min-height: 230px; margin-bottom: 20px; }
-.shared-report .report-header-with-photo { padding: 0; }
+.report-document-header { position: relative; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+.report-document-header .shared-report-heading { padding: 0 0 24px; }
+.report-document-title { font-size: clamp(30px, 5vw, 44px); line-height: 1.15; margin: 0 0 12px; }
+.report-trip-date { font-size: 15px; line-height: 1.5; color: var(--text-muted); margin: 0; }
+.report-header-with-photo { background: var(--brand-navy); border-radius: 8px; overflow: hidden; min-height: 230px; border-bottom: 0; }
 .report-header-with-photo .report-cover-image { position: absolute; inset: 0; }
 .report-header-with-photo .report-cover-image::after { content: ''; position: absolute; inset: 0; background: rgb(11 42 91 / 0.76); }
 .report-header-with-photo .shared-report-heading { position: relative; padding: 28px; color: #fff; }
-.report-header-with-photo .shared-report-heading :is(h1,h3,p) { color: #fff; }
+.report-header-with-photo .shared-report-heading :is(.report-document-title,.report-trip-date) { color: #fff; }
 .report-header-with-photo > .inline-error { position: relative; margin: 12px; }
 
 .trip-dates {
@@ -983,21 +994,6 @@ select:focus {
   padding: clamp(28px, 6vw, 64px);
 }
 
-.shared-report header {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 32px;
-}
-
-.shared-report h1 {
-  font-size: clamp(30px, 5vw, 44px);
-  margin-bottom: 10px;
-}
-
-.shared-report header > p:last-child {
-  color: var(--text-muted);
-  margin: 0;
-}
-
 .shared-report .report-markdown { padding: 16px 0 32px; }
 
 .shared-report footer {
@@ -1157,7 +1153,6 @@ select:focus {
   }
   .has-photo-mosaic { min-height: 220px; }
   .header-photo-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .header-photo-choice > span { min-height: 44px; }
   .mosaic-picker-preview { height: 160px; }
   .report-header-with-photo { min-height: 0; }
   .report-header-with-photo .report-cover-image { position: relative; aspect-ratio: 10 / 3; min-height: 0; }
@@ -1190,7 +1185,7 @@ select:focus {
   .report-editor textarea { min-height: 40dvh; }
   input, textarea, select { font-size: 16px; }
   .shared-report { padding: 20px; }
-  .shared-report h1, .trip-masthead h1 { font-size: 24px; }
+  .report-document-title, .trip-masthead h1 { font-size: 24px; }
   .auth-content { padding: 32px 16px; gap: 24px; align-content: start; }
   .auth-card { padding: 24px 16px; }
   .page-state { padding: 24px 16px; margin: 24px 16px; }

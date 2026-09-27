@@ -4,13 +4,15 @@ for (const width of [320, 390, 768, 1280]) {
   test(`selected mosaic and frozen report cover at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/tests/browser/index.html?route=/trips/trip-1&scenario=cover');
-    await page.getByRole('button', { name: 'Choose header photos' }).click();
+    await expect(page.locator('.trip-masthead .mosaic-tile img')).toHaveCount(6);
+    await page.getByRole('button', { name: 'Edit header photos' }).click();
     let dialog = page.getByRole('dialog', { name: 'Choose header photos' });
-    for (let i = 1; i <= 6; i++) await dialog.getByRole('checkbox', { name: `Photo ${i}`, exact: true }).check();
+    for (let i = 1; i <= 6; i++) await expect(dialog.getByRole('checkbox', { name: `Photo ${i}`, exact: true })).toBeChecked();
     await expect(dialog.getByRole('checkbox', { name: 'Photo 7', exact: true })).toBeDisabled();
+    await dialog.getByRole('checkbox', { name: 'Photo 1', exact: true }).uncheck();
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await expect(page.locator('.trip-masthead .photo-mosaic')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Choose header photos' }).click();
+    await expect(page.locator('.trip-masthead .mosaic-tile img')).toHaveCount(6);
+    await page.getByRole('button', { name: 'Edit header photos' }).click();
     dialog = page.getByRole('dialog', { name: 'Choose header photos' });
     for (let i = 1; i <= 6; i++) await dialog.getByRole('checkbox', { name: `Photo ${i}`, exact: true }).check();
     await dialog.getByRole('button', { name: 'Save header photos' }).click();
@@ -30,6 +32,9 @@ for (const width of [320, 390, 768, 1280]) {
     });
     expect(contrast).toBeGreaterThanOrEqual(4.5);
     await page.getByRole('tab', { name: 'Report', exact: true }).click();
+    await expect(page.locator('.report-document-title')).toHaveText(/Conference and customer visits/);
+    await expect(page.locator('.report-trip-date')).toHaveText('Mar 11, 2026');
+    await expect(page.getByText('Header preview', { exact: true })).toHaveCount(0);
     const option = page.getByRole('checkbox', { name: 'Include photo header in shared report' });
     await expect(option).not.toBeChecked();
     await option.check();
@@ -54,6 +59,7 @@ for (const width of [320, 390, 768, 1280]) {
     expect(snapshot.bytes).toBeLessThanOrEqual(32768);
     expect(snapshot.hash).toMatch(/^[a-f0-9]{64}$/);
     await page.getByRole('link', { name: 'Open shared report' }).click();
+    await expect(page.locator('.report-trip-date')).toHaveText('Mar 11, 2026');
     await expect(page.locator('.report-cover-image img')).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     const frozenHash = await page.evaluate(async () => (await (await import('/tests/browser/trips.ts')).getSharedReport('share-1'))?.headerImageHash);

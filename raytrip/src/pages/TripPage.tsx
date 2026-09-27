@@ -11,7 +11,7 @@ import { HeaderPhotoPicker } from '@/components/HeaderPhotoPicker';
 import { PhotoMosaic } from '@/components/PhotoMosaic';
 import { TripPhotoCacheProvider } from '@/components/TripPhotoCache';
 import { useTripPhoto } from '@/hooks/useTripPhotos';
-import { parseHeaderPhotoIds } from '../../rayfin/report-cover';
+import { resolveHeaderPhotos } from '@/lib/header-photos';
 import { useAuth } from '@/hooks/AuthContext';
 import { formatDate, toDateInputValue, toValidDate } from '@/lib/dates';
 import {
@@ -174,11 +174,16 @@ function TripWorkspace({ tripId }: { tripId: string }) {
 
   const readyPhotos = photos.filter(photo => photo.storageBackend === 'sql-v1' && photo.uploadState === 'ready');
   let headerIds: string[] = [];
+  let headerPhotos: TripPhoto[] = [];
+  let missingHeaderPhotos = false;
   let headerSelectionError = '';
-  try { headerIds = parseHeaderPhotoIds(trip?.headerPhotoIds); }
+  try {
+    const selection = resolveHeaderPhotos(tripId, trip?.headerPhotoIds, readyPhotos);
+    headerIds = selection.ids;
+    headerPhotos = selection.photos;
+    missingHeaderPhotos = selection.missing;
+  }
   catch (reason) { headerSelectionError = reason instanceof Error ? reason.message : 'Header selection is invalid.'; }
-  const headerPhotos = headerIds.flatMap(id => readyPhotos.filter(photo => photo.id === id));
-  const missingHeaderPhotos = headerPhotos.length !== headerIds.length;
   const pendingPhotos = photos.filter(photo => photo.storageBackend !== 'sql-v1' || photo.uploadState !== 'ready');
   const start = toValidDate(trip?.startDate)?.getTime();
   const end = toValidDate(trip?.endDate)?.getTime();
@@ -316,7 +321,7 @@ function TripWorkspace({ tripId }: { tripId: string }) {
             )}
           </div>
           <div id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden={view !== 'report'}>
-            {reportLoaded ? <ReportWorkspace tripId={tripId} initialReport={report} headerPhotos={headerPhotos} /> : (
+            {reportLoaded ? <ReportWorkspace tripId={tripId} initialReport={report} headerPhotos={headerPhotos} tripDates={trip} /> : (
               <div className="page-state" role="alert"><h2>Report unavailable</h2><p>Load the saved report before generating a new one.</p><button className="secondary-button" onClick={() => void refresh()}>Retry report loading</button></div>
             )}
           </div>

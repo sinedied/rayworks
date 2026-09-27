@@ -11,6 +11,8 @@ vi.mock('../src/services/rayfinClient', () => ({
   getRayfinClient: () => ({ data: { Trip: { update: mocks.updateTrip }, TripReport: { update: mocks.updateReport } } }),
 }));
 import { saveTripHeaderPhotos, saveTripReport, finalizeTripReport, reopenTripReport } from '../src/services/trips';
+const tripDates = { startDate: new Date('2026-03-11'), endDate: new Date('2026-03-11') };
+const dateSnapshot = { tripStartDate: tripDates.startDate, tripEndDate: tripDates.endDate };
 
 beforeEach(() => vi.resetAllMocks());
 afterEach(() => vi.unstubAllGlobals());
@@ -31,17 +33,17 @@ it('publishes the content and complete image together and clears every part when
   const bytes = jpeg.encode({ width: 2, height: 1, data: Buffer.alloc(8, 255) }, 70).data;
   const cover = { width: 2, height: 1, byteLength: bytes.length, sha256: await photoHash(bytes), parts: splitPhoto(bytes) };
   vi.stubGlobal('createImageBitmap', vi.fn().mockResolvedValue({ width: 2, height: 1, close: vi.fn() }));
-  await finalizeTripReport('report', 'Content', cover);
+  await finalizeTripReport('report', 'Content', cover, tripDates);
   expect(mocks.updateReport).toHaveBeenCalledExactlyOnceWith({ id: 'report' }, {
-    content: 'Content', status: 'finalized', finalizedAt: expect.any(Date), ...reportCoverPayload(cover),
+    content: 'Content', status: 'finalized', finalizedAt: expect.any(Date), ...reportCoverPayload(cover), ...dateSnapshot,
   });
-  await saveTripReport('report', 'Content', null);
-  expect(mocks.updateReport).toHaveBeenLastCalledWith({ id: 'report' }, { content: 'Content', ...reportCoverPayload(null) });
+  await saveTripReport('report', 'Content', null, tripDates);
+  expect(mocks.updateReport).toHaveBeenLastCalledWith({ id: 'report' }, { content: 'Content', ...reportCoverPayload(null), ...dateSnapshot });
   await reopenTripReport('report');
   expect(mocks.updateReport).toHaveBeenLastCalledWith({ id: 'report' }, { status: 'draft', finalizedAt: null });
 });
 
 it('does not save an invalid cover or silently drop an enabled image', async () => {
-  await expect(finalizeTripReport('report', 'Content', { byteLength: 32769, width: 1200, height: 360, sha256: '0'.repeat(64), parts: [] })).rejects.toThrow();
+  await expect(finalizeTripReport('report', 'Content', { byteLength: 32769, width: 1200, height: 360, sha256: '0'.repeat(64), parts: [] }, tripDates)).rejects.toThrow();
   expect(mocks.updateReport).not.toHaveBeenCalled();
 });

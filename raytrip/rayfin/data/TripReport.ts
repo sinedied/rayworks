@@ -48,6 +48,8 @@ export class TripReport {
   @set('draft', 'finalized') status!: 'draft' | 'finalized';
   @text({ unique: true, max: 64 }) shareId!: string;
   @date() generatedAt!: Date;
+  @date({ optional: true }) tripStartDate?: Date;
+  @date({ optional: true }) tripEndDate?: Date;
   @date({ optional: true }) finalizedAt?: Date;
   @uuid() trip_id!: string;
   @one(() => Trip, { optional: true }) trip?: Trip;
