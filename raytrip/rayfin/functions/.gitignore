@@ -1,5 +1,7 @@
 host.json
 local.settings.json
 deploymetadata.json
+runtimemetadata.json
+src/secrets.generated.ts
 bin/
 obj/

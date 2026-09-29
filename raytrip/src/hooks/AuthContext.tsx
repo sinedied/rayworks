@@ -53,7 +53,6 @@ export function AuthProvider({ children, authService }: AuthProviderProps) {
 
   const signIn = useCallback(async () => {
     setError(null);
-    setLoading(true);
     try {
       const loggedInUser = await authService.signIn();
       setUser(loggedInUser);
@@ -62,8 +61,6 @@ export function AuthProvider({ children, authService }: AuthProviderProps) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   }, [authService]);
 

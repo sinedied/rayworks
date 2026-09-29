@@ -37,7 +37,7 @@ function context(status = 'draft') {
   const ctx = {
     getSecret: (name: string) => name === 'AZURE_FOUNDRY_ENDPOINT' ? 'https://foundry.example/openai/v1/' : 'model',
     getDataClient: () => data,
-    getToken: () => 'test-token',
+    Tokens: { AzureAI: 'test-token' },
   };
   return { ctx, update, create, readReport, notes, tripQuery: data.Trip.builder.execute };
 }

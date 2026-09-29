@@ -35,6 +35,7 @@ describe('self-contained functions deployment', () => {
     for (const fn of runtimeMetadata.functions) {
       expect(fn.delegateParameters.at(-1)?.type).toMatch(/^RayfinContext(?:<|$)/);
       expect(fn.contextAudiences).toBeInstanceOf(Array);
+      expect(fn.contextAudiences).toEqual(fn.functionName === 'generateTripReport' ? ['AzureAI'] : []);
     }
   });
 });

@@ -78,6 +78,10 @@ npm run dev
 
 ## Access model
 
+- Frontend HTML, JavaScript, styles, fonts, and logos are public so visitors see
+  Ray|Trip's branded sign-in page. This does not grant access to app data or functions.
+  Setting `staticHosting.assetAccess` to `protected` instead makes Fabric show its
+  own sign-in screen before the app can load.
 - Trips, notes, photo metadata, and photo chunks are owner-only.
 - Finalizing a report grants authenticated read access while keeping updates and deletion
   owner-only.
@@ -85,10 +89,13 @@ npm run dev
   it is a draft and works again at the same URL after finalization.
 - Report photo headers are opt-in: viewers receive a flattened collage, never access to the
   original private photos or their SQL chunks.
-- Share links do not provide anonymous access; recipients must sign in. The current deployment
-  supports Fabric SSO and password authentication.
-- The report function uses the caller's delegated Entra token for the separately managed Azure
-  Foundry deployment.
+- Share links do not provide anonymous access; recipients must sign in with Fabric SSO.
+  Sign-in returns visitors to the requested trip or report. Password authentication
+  is not available in the Fabric deployment.
+- Functions use `auth.type: application`, required by CLI 1.36. Azure Foundry
+  access uses the Fabric app owner's identity and permissions. Function calls
+  still require sign-in, and database operations retain the caller's identity
+  and owner-scoped permissions.
 
 ## Trip workflow
 

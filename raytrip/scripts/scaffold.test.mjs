@@ -68,11 +68,16 @@ test('an auth-wired main.tsx is preserved, not clobbered', () => {
 });
 
 test('an auth-wired App.tsx is preserved, not clobbered', () => {
-  const wired = BASE_APP
-    .replace("import { HomePage } from '@/pages/HomePage';",
-      "import { useAuth } from '@/hooks/AuthContext';\nimport { HomePage } from '@/pages/HomePage';")
-    .replace('<Route path="/" element={<HomePage />} />',
-      '<Route path="/" element={<AuthGuard requireAuth><HomePage /></AuthGuard>} />');
+  const wired = `import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AuthGuard } from '@/components/AuthGuard';
+import { HomePage } from '@/pages/HomePage';
+
+export default function App() {
+  return <BrowserRouter><Routes>
+    <Route path="/" element={<AuthGuard requireAuth><HomePage /></AuthGuard>} />
+  </Routes></BrowserRouter>;
+}
+`;
 
   assert.ok(wired.includes('HomePage'), 'the old marker survives auth wiring');
   assert.equal(classifySeed(seedEntry('src/App.tsx'), wired), 'preserve');

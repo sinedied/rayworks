@@ -15,7 +15,7 @@ udf.func(
   'generateTripReport',
   async (
     tripId: string,
-    ctx: RayfinContext<UniversalAppSchema>
+    ctx: RayfinContext<UniversalAppSchema, AudienceType.AzureAI>
   ): Promise<{ reportId: string; shareId: string; content: string }> => {
     const endpoint = ctx.getSecret('AZURE_FOUNDRY_ENDPOINT');
     const model = ctx.getSecret('AZURE_AI_MODEL_DEPLOYMENT_NAME');
@@ -75,7 +75,7 @@ udf.func(
       notes,
       captions,
     });
-    const token = ctx.getToken(AudienceType.AzureAI);
+    const token = ctx.Tokens.AzureAI;
     const content = await generateBrief(async correction => {
       const response = await fetch(`${endpoint.replace(/\/+$/, '')}/chat/completions`, {
         method: 'POST',
@@ -113,5 +113,5 @@ udf.func(
     });
     return { reportId: report.id, shareId, content };
   },
-  [udf.connection({ audienceType: AudienceType.AzureAI })]
+  []
 );
