@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { useRoomControls } from '@/hooks/useRoomControls';
+import { useQuizAutoReveal } from '@/hooks/useQuizAutoReveal';
 import { countParticipants, tallyAnswers } from '@/lib/aggregate';
 import { ACTIVITY_LABELS } from '@/services/activities';
 import { currentUserIdOrNull } from '@/services/rooms';
@@ -18,6 +19,7 @@ export function ControlPage() {
     room,
     activities,
     liveActivity,
+    quiz,
     optionsFor,
     answersFor,
     loading,
@@ -25,7 +27,8 @@ export function ControlPage() {
     refresh,
   } = useLiveRoom(code);
 
-  const controls = useRoomControls(room, activities, optionsFor, refresh);
+  const controls = useRoomControls(room, activities, optionsFor, refresh, quiz);
+  const automation = useQuizAutoReveal(room, quiz, refresh);
   const isOwner = !!room && currentUserIdOrNull() === room.owner_id;
 
   if (loading) return <Centered>Loading…</Centered>;
@@ -77,9 +80,10 @@ export function ControlPage() {
           )}
         </section>
 
-        {controls.error && (
+        {(controls.error || automation.error) && (
           <p className="mt-4 rounded-xl bg-red-500/20 px-4 py-3 text-sm text-red-200">
-            {controls.error}
+            {controls.error ?? automation.error}
+            {automation.error && <button onClick={() => void automation.retry()} className="ml-2 underline">Retry automatic reveal</button>}
           </p>
         )}
 
@@ -126,6 +130,11 @@ export function ControlPage() {
           >
             {controls.showJoinInfo ? 'Hide join info' : 'Show join info'}
           </RemoteButton>
+          {quiz && <>
+            <RemoteButton onClick={() => void controls.finish()} disabled={controls.busy || controls.quizFinished}>Finish quiz</RemoteButton>
+            <RemoteButton onClick={() => void controls.restart()} disabled={controls.busy}>Restart quiz</RemoteButton>
+            <p className="col-span-2 text-sm text-gray-400">{quiz.participants.length} joined · {quiz.run.state}</p>
+          </>}
         </div>
 
         <section className="mt-6">

@@ -47,6 +47,11 @@ export class Room {
   /** Persists an interrupted reset so all clients stay paused until a retry succeeds. */
   @boolean({ optional: true, default: false }) isResetting?: boolean;
   @boolean({ optional: true }) resetResumeQuestions?: boolean;
+  @boolean({ optional: true, default: false }) quizAutoReveal?: boolean;
+  @text({ optional: true, max: 30 }) quizLeaderboardMode?: 'currentSeries' | 'combinedLatest';
+  @uuid({ optional: true }) quizRunId?: string;
+  @uuid({ optional: true }) displayedActivityId?: string;
+  @uuid({ optional: true }) displayedQuestionId?: string;
   /**
    * Whether the Q&A feed is part of this room at all. Optional so the column can be added to
    * existing rows; `undefined` is treated as enabled.

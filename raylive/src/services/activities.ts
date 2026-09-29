@@ -12,6 +12,7 @@ import { activityEditBlockReason } from '@/lib/activityEditing';
 import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { requireManageableRoom } from './rooms';
+import { clearQuizHistory, requireInactiveQuiz } from './quizRuns';
 
 const ACTIVITY_FIELDS = [
   'id',
@@ -24,6 +25,7 @@ const ACTIVITY_FIELDS = [
   'allowChangeAnswer',
   'isPrepared',
   'answerResetId',
+  'quizQuestionId',
   'maxRating',
   'timeLimitSeconds',
   'startedAt',
@@ -72,6 +74,7 @@ function toActivity(row: RayLiveSchema['Activity']): Activity {
     ...row,
     createdAt: new Date(row.createdAt),
     startedAt: row.startedAt ? new Date(row.startedAt) : undefined,
+    quizQuestionId: row.quizQuestionId ?? undefined,
   };
 }
 
@@ -173,6 +176,11 @@ export async function createActivity(
   position: number
 ): Promise<Activity> {
   await requireManageableRoom(room.id);
+  const existingActivities = await listActivities(room.id);
+  const last = existingActivities.at(-1);
+  if (input.kind === 'quiz' && last?.kind === 'quiz') {
+    await requireInactiveQuiz(room.id, [last.id]);
+  }
   const { options, configuration } = normalizedInput(input);
   const client = getRayfinClient();
   const id = input.id ?? crypto.randomUUID();
@@ -234,6 +242,7 @@ export async function saveActivityConfiguration(
   const { options, configuration } = normalizedInput(input);
   const activity = await getActivity(activityId);
   await requireManageableRoom(activity.room_id);
+  await requireInactiveQuiz(activity.room_id, [activity.id]);
   if (activity.kind !== input.kind) throw new Error('An activity type cannot be changed.');
 
   const existing = (await listOptions(activity.room_id))
@@ -293,6 +302,7 @@ export async function updateActivity(
       | 'allowChangeAnswer'
       | 'isPrepared'
       | 'answerResetId'
+      | 'quizQuestionId'
       | 'maxRating'
       | 'timeLimitSeconds'
       | 'startedAt'
@@ -384,6 +394,9 @@ export async function revealAnswers(
 /** Answers and options reference the activity, so they are removed first. */
 export async function deleteActivity(activityId: string): Promise<void> {
   const client = getRayfinClient();
+  const activity = await getActivity(activityId);
+  await requireInactiveQuiz(activity.room_id, [activityId]);
+  await clearQuizHistory(activity.room_id, activityId, true);
 
   await deleteActivityAnswers(activityId);
 
@@ -405,6 +418,8 @@ export async function deleteActivity(activityId: string): Promise<void> {
 export async function clearAnswers(activityId: string): Promise<void> {
   const activity = await getActivity(activityId);
   await requireManageableRoom(activity.room_id);
+  await requireInactiveQuiz(activity.room_id, [activityId]);
+  await clearQuizHistory(activity.room_id, activityId);
   await deleteActivityAnswers(activityId);
   await updateActivity(activityId, { answerResetId: crypto.randomUUID() });
   if (await hasActivityAnswers(activityId)) {
@@ -429,6 +444,7 @@ export async function swapPositions(
   a: Activity,
   b: Activity
 ): Promise<void> {
+  await requireInactiveQuiz(a.room_id, [a.id, b.id]);
   await updateActivity(a.id, { position: b.position });
   await updateActivity(b.id, { position: a.position });
 }

@@ -9,6 +9,9 @@ import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 import { useFlipList } from '@/hooks/useFlipList';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { useRoomControls } from '@/hooks/useRoomControls';
+import { useQuizAutoReveal } from '@/hooks/useQuizAutoReveal';
+import { useQuizLeaderboard } from '@/hooks/useQuizLeaderboard';
+import { useCountdown } from '@/hooks/useCountdown';
 import { useShortcuts } from '@/hooks/useShortcuts';
 import { currentUserIdOrNull } from '@/services/rooms';
 import type { QuestionWithVotes } from '@/services/questions';
@@ -38,6 +41,7 @@ export function PresentPage() {
     questions,
     activities,
     liveActivity,
+    quiz,
     optionsFor,
     answersFor,
     loading,
@@ -54,7 +58,10 @@ export function PresentPage() {
 
   // Controls appear only for the signed-in owner, so a projected or embedded copy stays clean.
   const isOwner = !!room && currentUserIdOrNull() === room.owner_id;
-  const controls = useRoomControls(room, activities, optionsFor, refresh);
+  const controls = useRoomControls(room, activities, optionsFor, refresh, quiz);
+  const automation = useQuizAutoReveal(room, quiz, refresh, !embed);
+  const standings = useQuizLeaderboard(room, quiz);
+  useCountdown(liveActivity);
 
   const shortcuts = useMemo(
     () => ({
@@ -87,7 +94,7 @@ export function PresentPage() {
       options: optionsFor(activity.id),
       answers: answersFor(activity.id),
     }));
-  const leaderboard = buildLeaderboard(quizActivities);
+  const leaderboard = quiz ? standings.entries : buildLeaderboard(quizActivities);
 
   const qnaEnabled = room.qnaEnabled !== false;
   const visibleQuestions = (
@@ -100,7 +107,8 @@ export function PresentPage() {
 
 
   // The prompt stays off the projector until the presenter starts the question.
-  const preparing = !!liveActivity && isPreparing(liveActivity);
+  const preparing = !!liveActivity && (isPreparing(liveActivity) ||
+    quiz?.questions.find((question) => question.id === liveActivity.quizQuestionId)?.state === 'starting');
   const theme = resolveTheme(room);
   const showJoinInfo = room.showJoinInfo !== false;
 
@@ -146,7 +154,15 @@ export function PresentPage() {
       </header>
 
       <main className="flex-1">
-        {showLeaderboard ? (
+        {isOwner && (automation.error || standings.error) && (
+          <p role="alert" className="mb-4 text-sm text-[var(--ia-text)]">
+            {automation.error ?? standings.error}
+            <button onClick={() => automation.error ? void automation.retry() : standings.retry()} className="ml-2 underline">Retry</button>
+          </p>
+        )}
+        {quiz?.run.state === 'building' ? (
+          <p className="py-12 text-center text-[var(--ia-muted)]">Preparing a new quiz...</p>
+        ) : showLeaderboard ? (
           <section>
             <h2 className="mb-6 text-[clamp(1.5rem,3vw,1.875rem)] font-bold">
               Leaderboard
@@ -154,14 +170,14 @@ export function PresentPage() {
             <Leaderboard entries={leaderboard} stage limit={8} />
           </section>
         ) : preparing ? (
-          /* Nicknames are stored on each device, so there is no lobby count to show. */
           <section className="flex h-full flex-col items-center justify-center text-center">
             <p className="text-[clamp(2.5rem,8vw,4.5rem)] font-bold text-[var(--ia-accent)]">
               Get ready
             </p>
             <p className="mt-6 text-[clamp(1.25rem,3vw,1.875rem)] text-[var(--ia-text)]">
-              Scan the code and pick a nickname
+              Scan the code and join the quiz
             </p>
+            {quiz && <p className="mt-4 text-lg text-[var(--ia-accent)]">{quiz.participants.length} joined</p>}
             <p className="mt-2 text-[clamp(1rem,2vw,1.5rem)] text-[var(--ia-muted)]">
               The question starts in a moment…
             </p>
@@ -179,6 +195,7 @@ export function PresentPage() {
                 tallyAnswers(liveActivity, answersFor(liveActivity.id))
               )}{' '}
               responses
+              {quiz && liveActivity.quizQuestionId && ` / ${quiz.members.filter((member) => member.question_id === liveActivity.quizQuestionId).length} eligible`}
             </p>
           </section>
         ) : visibleQuestions.length === 0 ? (

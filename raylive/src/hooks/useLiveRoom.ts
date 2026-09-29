@@ -6,7 +6,10 @@ import type { Answer } from '../../rayfin/data/Answer';
 import type { Room } from '../../rayfin/data/Room';
 
 import { listActivities, listOptions } from '@/services/activities';
-import { listAnswers } from '@/services/answers';
+import { activitiesWithAnswers, listAnswers } from '@/services/answers';
+import { currentUserIdOrNull } from '@/services/rooms';
+import { loadQuizRun } from '@/services/quizRuns';
+import { visibleQuizAnswers, quizActivity, quizOptions, type QuizRunData } from '@/lib/quizRuns';
 import { getVotedQuestionIds } from '@/services/identity';
 import {
   listQuestions,
@@ -24,6 +27,8 @@ export interface LiveRoomState {
   activities: Activity[];
   /** The activity currently accepting answers, if any. */
   liveActivity: Activity | null;
+  quiz?: QuizRunData | null;
+  hasStoredAnswers?: (activityId: string) => boolean;
   optionsFor: (activityId: string) => ActivityOption[];
   answersFor: (activityId: string) => Answer[];
   loading: boolean;
@@ -50,6 +55,8 @@ export function useLiveRoom(
   const [activities, setActivities] = useState<Activity[]>([]);
   const [options, setOptions] = useState<ActivityOption[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
+  const [quiz, setQuiz] = useState<QuizRunData | null>(null);
+  const [storedAnswers, setStoredAnswers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,18 +77,21 @@ export function useLiveRoom(
         setActivities([]);
         setOptions([]);
         setAnswers([]);
+        setQuiz(null);
         setNotFound(true);
         setError(null);
         return;
       }
 
-      const [questionRows, voteRows, activityRows, optionRows, answerRows] =
+      const [questionRows, voteRows, activityRows, optionRows, answerRows, quizData, stored] =
         await Promise.all([
           listQuestions(found.id),
           listVotes(found.id),
           listActivities(found.id),
           listOptions(found.id),
-          listAnswers(found.id),
+          listAnswers(found.id, undefined, !!found.quizRunId),
+          found.quizRunId ? loadQuizRun(found, found.quizRunId) : null,
+          found.quizRunId && currentUserIdOrNull() === found.owner_id ? activitiesWithAnswers(found.id) : null,
         ]);
 
       if (sequence !== request.current) return;
@@ -93,6 +103,8 @@ export function useLiveRoom(
       setActivities(activityRows);
       setOptions(optionRows);
       setAnswers(answerRows);
+      setQuiz(quizData);
+      setStoredAnswers(stored ?? new Set(answerRows.map((answer) => answer.activity_id)));
       setError(null);
     } catch (err) {
       if (sequence === request.current) {
@@ -148,18 +160,31 @@ export function useLiveRoom(
   }, [answers]);
 
   const optionsFor = useCallback(
-    (activityId: string) => optionsByActivity.get(activityId) ?? [],
-    [optionsByActivity]
+    (activityId: string) => {
+      const question = quiz?.questions.find((item) => item.activity_id === activityId);
+      return question ? quizOptions(question, quiz!.options) : optionsByActivity.get(activityId) ?? [];
+    },
+    [optionsByActivity, quiz]
   );
 
   const answersFor = useCallback(
-    (activityId: string) => answersByActivity.get(activityId) ?? [],
-    [answersByActivity]
+    (activityId: string) => {
+      const question = quiz?.questions.find((item) => item.activity_id === activityId);
+      if (!question) return answersByActivity.get(activityId) ?? [];
+      return visibleQuizAnswers(quiz!, question);
+    },
+    [answersByActivity, quiz]
   );
 
   const liveActivity = useMemo(
-    () => activities.find((activity) => activity.state === 'live') ?? null,
-    [activities]
+    () => {
+      const question = quiz?.questions.find((item) => item.id === room?.displayedQuestionId);
+      const source = activities.find((activity) => activity.id === question?.activity_id);
+      if (question && source) return quizActivity(question, source);
+      if (quiz?.run.state === 'building' && room?.displayedQuestionId == null) return null;
+      return activities.find((activity) => activity.state === 'live') ?? null;
+    },
+    [activities, quiz, room?.displayedQuestionId]
   );
 
   return {
@@ -167,6 +192,8 @@ export function useLiveRoom(
     questions,
     activities,
     liveActivity,
+    quiz,
+    hasStoredAnswers: (id) => storedAnswers.has(id),
     optionsFor,
     answersFor,
     loading,

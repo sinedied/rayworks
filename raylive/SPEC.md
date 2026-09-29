@@ -119,16 +119,43 @@ Multiple choice with correctness, a timer, and a leaderboard.
 
 - Presenter marks one or more options correct and optionally sets `timeLimitSeconds`
   (default 20, 0 = no limit).
-- **Prepare** opens a lobby: attendees set a nickname, the prompt stays hidden, and the projector
-  shows a "get ready" screen. **Start question** stamps `startedAt` and opens answering.
+- Consecutive quiz activities form a series, separated by non-quiz activities. **Open quiz**
+  starts at the first lobby; attendees explicitly **Join quiz** for this run using a nickname.
+  **Start question** opens answering. Next starts subsequent questions without another lobby.
 - The deadline is **enforced**: once it passes the form closes and submissions are refused.
 - The distribution stays hidden while the question is open, and correctness is shown only after
   **Reveal answers** — never from `isCorrect`, which the projected screen can read.
 - `startedAt` is stamped when the activity goes live; the audience device shows a countdown.
 - **Scoring:** correct answers score `base + speed bonus`, where the bonus decays linearly
   with elapsed time over the limit. Multi-correct questions require exactly the correct set.
-- **Leaderboard:** top participants by cumulative score across the room's quiz activities.
+- **Leaderboard:** current series/run by default, or the latest participated run per attendee
+  per series combined across the event. Lower/zero new scores replace older scores for that
+  attendee and series; absent attendees keep their last participated run.
 - Participants supply a **nickname** to appear on the leaderboard.
+
+Each question freezes its joined cohort and shares one deadline. Late joins wait for the next
+question; disconnects do not remove attendees. Optional event-level auto-reveal closes and reveals
+after every eligible participant submits a complete answer or the timer expires. Empty cohorts
+do not satisfy early completion. Untimed questions can require manual reveal. Auto-reveal is
+off by default, requires an active owner console/projector/remote, and never advances questions.
+Manual End/navigation closes the question and reveals it when auto-reveal is enabled.
+
+Previous/revisiting reviews the same attempt without resetting time or answers. A persisted
+display cursor keeps closed/revealed results on screen and lets Next continue after them.
+Restart creates a new run and requires new joins, retaining old answers/scores in read-only
+console history. Run-specific question/options, joins, rosters, and score outcomes isolate
+new reveals and answer locks. A new run never uses legacy option reveal flags as a fallback.
+
+Run configuration is snapshotted in `QuizRun`, `QuizQuestionRun`, and `QuizQuestionOption`;
+membership and finalized scoring use `QuizParticipant` and `QuizQuestionParticipant`.
+Answer rows carry optional attempt identity and submission size; only whole submissions count.
+Initialization, start, close, and reveal have persisted intermediate states for retry after
+partial writes. These are application-level safeguards, not transactional exam security.
+
+Old untagged answers remain in a Legacy results view, not in new-run completion checks.
+Event reset deletes run history; per-activity clearing deletes its answer/score outcomes and
+labels affected historical questions cleared. Active series must be finished before editing,
+deleting, clearing, or reordering their activities.
 
 ---
 
@@ -165,7 +192,8 @@ and leaderboard toggles. `/control/:code` offers the same actions as a phone rem
 a QR in the console; it is owner-only, since the underlying writes require the owner anyway.
 
 Run order resolution is pure (`src/lib/runOrder.ts`) and shared through `useRoomControls`, so all
-three surfaces behave identically. Quizzes are prepared before they start.
+three surfaces behave identically. Quiz series use one initial lobby; console quiz actions
+also use the shared run-aware controls.
 
 ## 5d. Room branding and join info
 

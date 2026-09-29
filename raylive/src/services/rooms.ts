@@ -1,8 +1,12 @@
 import type { Room } from '../../rayfin/data/Room';
+import type { RayLiveSchema } from '../../rayfin/data/schema';
 
 import { DEFAULT_PRESET_ID, DEFAULT_THEME } from '@/lib/theme';
 
 import { getRayfinClient } from './rayfinClient';
+import { readAll } from './paging';
+import { clearQuizHistory } from './quizRuns';
+import { deleteActivity, listActivities } from './activities';
 
 const ROOM_FIELDS = [
   'id',
@@ -13,6 +17,11 @@ const ROOM_FIELDS = [
   'isAcceptingQuestions',
   'isResetting',
   'resetResumeQuestions',
+  'quizAutoReveal',
+  'quizLeaderboardMode',
+  'quizRunId',
+  'displayedActivityId',
+  'displayedQuestionId',
   'qnaEnabled',
   'brandTitle',
   'showJoinInfo',
@@ -36,8 +45,13 @@ export function generateRoomCode(length = 6): string {
   ).join('');
 }
 
-function toRoom(row: Room): Room {
-  return { ...row, createdAt: new Date(row.createdAt) };
+function toRoom(row: RayLiveSchema['Room']): Room {
+  return {
+    ...row, createdAt: new Date(row.createdAt),
+    quizRunId: row.quizRunId ?? undefined,
+    displayedActivityId: row.displayedActivityId ?? undefined,
+    displayedQuestionId: row.displayedQuestionId ?? undefined,
+  };
 }
 
 export function currentUserId(): string {
@@ -144,13 +158,18 @@ export async function updateRoom(
   id: string,
   updates: Partial<
     Pick<
-      Room,
+      RayLiveSchema['Room'],
       | 'title'
       | 'description'
       | 'isOpen'
       | 'isAcceptingQuestions'
       | 'isResetting'
       | 'resetResumeQuestions'
+      | 'quizAutoReveal'
+      | 'quizLeaderboardMode'
+      | 'quizRunId'
+      | 'displayedActivityId'
+      | 'displayedQuestionId'
       | 'qnaEnabled'
       | 'brandTitle'
       | 'showJoinInfo'
@@ -168,17 +187,21 @@ export async function updateRoom(
 /** Children are deleted before the room itself: votes -> questions -> room. */
 export async function deleteRoom(roomId: string): Promise<void> {
   const client = getRayfinClient();
+  await requireRoomOwner(roomId);
+  await updateRoom(roomId, { quizRunId: null, displayedQuestionId: null, displayedActivityId: null });
+  await clearQuizHistory(roomId);
+  for (const activity of await listActivities(roomId)) await deleteActivity(activity.id);
 
-  const votes = await client.data.Vote.select(['id'])
+  const votes = await readAll(client.data.Vote.select(['id'])
     .where({ room_id: { eq: roomId } })
-    .execute();
+    .orderBy({ id: 'asc' }));
   for (const vote of votes) {
     await client.data.Vote.delete({ id: vote.id });
   }
 
-  const questions = await client.data.Question.select(['id'])
+  const questions = await readAll(client.data.Question.select(['id'])
     .where({ room_id: { eq: roomId } })
-    .execute();
+    .orderBy({ id: 'asc' }));
   for (const question of questions) {
     await client.data.Question.delete({ id: question.id });
   }

@@ -38,7 +38,8 @@ this) or the command fails with `AnonymousAccessBlockedError`. Import `@anonymou
 `src/lib/runOrder.ts` resolves the run order (`nextActivity`, `previousActivity`,
 `activationMode`, `canStartPrepared`) and `useRoomControls` turns it into actions. The control bar,
 the keyboard shortcuts, and the remote all go through that one hook — add actions there, not in a
-page, so the surfaces cannot drift apart. Quizzes are *prepared* before they start.
+page, so the surfaces cannot drift apart. A consecutive quiz series has one initial lobby;
+subsequent questions start directly. End/reveal retains a display cursor for Next/review.
 
 Gate any presenter affordance on `currentUserIdOrNull() === room.owner_id`, never on
 `isSignedIn()` alone. Keyboard shortcuts go through `useShortcuts`, which ignores modifiers and
@@ -122,6 +123,19 @@ follow the presenter with no extra coordination state. See `SPEC.md`.
 - Audience answer locks use `activityAnswerKey(id, answerResetId)`, not just the activity ID.
   Rotate the optional `Activity.answerResetId` when clearing responses, not on every start.
   Do not infer a reset from missing public answers: moderation also hides answers.
+- Quiz locks additionally include `quizQuestionId`; use the three-argument
+  `activityAnswerKey`/`rememberAnswered` path. A new run always requires explicit Join quiz.
+- Quiz run lifecycle is in `services/quizRuns.ts`, with pure rules in `lib/quizRuns.ts`.
+  Keep source activities/options separate from immutable run snapshots. Public correctness
+  comes only from a fully revealed question attempt, never an earlier run or private key.
+- `useQuizAutoReveal` runs only in active owner views; it is not a backend scheduler.
+  Completion means every frozen eligible participant has a complete submission, not a count
+  of answer rows. Empty groups do not auto-complete; the deadline is shared.
+- History/combined scores use finalized roster outcomes. Combined mode selects each person's
+  latest started joined run per series, including zero scores, not the latest global run or
+  the highest score. Do not fetch all historical answers on audience polls.
+- Register and clean up all five quiz entities with run/room deletion. Restart preserves
+  history; explicit reset/clear removes affected data. New optional fields require deployment.
 - Content edits go through `saveActivityConfiguration`, which rechecks owner, non-live state,
   and the absence of every stored answer. Preserve option IDs so partial saves can be retried.
 - Use `readAll` with stable ordering for complete collections. Collect deletion IDs before

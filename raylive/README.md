@@ -79,8 +79,44 @@ The development and deployment scripts set the required anonymous-access feature
 | Ranking | Reorder options | Borda-count standings |
 | Quiz | Answer against a timer | Reveal, scoring, and leaderboard |
 
-Activities move through `draft -> live -> ended`, and only one can be live at a time. Quizzes add
-a prepare step so attendees can choose a nickname before the prompt and timer appear.
+Activities move through `draft -> live -> ended`, and only one accepts answers at a time.
+Closed quiz results can stay on screen while the presenter reviews or advances.
+
+### Run a quiz series
+
+Consecutive quiz activities form one series; a non-quiz activity separates series.
+**Open quiz** opens the first question's lobby. Attendees explicitly **Join quiz** once per run,
+with their saved nickname prefilled. **Start question** begins the shared countdown;
+**Next** starts subsequent questions directly, without another lobby.
+
+Each question freezes its eligible group when it starts. People joining late wait for the next
+question. **Previous** reviews existing results without restarting the timer or accepting new
+answers. **Finish quiz** ends the series; **Restart quiz** opens a fresh lobby and preserves
+previous answers and scores in **Quiz run history** on the console's Leaderboard tab.
+
+Under **Quiz settings**, enable **Automatically reveal quiz answers** to close answering and
+reveal when every eligible attendee has submitted a complete answer, or the shared timer expires.
+You still advance manually. An empty group does not trigger early reveal; untimed questions and
+disconnected attendees may require manual End/Reveal. End or navigation away also reveals the
+closed question when this setting is enabled.
+
+> [!IMPORTANT]
+> Automatic reveal runs in an active owner console, non-embedded projector, or phone remote.
+> If every owner view is closed or suspended, it waits until one resumes. It is not a background
+> server timer. The setting is off by default.
+
+The leaderboard defaults to the **current quiz series**. **Combined latest run per attendee,
+per series** adds each person's latest participated run across series, never their best run or
+the sum of repeated attempts. Joining a newer run that starts replaces that person's older score
+for the same series even if the new score is zero; attendees who do not join keep their previous
+score. Older runs remain individually viewable. Pre-feature answers are labeled **Legacy results**
+and are excluded from run-aware combined scores.
+
+Runs snapshot questions, options, timing, eligible attendees, and finalized scores. New runs use
+new answer/reveal identities, so old reveals and answers cannot unlock or auto-complete them.
+Finish an active series before editing, clearing, deleting, or reordering its activities.
+Existing installations need the additive quiz tables/fields applied with `npm run rayfin:up`
+before serving the updated frontend.
 
 ### Edit activities and reset a rehearsal
 
@@ -90,7 +126,7 @@ hidden ones) and a Draft or Ended activity; end a live activity or quiz lobby fi
 **Clear responses** makes an answered activity editable again.
 
 **Reset all responses** asks for confirmation, then deletes all activity answers, Q&A questions,
-votes, and derived quiz standings in the room, even if Q&A is turned off. Activities return to
+votes, and all quiz run history in the room, even if Q&A is turned off. Activities return to
 Draft, quiz timers are cleared, and revealed answers become hidden again. The room, links,
 activity order, options, private quiz answer keys, theme, and open/closed setting are preserved.
 Previously connected attendees can answer again when you restart an activity without clearing
@@ -100,6 +136,10 @@ Participation and presenter controls pause during reset. If a write fails, the c
 the incomplete reset and offers **Retry response reset**, including after a reload. Completed
 deletions cannot be undone. The original question-acceptance setting is restored only after
 the reset finishes.
+
+Unlike Restart quiz, **Clear responses** deletes the selected activity's answers and score
+outcomes across retained runs. Its historical questions are labeled cleared; other questions
+and their scores are preserved.
 
 > [!IMPORTANT]
 > Reset and editing use separate Rayfin writes, not a database transaction. Fresh checks reject
@@ -212,13 +252,17 @@ The phone remote is owner-only and uses the Fabric Portal authentication handoff
 
 ### Data model
 
-Six entities live under `rayfin/data/`:
+Core entities live under `rayfin/data/`:
 
 - `Room` - owner, share code, open state, Q&A controls, and theme.
 - `Question` and `Vote` - moderated Q&A with client-side vote aggregation.
 - `Activity` - type, lifecycle, timer, and activity settings.
 - `ActivityOption` - choices plus private and revealed correctness.
 - `Answer` - participant submissions, including multi-select and ranking rows.
+- `QuizRun`, `QuizQuestionRun`, and `QuizQuestionOption` - immutable run configuration,
+  per-question lifecycle, and attempt-scoped answer reveals.
+- `QuizParticipant` and `QuizQuestionParticipant` - explicit run joins, frozen question
+  membership, and finalized scoring outcomes.
 
 `owner_id` and `room_id` are denormalized onto child entities because Rayfin policies cannot
 traverse relationships. Tallies remain client-side because the fluent client has no `count()` and

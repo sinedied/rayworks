@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { ActivityAnswerForm } from '@/components/ActivityAnswerForm';
 import { ActivityResults, ResponseCount } from '@/components/ActivityResults';
 import { RayLiveWordmark } from '@/components/RayLiveWordmark';
+import { QuizJoin } from '@/components/QuizJoin';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
 import { allowsMultipleSubmissions, hasAnswered } from '@/lib/aggregate';
@@ -33,6 +34,7 @@ export function AudiencePage() {
     room,
     questions,
     liveActivity,
+    quiz,
     optionsFor,
     answersFor,
     loading,
@@ -104,7 +106,7 @@ export function AudiencePage() {
   const qnaEnabled = room.qnaEnabled !== false;
   const liveAnswers = liveActivity ? answersFor(liveActivity.id) : [];
   const answerKey = liveActivity
-    ? activityAnswerKey(liveActivity.id, liveActivity.answerResetId)
+    ? activityAnswerKey(liveActivity.id, liveActivity.answerResetId, liveActivity.quizQuestionId)
     : '';
 
   // Answers are final unless the presenter allows changes, so the form locks once this
@@ -119,9 +121,13 @@ export function AudiencePage() {
     : false;
   const canChange = liveActivity?.allowChangeAnswer === true;
   const preparing = !!liveActivity && isPreparing(liveActivity);
+  const joined = quiz?.participants.some((participant) => participant.participantKey === getParticipantKey());
+  const questionState = quiz?.questions.find((question) => question.id === liveActivity?.quizQuestionId)?.state;
+  const eligible = !liveActivity?.quizQuestionId || quiz?.members.some((member) =>
+    member.question_id === liveActivity.quizQuestionId && member.participantKey === getParticipantKey());
   const open = !!liveActivity && canAnswer(liveActivity);
   const showForm =
-    !room.isResetting && open && (!answered || multipleAllowed || (canChange && changing === answerKey));
+    !room.isResetting && open && eligible && (!answered || multipleAllowed || (canChange && changing === answerKey));
 
   const activeTab: Tab = liveActivity ? tab : 'qna';
 
@@ -173,6 +179,14 @@ export function AudiencePage() {
           <p role="status" className="py-12 text-center text-sm text-[var(--ia-muted)]">
             The presenter is resetting responses. Participation is paused.
           </p>
+        ) : quiz?.run.state === 'building' ? (
+          <p role="status" className="py-12 text-center text-[var(--ia-muted)]">The presenter is preparing a new quiz.</p>
+        ) : questionState === 'starting' ? (
+          <p role="status" className="py-12 text-center text-[var(--ia-muted)]">Get ready. The question is starting.</p>
+        ) : questionState === 'closing' || questionState === 'revealing' ? (
+          <p role="status" className="py-12 text-center text-[var(--ia-muted)]">Answering is closed. Results are being finalized.</p>
+        ) : quiz && quiz.run.state !== 'finished' && (preparing || !joined) ? (
+          <QuizJoin key={quiz.run.id} quiz={quiz} refresh={() => refresh(true)} />
         ) : liveActivity && preparing ? (
           /* Lobby: the prompt is deliberately not rendered, so nobody can think ahead. */
           <section className="py-8 text-center">
@@ -231,7 +245,9 @@ export function AudiencePage() {
               {liveActivity.prompt}
             </h2>
 
-            {showForm ? (
+            {liveActivity.quizQuestionId && open && !eligible ? (
+              <p role="status" className="py-8 text-center text-[var(--ia-muted)]">You're in for the next question. This question's group was already set.</p>
+            ) : showForm ? (
               <ActivityAnswerForm
                 key={answerKey}
                 activity={liveActivity}

@@ -44,6 +44,8 @@ export class Answer {
    * one as a whole. Optional because rows created before answer-changing existed have none.
    */
   @uuid({ optional: true }) submissionId?: string;
+  @uuid({ optional: true }) quizQuestionId?: string;
+  @int({ optional: true }) submissionSize?: number;
   /** Nickname shown on quiz leaderboards. */
   @text({ optional: true, max: 80 }) participantName?: string;
   /** Set for choice, ranking, and quiz answers. */

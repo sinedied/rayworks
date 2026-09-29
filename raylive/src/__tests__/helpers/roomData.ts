@@ -1,4 +1,6 @@
 import type { RayLiveSchema } from '../../../rayfin/data/schema';
+import type { Room } from '../../../rayfin/data/Room';
+import type { Activity } from '../../../rayfin/data/Activity';
 
 type TableName = keyof RayLiveSchema;
 type Operation = 'read' | 'create' | 'update' | 'delete';
@@ -25,14 +27,19 @@ function table<T extends { id: string }>(name: TableName) {
   return {
     rows,
     select: (_fields: string[]) => {
-      let filters: Record<string, { eq: unknown }> = {};
+      let filters: Record<string, { eq?: unknown; in?: unknown[]; isNull?: boolean }> = {};
       let order: Record<string, 'asc' | 'desc'> = {};
       let limit = 100;
       let offset = 0;
       const matches = () => {
         operation(name, 'read');
         return [...rows.values()]
-          .filter((row) => Object.entries(filters).every(([key, filter]) => Reflect.get(row, key) === filter.eq))
+          .filter((row) => Object.entries(filters).every(([key, filter]) => {
+            const value = Reflect.get(row, key);
+            if (filter.isNull !== undefined) return (value == null) === filter.isNull;
+            if (filter.in) return filter.in.includes(value);
+            return value === filter.eq;
+          }))
           .sort((a, b) => {
             for (const [key, direction] of Object.entries(order)) {
               const left = Reflect.get(a, key);
@@ -87,6 +94,11 @@ export const data = {
   Answer: table<RayLiveSchema['Answer']>('Answer'),
   Question: table<RayLiveSchema['Question']>('Question'),
   Vote: table<RayLiveSchema['Vote']>('Vote'),
+  QuizRun: table<RayLiveSchema['QuizRun']>('QuizRun'),
+  QuizQuestionRun: table<RayLiveSchema['QuizQuestionRun']>('QuizQuestionRun'),
+  QuizQuestionOption: table<RayLiveSchema['QuizQuestionOption']>('QuizQuestionOption'),
+  QuizParticipant: table<RayLiveSchema['QuizParticipant']>('QuizParticipant'),
+  QuizQuestionParticipant: table<RayLiveSchema['QuizQuestionParticipant']>('QuizQuestionParticipant'),
 };
 
 export const client = {
@@ -99,11 +111,11 @@ export const client = {
   },
 };
 
-export const room: RayLiveSchema['Room'] = {
+export const room: Room = {
   id: 'room-1', owner_id: 'owner-1', code: 'test', title: 'Rehearsal',
   isOpen: true, isAcceptingQuestions: true, qnaEnabled: true, createdAt: new Date(),
 };
-export const activity: RayLiveSchema['Activity'] = {
+export const activity: Activity = {
   id: 'activity-1', room_id: room.id, owner_id: room.owner_id,
   kind: 'quiz', prompt: 'Question?', state: 'ended', position: 0,
   showResults: true, allowMultiple: false, createdAt: new Date(),

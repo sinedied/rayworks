@@ -2,6 +2,7 @@ import { listActivities, listOptions, updateActivity } from './activities';
 import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { requireRoomOwner, updateRoom } from './rooms';
+import { clearQuizHistory } from './quizRuns';
 
 export async function resetRoomResponses(roomId: string): Promise<void> {
   const room = await requireRoomOwner(roomId);
@@ -19,10 +20,12 @@ export async function resetRoomResponses(roomId: string): Promise<void> {
   });
 
   try {
+    await updateRoom(roomId, { quizRunId: null, displayedQuestionId: null, displayedActivityId: null });
+    await clearQuizHistory(roomId);
     const activities = await listActivities(roomId);
     for (const activity of activities) {
       await updateActivity(activity.id, {
-        state: 'draft', isPrepared: false, startedAt: null,
+        state: 'draft', isPrepared: false, startedAt: null, quizQuestionId: null,
       });
     }
 

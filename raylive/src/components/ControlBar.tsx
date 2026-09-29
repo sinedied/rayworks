@@ -125,6 +125,11 @@ export function ControlBar({
           {controls.showJoinInfo ? 'Hide join' : 'Show join'}
         </ControlButton>
 
+        {controls.hasQuiz && <>
+          <ControlButton onClick={() => void controls.finish()} disabled={controls.busy || controls.quizFinished} label="Finish quiz">Finish quiz</ControlButton>
+          <ControlButton onClick={() => void controls.restart()} disabled={controls.busy} label="Restart quiz">Restart quiz</ControlButton>
+        </>}
+
         <ControlButton
           onClick={onToggleLeaderboard}
           label="Toggle leaderboard"

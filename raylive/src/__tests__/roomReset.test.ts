@@ -41,10 +41,12 @@ describe('resetRoomResponses', () => {
     expect([...data.Vote.rows.keys()]).toEqual(['other-vote']);
     expect(data.Room.rows.get(room.id)).toEqual({
       ...room, isOpen: false, qnaEnabled: false, isResetting: false, resetResumeQuestions: true,
+      quizRunId: null, displayedActivityId: null, displayedQuestionId: null,
     });
     for (const previous of activitiesBefore) {
       expect(data.Activity.rows.get(previous.id)).toEqual({
         ...previous, state: 'draft', isPrepared: false, startedAt: null,
+        quizQuestionId: null,
         answerResetId: expect.any(String),
       });
     }

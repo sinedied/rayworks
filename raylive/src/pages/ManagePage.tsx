@@ -11,10 +11,16 @@ import { ActivityResults, ResponseCount } from '@/components/ActivityResults';
 import { CopyButton } from '@/components/CopyButton';
 import { Leaderboard } from '@/components/Leaderboard';
 import { QrCode } from '@/components/QrCode';
+import { QuizHistory } from '@/components/QuizHistory';
 import { ResponseModeration } from '@/components/ResponseModeration';
 import { ThemePicker } from '@/components/ThemePicker';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
-import { allowsMultipleSubmissions, buildLeaderboard, type WordCloudEntry } from '@/lib/aggregate';
+import { useRoomControls } from '@/hooks/useRoomControls';
+import { useQuizAutoReveal } from '@/hooks/useQuizAutoReveal';
+import { useQuizLeaderboard } from '@/hooks/useQuizLeaderboard';
+import { quizActivity } from '@/lib/quizRuns';
+import { updateQuizQuestionSettings } from '@/services/quizRuns';
+import { allowsMultipleSubmissions, buildLeaderboard, countParticipants, type WordCloudEntry } from '@/lib/aggregate';
 import { activityEditBlockReason } from '@/lib/activityEditing';
 import { isPreparing } from '@/lib/quiz';
 import { isFreeformActivity } from '@/lib/moderation';
@@ -25,10 +31,7 @@ import {
   createActivity,
   deleteActivity,
   endActivity,
-  goLive,
-  prepareActivity,
   revealAnswers,
-  startPreparedActivity,
   setActivityState,
   swapPositions,
   updateActivity,
@@ -52,6 +55,8 @@ export function ManagePage() {
     questions,
     activities,
     liveActivity,
+    quiz,
+    hasStoredAnswers,
     optionsFor,
     answersFor,
     loading,
@@ -66,7 +71,12 @@ export function ManagePage() {
   const pending = useRef(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ activity: Activity; options: ActivityOption[] } | null>(null);
-  const blocked = busy || room?.isResetting === true;
+  const controls = useRoomControls(room, activities, optionsFor, refresh, quiz);
+  const automation = useQuizAutoReveal(room, quiz, refresh);
+  const standings = useQuizLeaderboard(room, quiz);
+  const blocked = busy || controls.busy || room?.isResetting === true;
+  const activeSeries = new Set(quiz && quiz.run.state !== 'finished' ? quiz.questions.map((question) => question.activity_id) : []);
+  const displayedQuestion = quiz?.questions.find((question) => question.id === room?.displayedQuestionId);
 
   const qnaEnabled = room?.qnaEnabled !== false;
   const joinUrl = `${window.location.origin}/r/${code ?? ''}`;
@@ -127,7 +137,7 @@ export function ManagePage() {
 
   const handleReset = async () => {
     if (!window.confirm(
-      `Reset all responses in "${room.title}"? This permanently deletes every activity answer, Q&A question, vote, and quiz result. All activities return to Draft and revealed answers are hidden. Your activities, settings, and share links are kept. This cannot be undone.`
+      `Reset all responses in "${room.title}"? This permanently deletes every activity answer, Q&A question, vote, and all quiz run history. All activities return to Draft and revealed answers are hidden. Your activities, settings, and share links are kept. This cannot be undone.`
     )) return;
     await run(() => resetRoomResponses(room.id), 'All responses reset. Activities are ready in Draft.', true);
   };
@@ -135,7 +145,8 @@ export function ManagePage() {
   const currentEdit = editing && activities.find((activity) => activity.id === editing.activity.id);
   const editBlock = editing
     ? currentEdit
-      ? activityEditBlockReason(currentEdit, answersFor(currentEdit.id).length > 0)
+      ? activeSeries.has(currentEdit.id) ? 'Finish the quiz before editing its activities.'
+        : activityEditBlockReason(currentEdit, hasStoredAnswers?.(currentEdit.id) ?? answersFor(currentEdit.id).length > 0)
       : 'This activity is no longer available.'
     : null;
   const closeEditor = () => {
@@ -144,7 +155,7 @@ export function ManagePage() {
     window.requestAnimationFrame(() => document.getElementById(`edit-${id}`)?.focus());
   };
 
-  const leaderboard = buildLeaderboard(
+  const leaderboard = quiz ? standings.entries : buildLeaderboard(
     activities
       .filter((activity) => activity.kind === 'quiz')
       .map((activity) => ({
@@ -204,7 +215,7 @@ export function ManagePage() {
             </button>
             <button
               onClick={() => void handleReset()}
-              disabled={busy}
+              disabled={busy || controls.busy && !room.isResetting}
               className="min-h-11 rounded-lg border border-admin-danger px-3 py-2 text-sm font-medium text-admin-danger hover:bg-admin-danger-soft disabled:opacity-40"
             >
               {room.isResetting ? 'Retry response reset' : 'Reset all responses'}
@@ -231,6 +242,46 @@ export function ManagePage() {
             to share again.
           </p>
         )}
+
+        <section className="mb-6 rounded-lg border border-admin-border bg-white p-4">
+          <h2 className="text-lg font-semibold text-admin-heading">Quiz settings</h2>
+          <label className="mt-3 flex items-center gap-3 text-sm">
+            <input type="checkbox" checked={room.quizAutoReveal === true} disabled={blocked}
+              onChange={(event) => {
+                const quizAutoReveal = event.target.checked;
+                void run(() => updateRoom(room.id, { quizAutoReveal }));
+              }} />
+            Automatically reveal quiz answers
+          </label>
+          <p className="mt-1 text-xs text-admin-muted">Reveals when every eligible attendee answers or the timer expires. Keep an owner console, projector, or remote active. You advance questions manually.</p>
+          <label className="mt-4 block text-sm">
+            Quiz leaderboard
+            <select aria-label="Quiz leaderboard" value={room.quizLeaderboardMode ?? 'currentSeries'} disabled={blocked}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === 'currentSeries' || value === 'combinedLatest') {
+                  void run(() => updateRoom(room.id, { quizLeaderboardMode: value }));
+                }
+              }}
+              className="mt-1 w-full rounded-lg border border-admin-control-border bg-white px-3 py-2">
+              <option value="currentSeries">Current quiz series</option>
+              <option value="combinedLatest">Combined latest run per attendee, per series</option>
+            </select>
+          </label>
+          {quiz && <>
+            <p role="status" className="mt-4 break-words text-sm text-admin-muted">
+              {quiz.run.title} · {quiz.run.state} · {quiz.participants.length} joined
+              {room.displayedQuestionId && ` · Question ${(quiz.questions.find((question) => question.id === room.displayedQuestionId)?.position ?? 0) + 1} of ${quiz.questions.length}`}
+              {displayedQuestion && ` · ${displayedQuestion.state} · ${countParticipants(answersFor(displayedQuestion.activity_id))}/${quiz.members.filter((member) => member.question_id === displayedQuestion.id).length} answered`}
+            </p>
+            <fieldset disabled={blocked} className="mt-3 flex flex-wrap gap-2">
+              <SmallButton onClick={() => void controls.previous()}>Previous</SmallButton>
+              <SmallButton onClick={() => void controls.startOrAdvance()}>{controls.canStart ? 'Start question' : 'Next question'}</SmallButton>
+              {quiz.run.state !== 'finished' && <SmallButton onClick={() => void controls.finish()}>Finish quiz</SmallButton>}
+              <SmallButton onClick={() => void controls.restart()}>Restart quiz</SmallButton>
+            </fieldset>
+          </>}
+        </section>
 
         <section className="mb-8 rounded-lg border border-admin-border bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start gap-6">
@@ -306,9 +357,11 @@ export function ManagePage() {
           />
         </div>
 
-        {(actionError || error) && (
+        {(actionError || error || controls.error || automation.error || standings.error) && (
           <p role="alert" className="mb-6 rounded-lg bg-admin-danger-soft px-4 py-3 text-sm text-admin-danger">
-            {[actionError, error].filter(Boolean).join(' ')}
+            {[actionError, error, controls.error, automation.error, standings.error].filter(Boolean).join(' ')}
+            {automation.error && <button onClick={() => void automation.retry()} className="ml-2 underline">Retry automatic reveal</button>}
+            {standings.error && <button onClick={standings.retry} className="ml-2 underline">Retry standings</button>}
           </p>
         )}
 
@@ -337,31 +390,29 @@ export function ManagePage() {
             {activities.map((activity, index) => (
               <ActivityCard
                 key={activity.id}
-                activity={activity}
+                activity={quiz?.questions.find((question) => question.activity_id === activity.id)
+                  ? quizActivity(quiz.questions.find((question) => question.activity_id === activity.id)!, activity) : activity}
                 index={index}
                 total={activities.length}
                 isLive={liveActivity?.id === activity.id}
                 options={optionsFor(activity.id)}
                 answers={answersFor(activity.id)}
                 busy={blocked}
+                seriesActive={activeSeries.has(activity.id)}
+                hasAnswers={hasStoredAnswers?.(activity.id) ?? answersFor(activity.id).length > 0}
                 editing={editing !== null}
                 onEdit={() => setEditing({ activity, options: optionsFor(activity.id) })}
-                onGoLive={() => void run(() => goLive(activity.id, activities))}
-                onPrepare={() =>
-                  void run(() => prepareActivity(activity.id, activities))
-                }
-                onStart={() =>
-                  void run(() => startPreparedActivity(activity.id))
-                }
-                onEnd={() => void run(() => endActivity(activity.id))}
+                onGoLive={() => void controls.open(activity)}
+                onStart={() => void controls.startOrAdvance()}
+                onEnd={() => activity.kind === 'quiz' ? void controls.end() : void run(() => endActivity(activity.id))}
                 onReset={() => void run(() => setActivityState(activity.id, 'draft'))}
                 onReveal={() =>
-                  void run(() => revealAnswers(optionsFor(activity.id)))
+                  activity.kind === 'quiz' && quiz ? void controls.reveal() : void run(() => revealAnswers(optionsFor(activity.id)))
                 }
                 onClearAnswers={() => {
                   if (
                     window.confirm(
-                      `Delete every response to "${activity.prompt}"?`
+                      `Delete every response to "${activity.prompt}", including its answers and scores in all quiz run history?`
                     )
                   ) {
                     void run(() => clearAnswers(activity.id));
@@ -386,18 +437,16 @@ export function ManagePage() {
                   );
                 }}
                 onToggleResults={() =>
-                  void run(() =>
-                    updateActivity(activity.id, {
-                      showResults: !activity.showResults,
-                    })
-                  )
+                  void run(() => activity.kind === 'quiz' && quiz
+                    ? updateQuizQuestionSettings(room.id, activity.id, {
+                      showResults: !(quiz.questions.find((question) => question.activity_id === activity.id)?.showResults ?? activity.showResults),
+                    }) : updateActivity(activity.id, { showResults: !activity.showResults }))
                 }
                 onToggleChangeAnswer={() =>
-                  void run(() =>
-                    updateActivity(activity.id, {
-                      allowChangeAnswer: activity.allowChangeAnswer !== true,
-                    })
-                  )
+                  void run(() => activity.kind === 'quiz' && quiz
+                    ? updateQuizQuestionSettings(room.id, activity.id, {
+                      allowChangeAnswer: !(quiz.questions.find((question) => question.activity_id === activity.id)?.allowChangeAnswer ?? activity.allowChangeAnswer),
+                    }) : updateActivity(activity.id, { allowChangeAnswer: activity.allowChangeAnswer !== true }))
                 }
                 onMove={(direction) => {
                   const other = activities[index + direction];
@@ -517,6 +566,8 @@ export function ManagePage() {
               .
             </p>
             <Leaderboard entries={leaderboard} limit={10} />
+            {!quiz && <p className="mt-2 text-xs text-admin-subtle">Legacy results: answers recorded before quiz runs were introduced.</p>}
+            <QuizHistory room={room} activities={activities} />
           </section>
         )}
       </main>
@@ -532,10 +583,11 @@ function ActivityCard({
   options,
   answers,
   busy,
+  seriesActive,
+  hasAnswers,
   editing,
   onEdit,
   onGoLive,
-  onPrepare,
   onStart,
   onEnd,
   onReset,
@@ -555,10 +607,11 @@ function ActivityCard({
   options: ReturnType<ReturnType<typeof useLiveRoom>['optionsFor']>;
   answers: ReturnType<ReturnType<typeof useLiveRoom>['answersFor']>;
   busy: boolean;
+  seriesActive: boolean;
+  hasAnswers: boolean;
   editing: boolean;
   onEdit: () => void;
   onGoLive: () => void;
-  onPrepare: () => void;
   onStart: () => void;
   onEnd: () => void;
   onReset: () => void;
@@ -574,7 +627,7 @@ function ActivityCard({
   const [expanded, setExpanded] = useState(false);
   const [moderating, setModerating] = useState(false);
   const preparing = isPreparing(activity);
-  const editBlock = activityEditBlockReason(activity, answers.length > 0);
+  const editBlock = seriesActive ? 'Finish the quiz before editing its activities.' : activityEditBlockReason(activity, hasAnswers);
 
   return (
     <article
@@ -607,14 +660,14 @@ function ActivityCard({
         <div className="flex shrink-0 items-center gap-1">
           <IconButton
             onClick={() => onMove(-1)}
-            disabled={index === 0 || busy}
+            disabled={index === 0 || busy || seriesActive}
             label="Move up"
           >
             ↑
           </IconButton>
           <IconButton
             onClick={() => onMove(1)}
-            disabled={index === total - 1 || busy}
+            disabled={index === total - 1 || busy || seriesActive}
             label="Move down"
           >
             ↓
@@ -634,22 +687,12 @@ function ActivityCard({
         </button>
         {activity.state !== 'live' ? (
           <>
-            {activity.kind === 'quiz' && (
-              <button
-                onClick={onPrepare}
-                disabled={busy}
-                title="Let people join and set a nickname without showing the question"
-                className="rounded-lg border border-admin-accent-strong px-3 py-1.5 text-xs font-medium text-admin-accent-strong disabled:opacity-40"
-              >
-                Prepare
-              </button>
-            )}
             <button
               onClick={onGoLive}
               disabled={busy}
               className="rounded-lg admin-primary px-3 py-1.5 text-xs font-medium disabled:opacity-40"
             >
-              {activity.kind === 'quiz' ? 'Start now' : 'Go live'}
+              {activity.kind === 'quiz' ? activity.quizQuestionId ? 'Open question' : 'Open quiz' : 'Go live'}
             </button>
           </>
         ) : preparing ? (
@@ -670,7 +713,7 @@ function ActivityCard({
           </button>
         )}
 
-        {activity.kind === 'quiz' && (
+        {activity.kind === 'quiz' && isLive && !preparing && (
           <SmallButton onClick={onReveal}>Reveal answers</SmallButton>
         )}
 
@@ -686,11 +729,11 @@ function ActivityCard({
             : 'Allow changing answers'}
         </SmallButton>
 
-        {activity.state === 'ended' && (
+        {activity.state === 'ended' && !seriesActive && activity.kind !== 'quiz' && (
           <SmallButton onClick={onReset}>Back to draft</SmallButton>
         )}
 
-        {answers.length > 0 && (
+        {hasAnswers && !seriesActive && (
           <SmallButton onClick={onClearAnswers}>Clear responses</SmallButton>
         )}
 
@@ -712,6 +755,7 @@ function ActivityCard({
 
         <button
           onClick={onDelete}
+          disabled={seriesActive}
           className="rounded-lg px-3 py-1.5 text-xs font-medium text-admin-subtle transition-colors hover:text-admin-danger"
         >
           Delete

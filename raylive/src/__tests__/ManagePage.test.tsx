@@ -81,6 +81,14 @@ describe('management shell', () => {
     expect(refresh).toHaveBeenCalledTimes(3);
   });
 
+  it('persists the selected quiz settings across an asynchronous owner check', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Automatically reveal quiz answers' }));
+    expect(updateRoom).toHaveBeenLastCalledWith(room.id, { quizAutoReveal: true });
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Quiz leaderboard' }), 'combinedLatest');
+    expect(updateRoom).toHaveBeenLastCalledWith(room.id, { quizLeaderboardMode: 'combinedLatest' });
+  });
+
   it.each(['loading', 'notFound'] as const)('retains the header in the %s state', (state) => {
     vi.mocked(useLiveRoom).mockReturnValue({
       ...roomState, room: null, [state]: true,

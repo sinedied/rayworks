@@ -81,8 +81,9 @@ export function rememberVote(questionId: string): void {
   addToIdSet(VOTED_STORAGE, questionId);
 }
 
-export function activityAnswerKey(activityId: string, resetId?: string): string {
-  return resetId ? `${activityId}:${resetId}` : activityId;
+export function activityAnswerKey(activityId: string, resetId?: string, quizQuestionId?: string): string {
+  const key = resetId ? `${activityId}:${resetId}` : activityId;
+  return quizQuestionId ? `${key}:quiz:${quizQuestionId}` : key;
 }
 
 /** Legacy activities keep their original key until responses are explicitly reset. */
@@ -90,6 +91,6 @@ export function getAnsweredActivityIds(): Set<string> {
   return readIdSet(ANSWERED_STORAGE);
 }
 
-export function rememberAnswered(activityId: string, resetId?: string): void {
-  addToIdSet(ANSWERED_STORAGE, activityAnswerKey(activityId, resetId));
+export function rememberAnswered(activityId: string, resetId?: string, quizQuestionId?: string): void {
+  addToIdSet(ANSWERED_STORAGE, activityAnswerKey(activityId, resetId, quizQuestionId));
 }

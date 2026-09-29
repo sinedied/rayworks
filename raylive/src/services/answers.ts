@@ -15,12 +15,15 @@ import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { createTolerantly } from './rayfinWrite';
 import { requireManageableRoom, requireParticipatingRoom } from './rooms';
+import { validateQuizSubmission } from './quizRuns';
 
 const PUBLIC_ANSWER_FIELDS = [
   'id',
   'participantKey',
   'participantName',
   'submissionId',
+  'quizQuestionId',
+  'submissionSize',
   'option_id',
   'textValue',
   'ratingValue',
@@ -38,17 +41,24 @@ function toAnswer(row: Answer): Answer {
 }
 
 /** Complete room or activity responses, including hidden rows when fetched by the owner. */
-export async function listAnswers(roomId: string, activityId?: string): Promise<Answer[]> {
+export async function listAnswers(roomId: string, activityId?: string, legacyOnly = false): Promise<Answer[]> {
   const client = getRayfinClient();
 
   const rows = await readAll(client.data.Answer.select([...PUBLIC_ANSWER_FIELDS])
     .where({
       room_id: { eq: roomId },
       ...(activityId === undefined ? {} : { activity_id: { eq: activityId } }),
+      ...(legacyOnly ? { quizQuestionId: { isNull: true } } : {}),
     })
     .orderBy({ id: 'asc' }));
 
   return rows.map(toAnswer);
+}
+
+export async function activitiesWithAnswers(roomId: string): Promise<Set<string>> {
+  const rows = await readAll(getRayfinClient().data.Answer.select(['id', 'activity_id'])
+    .where({ room_id: { eq: roomId } }).orderBy({ id: 'asc' }));
+  return new Set(rows.map((row) => row.activity_id));
 }
 
 type AnswerDraft = Pick<
@@ -90,6 +100,7 @@ async function submitAll(
     getActivity(activity.id),
   ]);
   if (current.room_id !== room.id ||
+      (current.quizQuestionId ?? '') !== (activity.quizQuestionId ?? '') ||
       (current.answerResetId ?? '') !== (activity.answerResetId ?? '') ||
       current.startedAt?.getTime() !== activity.startedAt?.getTime()) {
     throw new Error('This activity changed. Wait for it to refresh before answering.');
@@ -100,16 +111,24 @@ async function submitAll(
 
   const client = getRayfinClient();
   const submissionId = crypto.randomUUID();
+  const question = current.kind === 'quiz' && current.quizQuestionId
+    ? await validateQuizSubmission(activity, drafts.flatMap((draft) => draft.option_id ? [draft.option_id] : []))
+    : null;
 
   for (const draft of drafts) {
     const answer = buildAnswer(current, draft, submissionId);
+    if (question) {
+      answer.quizQuestionId = question.id;
+      answer.submissionSize = drafts.length;
+      answer.elapsedMs = Math.max(0, Date.now() - question.startedAt!.getTime());
+    }
     await createTolerantly(
       async () => await client.data.Answer.create(answer),
       answer
     );
   }
 
-  rememberAnswered(current.id, current.answerResetId);
+  rememberAnswered(current.id, current.answerResetId, current.quizQuestionId);
 }
 
 /** Milliseconds since the activity went live, used for quiz speed scoring. */

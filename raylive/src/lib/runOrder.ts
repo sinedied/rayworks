@@ -20,8 +20,13 @@ export function inRunOrder<T extends RunnableActivity>(activities: T[]): T[] {
 
 /** The activity currently on screen, if any. */
 export function currentActivity<T extends RunnableActivity>(
-  activities: T[]
+  activities: T[],
+  displayedId?: string
 ): T | null {
+  if (displayedId) {
+    const displayed = activities.find((activity) => activity.id === displayedId);
+    if (displayed) return displayed;
+  }
   return activities.find((activity) => activity.state === 'live') ?? null;
 }
 
@@ -32,12 +37,13 @@ export function currentActivity<T extends RunnableActivity>(
  * live. Returns `null` at the end of the list.
  */
 export function nextActivity<T extends RunnableActivity>(
-  activities: T[]
+  activities: T[],
+  displayedId?: string
 ): T | null {
   const ordered = inRunOrder(activities);
   if (ordered.length === 0) return null;
 
-  const current = currentActivity(ordered);
+  const current = currentActivity(ordered, displayedId);
   if (!current) return ordered[0];
 
   const index = ordered.findIndex((activity) => activity.id === current.id);
@@ -46,10 +52,11 @@ export function nextActivity<T extends RunnableActivity>(
 
 /** The activity a "previous" action should move to, or `null` at the start. */
 export function previousActivity<T extends RunnableActivity>(
-  activities: T[]
+  activities: T[],
+  displayedId?: string
 ): T | null {
   const ordered = inRunOrder(activities);
-  const current = currentActivity(ordered);
+  const current = currentActivity(ordered, displayedId);
   if (!current) return null;
 
   const index = ordered.findIndex((activity) => activity.id === current.id);
