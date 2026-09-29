@@ -3,7 +3,7 @@ import { Link, useBeforeUnload, useBlocker } from 'react-router-dom';
 import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
 import { reportCoverPayload } from '../../rayfin/report-cover';
-import { snapshotTripDates, type TripDates } from '../../rayfin/report-dates';
+import { snapshotTripDates, type TripDates } from '../../rayfin/functions/src/report-dates';
 import { createReportCover, readCoverState } from '@/lib/report-cover';
 import { ReportHeader } from './ReportHeader';
 import { useTripPhotoCache } from '@/hooks/useTripPhotos';

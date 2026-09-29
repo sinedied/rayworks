@@ -5,12 +5,12 @@
   "type": "module",
   "main": "dist/src/function_app.js",
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node dist/src/function_app.js",
     "build:watch": "tsc --build --watch",
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@microsoft/fabric-user-data-functions": "experimental",
+    "@microsoft/fabric-user-data-functions": "1.36.0",
     "jpeg-js": "^0.4.4"
   },
   "devDependencies": {

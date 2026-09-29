@@ -3,7 +3,7 @@ import type { TripDay } from '../../rayfin/data/TripDay';
 import type { TripPhoto } from '../../rayfin/data/TripPhoto';
 import type { TripReportRecord as TripReport } from '../../rayfin/data/TripReport';
 import { reportCoverPayload, type ReportCover } from '../../rayfin/report-cover';
-import { snapshotTripDates, type TripDates } from '../../rayfin/report-dates';
+import { snapshotTripDates, type TripDates } from '../../rayfin/functions/src/report-dates';
 const scenario = new URLSearchParams(location.search).get('scenario');
 const date = new Date('2026-09-25');
 const trip: Trip = {
@@ -85,7 +85,12 @@ export async function reopenTripReport() {
 export async function updateTrip() {}
 export async function deleteTripDay(id: string) { days = days.filter(day => day.id !== id); }
 export async function deleteTripPhoto(photo: TripPhoto) { photos = photos.filter(p => p.id !== photo.id); }
-export async function uploadTripPhoto() { await new Promise(resolve => setTimeout(resolve, 20)); }
+export async function uploadTripPhoto(...args: Parameters<typeof import('../../src/services/photos').uploadTripPhoto>) {
+  args[5]?.onProgress?.('Uploading photo: 25%');
+  await new Promise(resolve => setTimeout(resolve, 20));
+  if (scenario === 'upload-error') throw new Error('Uploading photo part 40/155 failed: HTTP Error 500. Incomplete photo data was removed.');
+  args[5]?.onProgress?.('Photo saved.');
+}
 export async function saveTripDay() {
   if (scenario === 'error') throw new Error('Could not save daily note.');
 }

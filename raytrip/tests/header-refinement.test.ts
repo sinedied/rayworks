@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveHeaderPhotos } from '../src/lib/header-photos';
-import { formatTripDateRange, snapshotTripDates } from '../rayfin/report-dates';
+import { formatTripDateRange, snapshotTripDates } from '../rayfin/functions/src/report-dates';
 import type { TripPhoto } from '../rayfin/data/TripPhoto';
 
 function photo(index: number, overrides: Partial<TripPhoto> = {}): TripPhoto {

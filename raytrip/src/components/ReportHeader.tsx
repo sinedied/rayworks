@@ -1,5 +1,5 @@
 import type { ReportCover } from '../../rayfin/report-cover';
-import { formatTripDateRange } from '../../rayfin/report-dates';
+import { formatTripDateRange } from '../../rayfin/functions/src/report-dates';
 import { ReportCoverImage } from './ReportCoverImage';
 
 export function ReportHeader({

@@ -24,11 +24,13 @@ function query() {
   return { select: vi.fn(() => builder), create: vi.fn(), update: vi.fn(), delete: vi.fn(), builder };
 }
 
-async function setup() {
-  const bytes = jpeg.encode({ width: 4, height: 4, data: Buffer.alloc(4 * 4 * 4, 200) }, 80).data;
+async function setup(input?: { bytes: Uint8Array; width: number; height: number }) {
+  const width = input?.width ?? 4;
+  const height = input?.height ?? 4;
+  const bytes = input?.bytes ?? jpeg.encode({ width, height, data: Buffer.alloc(width * height * 4, 200) }, 80).data;
   const chunks = splitPhoto(bytes).map((content, partIndex) => ({ id: String(partIndex), content, partIndex }));
   const photo = { id: photoId, trip_id: tripId, owner_id: 'owner', storageBackend: 'sql-v1', uploadState: 'uploading',
-    byteLength: bytes.length, width: 4, height: 4, chunkCount: chunks.length, sha256: await photoHash(bytes), contentType: 'image/jpeg' };
+    byteLength: bytes.length, width, height, chunkCount: chunks.length, sha256: await photoHash(bytes), contentType: 'image/jpeg' };
   const data = { Trip: query(), TripDay: query(), TripPhoto: query(), TripPhotoChunk: query() };
   data.Trip.builder.execute.mockResolvedValue([{ id: tripId, owner_id: 'owner' }]);
   data.TripPhoto.builder.execute.mockResolvedValue([photo]);
@@ -68,6 +70,27 @@ describe('SQL photo functions', () => {
     expect(s.data.TripPhoto.update).not.toHaveBeenCalled();
     s.data.TripPhoto.builder.execute.mockResolvedValue([]);
     await expect(complete(photoId, s.ctx)).rejects.toThrow('do not own');
+  });
+  it('reads every chunk page and validates a realistic high-detail JPEG', async () => {
+    const width = 1200;
+    const height = 1600;
+    const pixels = Buffer.alloc(width * height * 4);
+    let seed = 1;
+    for (let i = 0; i < pixels.length; i += 4) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      pixels[i] = seed & 255; pixels[i + 1] = (seed >>> 8) & 255; pixels[i + 2] = (seed >>> 16) & 255; pixels[i + 3] = 255;
+    }
+    const bytes = jpeg.encode({ width, height, data: pixels }, 15).data;
+    const s = await setup({ bytes, width, height });
+    expect(s.chunks.length).toBeGreaterThan(100);
+    expect(bytes.length).toBeLessThanOrEqual(524288);
+    s.data.TripPhotoChunk.builder.executePaginated
+      .mockResolvedValueOnce({ items: s.chunks.slice(0, 100), hasNextPage: true, endCursor: 'next-page' })
+      .mockResolvedValueOnce({ items: s.chunks.slice(100), hasNextPage: false });
+    await expect(complete(photoId, s.ctx)).resolves.toEqual({ photoId });
+    expect(s.data.TripPhotoChunk.builder.after).toHaveBeenCalledWith('next-page');
+    expect(s.data.TripPhotoChunk.builder.executePaginated).toHaveBeenCalledTimes(2);
+    expect(s.data.TripPhoto.update).toHaveBeenCalledWith({ id: photoId }, { uploadState: 'ready' });
   });
   it('removes all chunk pages before deleting the metadata', async () => {
     const s = await setup();

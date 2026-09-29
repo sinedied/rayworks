@@ -107,3 +107,16 @@ test('leaving a running generation cannot populate the next trip visit', async (
   await expect(page.getByRole('heading', { name: 'Trip report', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Your trips and reports' })).toBeVisible();
 });
+
+test('mobile upload failure identifies the part and retains the selected photo', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(fixture('/trips/trip-1', 'upload-error'));
+  const input = page.getByLabel('Photo', { exact: true });
+  await input.setInputFiles({ name: 'camera.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('synthetic fixture') });
+  await page.getByRole('button', { name: 'Upload photo', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Uploading photo part 40/155 failed: HTTP Error 500');
+  await expect(input).toHaveValue(/camera\.jpg$/);
+  await expect(page.getByText('Uploading photo: 25%', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Upload photo', exact: true })).toBeEnabled();
+  await noOverflow(page);
+});

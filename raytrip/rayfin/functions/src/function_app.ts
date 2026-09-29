@@ -6,7 +6,7 @@ import {
 
 import type { UniversalAppSchema } from '../../data/schema.js';
 import { generateBrief, reportGenerationPrompt } from './report-document.js';
-import { snapshotTripDates } from '../../report-dates.js';
+import { snapshotTripDates } from './report-dates.js';
 import './photo-functions.js';
 
 const udf = new UserDataFunctions();

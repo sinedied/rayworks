@@ -15,7 +15,16 @@ function retryable(error: unknown): boolean {
   if ('status' in error && typeof error.status === 'number') {
     return [408, 429, 500, 502, 503, 504].includes(error.status);
   }
-  return 'name' in error && error.name === 'NetworkError';
+  return 'name' in error && (error.name === 'NetworkError'
+    || (error.name === 'SdkError' && 'message' in error && typeof error.message === 'string'
+      && /^Request timed out after \d+ms$/.test(error.message)));
+}
+
+async function uploadStep<T>(step: string, action: () => Promise<T>): Promise<T> {
+  try { return await action(); }
+  catch (error) {
+    throw new Error(`${step}: ${error instanceof Error ? error.message : 'Request failed.'}`, { cause: error });
+  }
 }
 
 async function retry<T>(action: () => Promise<T>, signal?: AbortSignal): Promise<T> {
@@ -61,10 +70,10 @@ export async function uploadTripPhoto(
   const photoId = crypto.randomUUID();
   const { parts, ...manifest } = prepared;
   try {
-    const upload = await retry(() => client.functions.beginTripPhotoUpload.invoke({
+    const upload = await uploadStep('Starting photo upload failed', () => retry(() => client.functions.beginTripPhotoUpload.invoke({
       photoId, tripId, dayId: tripDayId || '', fileName: file.name.slice(0, 255),
       caption: caption?.trim() || '', ...manifest,
-    }), options.signal);
+    }), options.signal));
     if (upload.ownerId !== ownerId || upload.photoId !== photoId) throw new Error('The upload session does not match your signed-in account.');
 
     let next = 0;
@@ -78,7 +87,7 @@ export async function uploadTripPhoto(
           const partKey = `${photoId}:${partIndex}`;
           const content = parts[partIndex];
           let attempted = false;
-          await retry(async () => {
+          await uploadStep(`Uploading photo part ${partIndex + 1}/${parts.length} failed`, () => retry(async () => {
             if (attempted) {
               const existing = await client.data.TripPhotoChunk.select(['id', 'content'])
                 .where({ partKey: { eq: partKey } }).first(1).execute();
@@ -91,7 +100,7 @@ export async function uploadTripPhoto(
             await client.data.TripPhotoChunk.create({
               photo_id: photoId, partIndex, partKey, content, owner_id: upload.ownerId,
             });
-          }, options.signal);
+          }, options.signal));
           completed++;
           options.onProgress?.(`Uploading photo: ${Math.round(completed / parts.length * 100)}%`);
         }
@@ -102,15 +111,15 @@ export async function uploadTripPhoto(
     if (failure?.status === 'rejected') throw failure.reason;
     options.signal?.throwIfAborted();
     options.onProgress?.('Verifying and saving photo…');
-    await retry(() => client.functions.completeTripPhotoUpload.invoke({ photoId }), options.signal);
+    await uploadStep('Verifying photo upload failed', () => retry(() => client.functions.completeTripPhotoUpload.invoke({ photoId }), options.signal));
     options.onProgress?.('Photo saved.');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Photo upload failed.';
     try { await deleteTripPhoto({ id: photoId }); }
     catch (cleanup) {
-      throw new Error(`${message} Cleanup also failed: ${cleanup instanceof Error ? cleanup.message : 'unavailable'}. Reload the trip and retry removal of the incomplete upload.`);
+      throw new Error(`${message} Cleanup also failed: ${cleanup instanceof Error ? cleanup.message : 'unavailable'}. Reload the trip and retry removal of the incomplete upload.`, { cause: error });
     }
-    throw new Error(`${message} Incomplete photo data was removed.`);
+    throw new Error(`${message} Incomplete photo data was removed.`, { cause: error });
   }
 }
 

@@ -6,7 +6,7 @@ import { getRayfinClient } from './rayfinClient';
 import { validateReportContent } from '@/lib/report';
 import { coverBlob } from '@/lib/report-cover';
 import { COVER_FIELDS, parseHeaderPhotoIds, reportCoverPayload, type ReportCover } from '../../rayfin/report-cover';
-import { snapshotTripDates, type TripDates } from '../../rayfin/report-dates';
+import { snapshotTripDates, type TripDates } from '../../rayfin/functions/src/report-dates';
 import { listTripPhotos } from './photos';
 export { listTripPhotos, uploadTripPhoto, getTripPhotoUrl, deleteTripPhoto } from './photos';
 
