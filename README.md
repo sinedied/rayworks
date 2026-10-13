@@ -126,3 +126,7 @@ commands, security model, and any additional configuration.
 - [Rayfin CLI reference](https://learn.microsoft.com/fabric/apps/cli-reference) - command
   and configuration reference.
 - [Project Rayfin on GitHub](https://github.com/microsoft/rayfin) - source, releases, and issues.
+
+## License
+
+Ray|Works is available under the [MIT License](LICENSE).
