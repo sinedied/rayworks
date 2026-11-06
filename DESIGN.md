@@ -23,9 +23,11 @@
 | Light neutral | `#E5E7EB` |
 | Dark neutral | `#1F2937` |
 
-Each app uses its logo's accent for primary actions and selected states: Forms blue, Live teal,
-Trip coral, Deck purple. Keep secondary controls neutral and semantic colors independent of
-product accents. Never recolor logos to match a UI state.
+Each app uses its logo's accent identity for primary actions and selected states: Forms blue,
+Live teal, Trip coral, Deck purple, and Atlas yellow. Atlas uses darker ochre `#9A6700` for
+functional controls, links, and focus because yellow does not provide sufficient contrast on
+light surfaces. Keep secondary controls neutral and semantic colors independent of product
+accents. Never recolor logos to match a UI state.
 
 | Shared UI role | Color |
 | --- | --- |
@@ -73,5 +75,7 @@ normal text); meaningful control boundaries and focus indicators need 3:1 contra
   and semantic error feedback. Prefer calm functional UI; respect reduced-motion preferences.
 - Preserve task-specific content: slide/thumbnail typography, charts, report prose, public forms,
   and audience/presentation layouts. Live room themes retain their colors and readable branding;
-  Deck retains its dark mode with corresponding dark roles. Do not force universal content widths.
+  Deck retains its dark mode with corresponding dark roles. Atlas keeps a full-bleed night map
+  stage behind its chapter column and rail, and leaves basemap attribution visible. Do not force
+  universal content widths.
 - Reuse app-local components and tokens; this contract does not require a shared runtime library.

@@ -36,9 +36,11 @@ favicon when only a compact square is available.
 | Ray\|Live | `#0B2A5B` | `#F8FAFC` | Teal `#00C2AB` |
 | Ray\|Trip | `#0B2A5B` | `#F8FAFC` | Coral `#FF6B6B` |
 | Ray\|Deck | `#0B2A5B` | `#F8FAFC` | Purple `#7C3AED` |
+| Ray\|Atlas | `#0B2A5B` | `#F8FAFC` | Yellow `#FFC629` |
 
-Yellow `#FFC629` is currently unused. Check its contrast before assigning it as lettering on a
-light background.
+Atlas uses yellow for the identity and a darker ochre for functional UI states that require text
+or control contrast. Its globe motif stays navy with near-white lines on the dark variant, because
+a near-white globe would read as a counter hole inside the yellow `a`.
 
 ## Product motifs
 
@@ -49,6 +51,7 @@ light background.
 | Ray\|Live | Broadcast beacon as the `i` dot |
 | Ray\|Trip | Location pin as the `i` dot |
 | Ray\|Deck | Slide-content lines inside the `D` |
+| Ray\|Atlas | Navy globe inside the lowercase `a` counter |
 
 ## Favicons
 
@@ -63,5 +66,6 @@ motif.
 | Ray\|Live | `L` | Teal | Broadcast beacon |
 | Ray\|Trip | `T` | Coral | Location pin |
 | Ray\|Deck | `D` | Purple | Slide-content lines |
+| Ray\|Atlas | `A` | Yellow | Globe in the `A` opening |
 
 App-local `favicon.svg` files must be exact copies of these canonical assets.

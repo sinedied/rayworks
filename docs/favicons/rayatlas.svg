@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"
+     role="img" aria-labelledby="rayatlas-favicon-title" aria-describedby="rayatlas-favicon-desc" focusable="false">
+  <title id="rayatlas-favicon-title">Ray|Atlas favicon</title>
+  <desc id="rayatlas-favicon-desc">A near-white A whose lower opening holds a navy globe with yellow equator and meridian lines on a yellow rounded tile. The outer canvas is transparent.</desc>
+  <path fill="#FFC629" d="M16 2H48A14 14 0 0 1 62 16V48A14 14 0 0 1 48 62H16A14 14 0 0 1 2 48V16A14 14 0 0 1 16 2Z"/>
+  <path fill="#F8FAFC" d="M9.5 52.59L24 11.41Q24.5 10 26 10H38Q39.5 10 40 11.41L54.5 52.59Q55 54 53.5 54H45.5Q44 54 43.51 52.58L32.33 20.44Q32 19.5 31.67 20.44L20.49 52.58Q20 54 18.5 54H10.5Q9 54 9.5 52.59Z"/>
+  <circle cx="32" cy="41.5" r="10.5" fill="#FFC629"/>
+  <circle cx="32" cy="41.5" r="8.5" fill="#0B2A5B"/>
+  <g fill="none" stroke="#FFC629" stroke-width="2.2" stroke-linecap="round"><path d="M23.5 41.5H40.5"/><ellipse cx="32" cy="41.5" rx="3.74" ry="8.5"/></g>
+</svg>
