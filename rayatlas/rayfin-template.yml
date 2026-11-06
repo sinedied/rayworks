@@ -1,0 +1,10 @@
+apiVersion: v1
+metadata:
+  name: rayatlas
+  displayName: Ray|Atlas
+  description: >-
+    A protected Fabric story map that tells cinematic, data-driven narratives on
+    an interactive globe, with scroll chapters, presentation mode, and local drafts.
+entries:
+  - path: .
+    name: rayatlas

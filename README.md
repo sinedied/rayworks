@@ -86,6 +86,18 @@ the line between analytics and software to create entirely new experiences on en
       </td>
       <td>Create concise, editable presentations with Microsoft Fabric data backed visuals.</td>
     </tr>
+    <tr>
+      <td width="180" align="left">
+        <a href="rayatlas/README.md">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="./docs/logos/rayatlas-dark.svg">
+            <source media="(prefers-color-scheme: light)" srcset="./docs/logos/rayatlas.svg">
+            <img src="./docs/logos/rayatlas.svg" alt="Ray|Atlas" height="36">
+          </picture>
+        </a>
+      </td>
+      <td>Tell cinematic, data-driven stories on an interactive globe.</td>
+    </tr>
   </tbody>
 </table>
 
@@ -95,7 +107,7 @@ Use a supported Node.js LTS release and a Microsoft Fabric workspace with Fabric
 Then choose an application:
 
 ```bash
-cd rayforms # or raylive, raytrip, raydeck
+cd rayforms # or raylive, raytrip, raydeck, rayatlas
 npm install
 npm run dev
 ```
