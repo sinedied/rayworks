@@ -11,6 +11,8 @@ services:
     allowedRedirectUris:
       - http://localhost:5173
       - https://easy-heron-31b0bc8d0d-swedencentral.webapp.fabricapps.net
+      - http://127.0.0.1:5173
+      - https://sweet-slope-5cdadf0580-swedencentral.webapp.fabricapps.net
   data:
     enabled: true
     dialect: mssql
