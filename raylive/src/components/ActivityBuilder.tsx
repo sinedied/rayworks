@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { Activity, ActivityKind } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
 
+import { PlaceCombobox } from '@/components/PlaceCombobox';
 import {
   ACTIVITY_LABELS,
   OPTION_BASED_KINDS,
@@ -17,7 +18,10 @@ const KIND_HINTS: Record<ActivityKind, string> = {
   openText: 'Longer free-form answers',
   ranking: 'Order options by preference',
   quiz: 'Right answers, a timer, and a leaderboard',
+  globe: 'Pin where everyone joins from on a live globe',
 };
+
+const GLOBE_PROMPT = 'Where are you joining from?';
 
 const KINDS = Object.keys(ACTIVITY_LABELS) as ActivityKind[];
 
@@ -61,6 +65,7 @@ export function ActivityBuilder(props: BuilderProps) {
   const [timeLimitSeconds, setTimeLimitSeconds] = useState(initial ? (initial.timeLimitSeconds ?? 0) : 20);
   const [showResults, setShowResults] = useState(initial?.showResults ?? true);
   const [allowChangeAnswer, setAllowChangeAnswer] = useState(initial?.allowChangeAnswer ?? false);
+  const [venuePlaceId, setVenuePlaceId] = useState<string | null>(initial?.venuePlaceId ?? null);
   const [error, setError] = useState<string | null>(null);
 
   const needsOptions = OPTION_BASED_KINDS.includes(kind);
@@ -77,6 +82,7 @@ export function ActivityBuilder(props: BuilderProps) {
     setAllowMultiple(false);
     setShowResults(true);
     setAllowChangeAnswer(false);
+    setVenuePlaceId(null);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -92,6 +98,8 @@ export function ActivityBuilder(props: BuilderProps) {
       allowChangeAnswer,
       maxRating,
       timeLimitSeconds,
+      // null clears a venue the presenter removed.
+      venuePlaceId: kind === 'globe' ? venuePlaceId : undefined,
       showResults,
     };
     setError(null);
@@ -137,7 +145,10 @@ export function ActivityBuilder(props: BuilderProps) {
             <button
               key={option}
               type="button"
-              onClick={() => setKind(option)}
+              onClick={() => {
+                setKind(option);
+                if (option === 'globe' && !prompt.trim()) setPrompt(GLOBE_PROMPT);
+              }}
               className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${kind === option
                   ? 'border-admin-accent-strong bg-admin-accent-soft text-admin-accent-strong'
                   : 'border-admin-border hover:border-admin-accent-strong'
@@ -163,6 +174,20 @@ export function ActivityBuilder(props: BuilderProps) {
           placeholder="Your question…"
           className={`${inputClass} resize-none`}
         />
+
+        {kind === 'globe' && (
+          <div className="mt-4">
+            <PlaceCombobox
+              variant="console"
+              label="Venue city (optional)"
+              description="Attendees' cities connect to it with arcs on the projected globe."
+              placeholder="e.g. Berlin"
+              value={venuePlaceId}
+              onChange={setVenuePlaceId}
+              clearLabel="Remove"
+            />
+          </div>
+        )}
 
         {needsOptions && (
           <div className="mt-4 space-y-2">

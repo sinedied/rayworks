@@ -2,7 +2,12 @@ import type { Activity } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
 import type { Answer } from '../../rayfin/data/Answer';
 
+import { useEffect, useMemo, useState } from 'react';
+
+import { GlobeResults } from '@/components/GlobeResults';
 import { useFlipList } from '@/hooks/useFlipList';
+import { tallyGlobe } from '@/lib/globe';
+import { loadPlaces, type PlaceIndex } from '@/lib/places';
 import { showsCorrectness, showsDistribution } from '@/lib/quiz';
 import {
   buildWordCloud,
@@ -47,6 +52,8 @@ export function ActivityResults({
       return <OpenTextResults answers={answers} stage={stage} />;
     case 'ranking':
       return <RankingResults options={options} answers={answers} stage={stage} />;
+    case 'globe':
+      return <GlobeActivityResults activity={activity} answers={answers} stage={stage} />;
     default:
       // While a quiz question is open its distribution stays hidden, otherwise late answerers
       // can simply follow the crowd on the projected screen.
@@ -367,6 +374,74 @@ function AnswersLocked({
         closes
       </p>
     </div>
+  );
+}
+
+function GlobeActivityResults({
+  activity,
+  answers,
+  stage,
+}: {
+  activity: Activity;
+  answers: Answer[];
+  stage: boolean;
+}) {
+  const [places, setPlaces] = useState<PlaceIndex | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    loadPlaces()
+      .then((index) => {
+        if (active) setPlaces(index);
+      })
+      .catch(() => {
+        if (active) setFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [attempt]);
+
+  const venueId = activity.venuePlaceId;
+  const tally = useMemo(() => {
+    if (!places) return null;
+    const venue = venueId ? places.get(venueId) ?? null : null;
+    return tallyGlobe(answers, places, venue);
+  }, [answers, places, venueId]);
+
+  const text = stage ? 'text-[clamp(1rem,2vw,1.5rem)]' : 'text-sm';
+  if (failed && !tally) {
+    return (
+      <p role="alert" className={`py-8 text-center text-[var(--ia-muted)] ${text}`}>
+        The city list could not be loaded.{' '}
+        <button
+          type="button"
+          onClick={() => {
+            setFailed(false);
+            setAttempt((value) => value + 1);
+          }}
+          className="inline-flex min-h-11 items-center px-1 font-semibold text-[var(--ia-accent)] underline underline-offset-4"
+        >
+          Try again
+        </button>
+      </p>
+    );
+  }
+  if (!tally) {
+    return (
+      <p role="status" className={`py-8 text-center text-[var(--ia-muted)] ${text}`}>
+        Loading the globe…
+      </p>
+    );
+  }
+  return (
+    <GlobeResults
+      tally={tally}
+      variant={stage ? 'stage' : 'card'}
+      emptyHint={stage ? 'Scan the code and add your city to the globe.' : undefined}
+    />
   );
 }
 

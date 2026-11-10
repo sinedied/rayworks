@@ -7,7 +7,9 @@ import { RayLiveWordmark } from '@/components/RayLiveWordmark';
 import { QuizJoin } from '@/components/QuizJoin';
 import { useCountdown } from '@/hooks/useCountdown';
 import { useLiveRoom } from '@/hooks/useLiveRoom';
+import { usePlace } from '@/hooks/usePlaces';
 import { allowsMultipleSubmissions, hasAnswered } from '@/lib/aggregate';
+import { formatPlace } from '@/lib/places';
 import { canAnswer, isPreparing } from '@/lib/quiz';
 import {
   logoVariantForBackground,
@@ -53,6 +55,14 @@ export function AudiencePage() {
 
   // Re-renders as a timed question runs out, so the form closes itself on the deadline.
   const countdown = useCountdown(liveActivity);
+
+  // Globe: this participant's newest city, shown after submitting and pre-selected on change.
+  const myPlaceId = liveActivity?.kind === 'globe'
+    ? answersFor(liveActivity.id)
+        .filter((answer) => answer.participantKey === getParticipantKey() && answer.placeId)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.placeId
+    : undefined;
+  const myPlace = usePlace(myPlaceId);
 
   const handleAsk = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -252,6 +262,7 @@ export function AudiencePage() {
                 key={answerKey}
                 activity={liveActivity}
                 options={optionsFor(liveActivity.id)}
+                currentPlaceId={myPlaceId}
                 onSubmitted={async () => {
                   setAnsweredNow((current) => [...current, answerKey]);
                   setChanging(null);
@@ -266,9 +277,11 @@ export function AudiencePage() {
                       ? "Time's up — this question is closed."
                       : !open && !answered
                         ? 'This question is closed.'
-                        : answered
-                          ? `Answer sent${canChange && open ? '.' : ' — answers are final.'}`
-                          : 'This question is closed.'}
+                        : answered && liveActivity.kind === 'globe'
+                          ? `You're on the map${myPlace ? ` — ${formatPlace(myPlace)}` : ''}.${canChange && open ? '' : ' Answers are final.'}`
+                          : answered
+                            ? `Answer sent${canChange && open ? '.' : ' — answers are final.'}`
+                            : 'This question is closed.'}
                   </p>
                   {canChange && open && (
                     <button

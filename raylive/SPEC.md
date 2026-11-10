@@ -157,6 +157,35 @@ Event reset deletes run history; per-activity clearing deletes its answer/score 
 labels affected historical questions cleared. Active series must be finished before editing,
 deleting, clearing, or reordering their activities.
 
+### 4.7 Globe
+
+"Where are you joining from?" — city-level only.
+
+- Presenter may set an optional venue city (`Activity.venuePlaceId`). The prompt defaults to
+  "Where are you joining from?".
+- Audience picks their city from a bundled list (GeoNames cities with 50,000+ people, plus
+  capitals and regional seats); the answer stores only its GeoNames id (`Answer.placeId`), one
+  row per submission. `allowMultiple` is always off; changing an answer follows
+  `allowChangeAnswer` and writes a new submission.
+- The city picker (`PlaceCombobox`) lazy-loads the list on first focus and also matches common
+  exonyms ("Cologne" → Köln, "Bombay" → Mumbai). `npm run places:build` regenerates the list
+  from GeoNames, keeping alternate names that Natural Earth confirms as localized or former names.
+- Ids are validated as short numeric strings on write. Coordinates are resolved client-side from
+  the bundled list and are never stored.
+- Tally (`tallyGlobe`): each participant's newest submission wins. Hiding it removes the
+  participant rather than resurfacing an older answer. Ids missing from the bundled list are
+  skipped. A venue id missing from the list behaves like no venue.
+- Results: a themed globe with city bubbles and, when a venue is set, arcs to the venue.
+  - MapLibre globe with no tile server: bundled Natural Earth countries, colours derived from the
+    room theme at runtime (re-themed live). MapLibre loads lazily, only for globe activities.
+  - Stats: participants, countries, continents, and top cities. With a venue: the farthest city
+    plus total and median great-circle distance to the venue. The top 8 cities other than the
+    venue get map labels.
+  - Projected view slowly rotates or sways (paused for a while after interaction); comets fly
+    along arcs and new cities pop in. All motion is off under `prefers-reduced-motion`.
+  - Without WebGL the stats panel and city list render alone. A visually-hidden table and a polite,
+    throttled live region provide the text alternative.
+
 ---
 
 ## 5. Q&A
@@ -219,7 +248,7 @@ Existing: `Room`, `Question`, `Vote`. New entities below.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | uuid | |
-| `kind` | set | `multipleChoice`, `wordCloud`, `rating`, `openText`, `ranking`, `quiz` |
+| `kind` | set | `multipleChoice`, `wordCloud`, `rating`, `openText`, `ranking`, `quiz`, `globe` |
 | `prompt` | text(500) | The question |
 | `state` | set | `draft`, `live`, `ended` |
 | `position` | int | Order in the room |
@@ -227,6 +256,7 @@ Existing: `Room`, `Question`, `Vote`. New entities below.
 | `allowMultiple` | boolean | Multi-select / multiple word-cloud entries |
 | `maxRating` | int? | Rating scale, default 5 |
 | `timeLimitSeconds` | int? | Quiz countdown |
+| `venuePlaceId` | text(20)? | Globe venue city, GeoNames id |
 | `startedAt` | date? | Stamped when going live; anchors quiz timing |
 | `createdAt` | date | |
 | `room_id` / `room` | uuid / `@one` | |
@@ -258,6 +288,7 @@ produce several rows.
 | `option_id` | uuid? | Choice / quiz / ranking |
 | `textValue` | text(500)? | Word cloud / open text |
 | `ratingValue` | int? | Rating |
+| `placeId` | text(20)? | Globe: GeoNames id of the participant's city, never coordinates |
 | `rankPosition` | int? | Ranking |
 | `elapsedMs` | int? | Quiz speed, from `Activity.startedAt` |
 | `isHidden` | boolean | Moderation for open text |

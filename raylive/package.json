@@ -18,7 +18,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "rayfin:up": "RAYFIN_FEATURE_FLAGS=anonymous-data-access rayfin up",
-    "rayfin:db": "RAYFIN_FEATURE_FLAGS=anonymous-data-access rayfin up db apply"
+    "rayfin:db": "RAYFIN_FEATURE_FLAGS=anonymous-data-access rayfin up db apply",
+    "places:build": "node scripts/build-places.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -29,6 +30,7 @@
     "@microsoft/rayfin-core": "^1.35.1",
     "@microsoft/rayfin-data": "^1.35.1",
     "@tailwindcss/vite": "^4.1.11",
+    "maplibre-gl": "^6.16.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

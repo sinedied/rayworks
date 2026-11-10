@@ -19,9 +19,11 @@ import { useState } from 'react';
 import type { Activity } from '../../rayfin/data/Activity';
 import type { ActivityOption } from '../../rayfin/data/ActivityOption';
 
+import { PlaceCombobox } from '@/components/PlaceCombobox';
 import { QuizTimer } from '@/components/QuizTimer';
 import {
   submitChoice,
+  submitPlace,
   submitRanking,
   submitRating,
   submitText,
@@ -42,6 +44,8 @@ export interface AnswerFormProps {
   activity: Activity;
   options: ActivityOption[];
   onSubmitted: () => Promise<void> | void;
+  /** Globe only: the city this participant already submitted, pre-selected when changing it. */
+  currentPlaceId?: string;
 }
 
 /** Renders the right answer control for the activity kind and submits it. */
@@ -49,6 +53,7 @@ export function ActivityAnswerForm({
   activity,
   options,
   onSubmitted,
+  currentPlaceId,
 }: AnswerFormProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +148,14 @@ export function ActivityAnswerForm({
           options={options}
           busy={busy}
           onSubmit={(ordered) => run(() => submitRanking(activity, ordered))}
+        />
+      )}
+
+      {activity.kind === 'globe' && (
+        <PlaceInput
+          initialPlaceId={currentPlaceId}
+          busy={busy}
+          onSubmit={(placeId) => run(() => submitPlace(activity, placeId))}
         />
       )}
     </div>
@@ -296,6 +309,43 @@ function TextInput({
         className={`mt-3 w-full ${primaryButton}`}
       >
         Send
+      </button>
+    </form>
+  );
+}
+
+function PlaceInput({
+  initialPlaceId,
+  busy,
+  onSubmit,
+}: {
+  initialPlaceId?: string;
+  busy: boolean;
+  onSubmit: (placeId: string) => void;
+}) {
+  const [placeId, setPlaceId] = useState<string | null>(initialPlaceId ?? null);
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (placeId) onSubmit(placeId);
+      }}
+    >
+      <PlaceCombobox
+        variant="audience"
+        label="Your city"
+        value={placeId}
+        onChange={setPlaceId}
+        description="Pick the nearest city from the list. Only your city is shared."
+        placeholder="e.g. Hamburg"
+      />
+      <button
+        type="submit"
+        disabled={!placeId || busy}
+        className={`mt-4 w-full ${primaryButton}`}
+      >
+        {busy ? 'Sending…' : 'Put me on the map'}
       </button>
     </form>
   );

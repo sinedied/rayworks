@@ -10,7 +10,7 @@ import { canAnswer } from '@/lib/quiz';
 import { normalizeWordCloudText } from '@/lib/aggregate';
 import { responseDeletionTargets } from '@/lib/moderation';
 
-import { getActivity } from './activities';
+import { getActivity, normalizePlaceId } from './activities';
 import { readAll } from './paging';
 import { getRayfinClient } from './rayfinClient';
 import { createTolerantly } from './rayfinWrite';
@@ -27,6 +27,7 @@ const PUBLIC_ANSWER_FIELDS = [
   'option_id',
   'textValue',
   'ratingValue',
+  'placeId',
   'rankPosition',
   'elapsedMs',
   'isHidden',
@@ -63,7 +64,7 @@ export async function activitiesWithAnswers(roomId: string): Promise<Set<string>
 
 type AnswerDraft = Pick<
   Answer,
-  'option_id' | 'textValue' | 'ratingValue' | 'rankPosition' | 'elapsedMs'
+  'option_id' | 'textValue' | 'ratingValue' | 'placeId' | 'rankPosition' | 'elapsedMs'
 >;
 
 function buildAnswer(
@@ -167,6 +168,20 @@ export async function submitRating(
   value: number
 ): Promise<void> {
   await submitAll(activity, [{ ratingValue: value }]);
+}
+
+/**
+ * Globe answers store one row carrying the participant's city (GeoNames id), never coordinates.
+ * A changed answer is a new submission; tallies keep each participant's newest one.
+ */
+export async function submitPlace(
+  activity: Activity,
+  placeId: string
+): Promise<void> {
+  if (activity.kind !== 'globe') throw new Error('This activity does not accept a city.');
+  const normalized = normalizePlaceId(placeId);
+  if (!normalized) throw new Error('Pick a city from the list.');
+  await submitAll(activity, [{ placeId: normalized }]);
 }
 
 /** Ranking stores one row per option, carrying its 1-based position. */

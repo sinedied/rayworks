@@ -60,7 +60,7 @@ the line between analytics and software to create entirely new experiences on en
           </picture>
         </a>
       </td>
-      <td>Run live Q&amp;A, polls, quizzes, audience participation, and projected results.</td>
+      <td>Run live Q&amp;A, polls, quizzes, audience globes, and projected results.</td>
     </tr>
     <tr>
       <td width="180" align="left">

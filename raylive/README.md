@@ -31,7 +31,8 @@ the audience joins from a short link or QR code without signing in.
 ## Features
 
 - **Live Q&A** - collect, moderate, and upvote audience questions.
-- **Six activity types** - multiple choice, word cloud, rating, open text, ranking, and quiz.
+- **Seven activity types** - multiple choice, word cloud, rating, open text, ranking, quiz,
+  and an audience globe.
 - **Presenter workflow** - prepare questions, go live, reveal answers, and show a leaderboard.
 - **Rehearsal reset and editing** - clear a room's audience content in one confirmed action,
   and edit unanswered activities before running them again.
@@ -78,6 +79,7 @@ The development and deployment scripts set the required anonymous-access feature
 | Open text | Submit a longer response | Moderatable live list |
 | Ranking | Reorder options | Borda-count standings |
 | Quiz | Answer against a timer | Reveal, scoring, and leaderboard |
+| Globe | Pick their city | Live globe with arcs to the venue and travel stats |
 
 Activities move through `draft -> live -> ended`, and only one accepts answers at a time.
 Closed quiz results can stay on screen while the presenter reviews or advances.
@@ -117,6 +119,25 @@ new answer/reveal identities, so old reveals and answers cannot unlock or auto-c
 Finish an active series before editing, clearing, deleting, or reordering its activities.
 Existing installations need the additive quiz tables/fields applied with `npm run rayfin:up`
 before serving the updated frontend.
+
+### Show where the audience joins from
+
+A **Globe** activity asks "Where are you joining from?". Attendees search a bundled city list,
+which also matches common English names such as "Cologne" for Köln. Presenters can set an
+optional venue city in the activity editor.
+
+The projected view draws a globe in the room theme with a bubble per city, arcs to the venue,
+and slow rotation that stops under reduced motion. Stats show participants, countries,
+continents, top cities and, with a venue, the farthest city plus total and median distance.
+Without WebGL, the stats and city list render alone.
+
+> [!NOTE]
+> Answers store only the city's GeoNames id, never coordinates or a precise location.
+> Coordinates come from the bundled list in the browser.
+>
+> Existing installations need the optional `Activity.venuePlaceId` and `Answer.placeId` columns
+> applied with `npm run rayfin:db` (or `npm run rayfin:up`) before serving the updated frontend,
+> because every room query selects them.
 
 ### Edit activities and reset a rehearsal
 
@@ -216,7 +237,8 @@ open text activities configured for multiple entries intentionally keep several 
 Upvotes are final.
 
 `participantKey` and `voterKey` are readable because Rayfin selects written fields after a
-mutation. They are pseudonymous IDs, not credentials.
+mutation. They are pseudonymous IDs, not credentials. Globe answers are as public as other
+answers: the chosen city is visible to anyone who can read the room's answers.
 
 </details>
 
@@ -256,9 +278,9 @@ Core entities live under `rayfin/data/`:
 
 - `Room` - owner, share code, open state, Q&A controls, and theme.
 - `Question` and `Vote` - moderated Q&A with client-side vote aggregation.
-- `Activity` - type, lifecycle, timer, and activity settings.
+- `Activity` - type, lifecycle, timer, globe venue, and activity settings.
 - `ActivityOption` - choices plus private and revealed correctness.
-- `Answer` - participant submissions, including multi-select and ranking rows.
+- `Answer` - participant submissions, including multi-select, ranking, and globe city rows.
 - `QuizRun`, `QuizQuestionRun`, and `QuizQuestionOption` - immutable run configuration,
   per-question lifecycle, and attempt-scoped answer reveals.
 - `QuizParticipant` and `QuizQuestionParticipant` - explicit run joins, frozen question
@@ -278,6 +300,7 @@ anonymous callers could forge denormalized counters.
 | `npm test` | Run Vitest |
 | `npm run rayfin:up` | Deploy to Fabric with anonymous access enabled |
 | `npm run rayfin:db` | Apply schema changes with anonymous access enabled |
+| `npm run places:build` | Regenerate the bundled city and country data |
 
 <details>
 <summary><strong>Theming and project layout</strong></summary>
@@ -289,12 +312,28 @@ variables; `src/main.css` derives surfaces, borders, and muted text with `color-
 rayfin/data/          Room, Q&A, activity, option, answer, and vote entities
 src/components/       Builders, answer forms, results, leaderboard, QR, and auth
 src/hooks/            Authentication and polling hooks
-src/lib/              Tallying, quiz rules, run order, reordering, and theming
+src/lib/              Tallying, quiz rules, run order, reordering, theming, and globe
+src/lib/places/       Generated city and country data, search, and distances
+scripts/              Place data generator (`npm run places:build`)
 src/pages/            Dashboard, management, audience, stage, and remote views
 src/services/         Rayfin access, anonymous writes, identity, and bootstrap
 ```
 
 </details>
+
+### Map data and attribution
+
+The globe uses only data bundled with the app, generated by `npm run places:build`:
+
+- City data © [GeoNames](https://www.geonames.org/), licensed under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): cities with 50,000+ people, plus
+  capitals and regional seats.
+- Country shapes and the city aliases come from [Natural Earth](https://www.naturalearthdata.com/)
+  (public domain).
+- [MapLibre GL JS](https://maplibre.org/) renders the globe. No tile, glyph, or sprite server
+  (such as OpenFreeMap) is contacted; labels are HTML.
+
+The attribution appears under the globe and in the city picker.
 
 ## More resources
 

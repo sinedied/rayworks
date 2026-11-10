@@ -34,7 +34,7 @@ describe('saveActivityConfiguration', () => {
     expect(data.ActivityOption.rows.has('option-2')).toBe(false);
   });
 
-  it.each<ActivityKind>(['multipleChoice', 'wordCloud', 'rating', 'openText', 'ranking', 'quiz'])(
+  it.each<ActivityKind>(['multipleChoice', 'wordCloud', 'rating', 'openText', 'ranking', 'quiz', 'globe'])(
     'edits an unanswered %s draft', async (kind) => {
       data.Activity.rows.set(activity.id, { ...activity, kind, state: 'draft' });
       await saveActivityConfiguration(activity.id, { ...input(), kind, maxRating: 8 });
@@ -113,4 +113,41 @@ it('resumes a partial creation without duplicating its activity or options', asy
   await createActivity(room, draft, 1);
   expect([...data.Activity.rows.keys()]).toEqual([activity.id, 'new-activity']);
   expect([...data.ActivityOption.rows.values()].filter((row) => row.activity_id === 'new-activity')).toHaveLength(2);
+});
+
+describe('globe activities', () => {
+  const globe = (changes: Partial<NewActivityInput> = {}): NewActivityInput => ({
+    id: 'globe-1', kind: 'globe', prompt: 'Where are you joining from?',
+    allowMultiple: true, allowChangeAnswer: true, venuePlaceId: ' 2988507 ', ...changes,
+  });
+
+  it('creates a globe with a venue, no options, and a single answer per person', async () => {
+    const created = await createActivity(room, globe({ options: input().options }), 1);
+    expect(created).toMatchObject({ kind: 'globe', venuePlaceId: '2988507', allowMultiple: false, allowChangeAnswer: true });
+    expect(data.Activity.rows.get('globe-1')).toMatchObject({ venuePlaceId: '2988507', allowMultiple: false });
+    expect([...data.ActivityOption.rows.values()].filter((row) => row.activity_id === 'globe-1')).toEqual([]);
+  });
+
+  it('creates a globe without a venue and keeps the column off other kinds', async () => {
+    await createActivity(room, globe({ venuePlaceId: undefined }), 1);
+    expect(data.Activity.rows.get('globe-1')?.venuePlaceId).toBeUndefined();
+    await createActivity(room, {
+      ...input(), id: 'quiz-2', venuePlaceId: '2988507',
+      options: [{ id: 'q2-a', label: 'A', isCorrect: true }, { id: 'q2-b', label: 'B', isCorrect: false }],
+    }, 2);
+    expect(data.Activity.rows.get('quiz-2')).not.toHaveProperty('venuePlaceId');
+  });
+
+  it('updates and clears the venue when editing', async () => {
+    data.Activity.rows.set(activity.id, { ...activity, kind: 'globe', state: 'draft' });
+    await saveActivityConfiguration(activity.id, globe({ venuePlaceId: '5128581' }));
+    expect(data.Activity.rows.get(activity.id)?.venuePlaceId).toBe('5128581');
+    await saveActivityConfiguration(activity.id, globe({ venuePlaceId: '' }));
+    expect(data.Activity.rows.get(activity.id)?.venuePlaceId).toBeNull();
+  });
+
+  it.each(['Paris', '1'.repeat(21), '12 34'])('rejects a malformed venue %j without writing', async (venuePlaceId) => {
+    await expect(createActivity(room, globe({ venuePlaceId }), 1)).rejects.toThrow('Pick a city');
+    expect(backend.writes).toEqual([]);
+  });
 });

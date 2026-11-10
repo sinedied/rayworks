@@ -19,7 +19,11 @@ export type RayLiveSchema = {
   Question: Question;
   Vote: Vote;
   // DAB reads/writes null for a cleared date; the date decorator only accepts Date | undefined.
-  Activity: Omit<Activity, 'startedAt' | 'quizQuestionId'> & { startedAt?: Date | null; quizQuestionId?: string | null };
+  Activity: Omit<Activity, 'startedAt' | 'quizQuestionId' | 'venuePlaceId'> & {
+    startedAt?: Date | null;
+    quizQuestionId?: string | null;
+    venuePlaceId?: string | null;
+  };
   ActivityOption: ActivityOption;
   Answer: Answer;
   QuizRun: QuizRun;

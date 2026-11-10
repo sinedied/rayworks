@@ -55,6 +55,11 @@ export class Answer {
   @text({ optional: true, max: 500 }) textValue?: string;
   /** Set for rating answers. */
   @int({ optional: true }) ratingValue?: number;
+  /**
+   * Set for globe answers: GeoNames id of the participant's city. City-level only; never
+   * coordinates.
+   */
+  @text({ optional: true, max: 20 }) placeId?: string;
   /** 1-based position for ranking answers. */
   @int({ optional: true }) rankPosition?: number;
   /** Milliseconds between the activity going live and this answer, for quiz scoring. */

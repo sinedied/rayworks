@@ -73,6 +73,36 @@ describe('activity editor', () => {
     expect(create.mock.calls[1][0]).toEqual(first);
   });
 
+  it('creates a globe with a venue city and no option controls', async () => {
+    const create = vi.fn().mockResolvedValue(true);
+    render(<ActivityBuilder onCreate={create} busy={false} />);
+    await userEvent.click(screen.getByRole('button', { name: '+ Add an activity' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Globe/ }));
+    expect(screen.getByLabelText('Question')).toHaveValue('Where are you joining from?');
+    expect(screen.queryByLabelText('Option 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Allow multiple/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Let people change their answer')).toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole('combobox', { name: 'Venue city (optional)' }), 'berlin');
+    await userEvent.click(await screen.findByRole('option', { name: 'Berlin State of Berlin, Germany' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add globe' }));
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'globe', prompt: 'Where are you joining from?', venuePlaceId: '2950159', options: undefined,
+    }));
+  });
+
+  it('shows the saved venue and clears it with null', async () => {
+    const save = vi.fn().mockResolvedValue(true);
+    render(<ActivityBuilder mode="edit" activity={{ ...activity, kind: 'globe', venuePlaceId: '2911298' }}
+      options={[]} busy={false} onSave={save} onCancel={vi.fn()} />);
+    expect(await screen.findByText('Hamburg, Germany')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ venuePlaceId: '2911298' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove city: Hamburg, Germany' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'globe', venuePlaceId: null }));
+  });
+
   it('disables save but allows cancellation when an answer arrives', () => {
     render(<ActivityBuilder mode="edit" activity={activity} options={options} busy={false}
       blockedReason="Clear all responses before editing this activity." onSave={vi.fn()} onCancel={vi.fn()} />);

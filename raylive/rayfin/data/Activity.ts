@@ -22,7 +22,8 @@ export type ActivityKind =
   | 'rating'
   | 'openText'
   | 'ranking'
-  | 'quiz';
+  | 'quiz'
+  | 'globe';
 
 /** `draft` is presenter-only, `live` accepts answers, `ended` freezes them. */
 export type ActivityState = 'draft' | 'live' | 'ended';
@@ -53,7 +54,7 @@ export type ActivityState = 'draft' | 'live' | 'ended';
 })
 export class Activity {
   @uuid() id!: string;
-  @set('multipleChoice', 'wordCloud', 'rating', 'openText', 'ranking', 'quiz')
+  @set('multipleChoice', 'wordCloud', 'rating', 'openText', 'ranking', 'quiz', 'globe')
   kind!: ActivityKind;
   @text({ min: 1, max: 500 }) prompt!: string;
   @set('draft', 'live', 'ended') state!: ActivityState;
@@ -79,6 +80,11 @@ export class Activity {
   @int({ optional: true }) maxRating?: number;
   /** Quiz countdown in seconds; 0 or absent means untimed. */
   @int({ optional: true }) timeLimitSeconds?: number;
+  /**
+   * Optional venue city for globe activities, as a GeoNames id resolved against the bundled city
+   * list; ignored by other kinds. Coordinates are never stored.
+   */
+  @text({ optional: true, max: 20 }) venuePlaceId?: string;
   /** Stamped when the activity goes live; anchors quiz timing. */
   @date({ optional: true }) startedAt?: Date;
   @date() createdAt!: Date;

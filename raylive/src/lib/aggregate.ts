@@ -14,6 +14,7 @@ export interface AnswerLike {
   option_id?: string;
   textValue?: string;
   ratingValue?: number;
+  placeId?: string;
   rankPosition?: number;
   elapsedMs?: number;
   isHidden?: boolean;

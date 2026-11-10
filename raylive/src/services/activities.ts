@@ -28,6 +28,7 @@ const ACTIVITY_FIELDS = [
   'quizQuestionId',
   'maxRating',
   'timeLimitSeconds',
+  'venuePlaceId',
   'startedAt',
   'createdAt',
   'room_id',
@@ -58,7 +59,19 @@ export const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   openText: 'Open text',
   ranking: 'Ranking',
   quiz: 'Quiz',
+  globe: 'Globe',
 };
+
+/** GeoNames ids are short numeric strings; anything else cannot match the bundled city list. */
+const PLACE_ID_PATTERN = /^\d{1,20}$/;
+
+/** Trims a GeoNames id, returning `undefined` when empty and throwing when malformed. */
+export function normalizePlaceId(value: string | null | undefined): string | undefined {
+  const placeId = value?.trim();
+  if (!placeId) return undefined;
+  if (!PLACE_ID_PATTERN.test(placeId)) throw new Error('Pick a city from the list.');
+  return placeId;
+}
 
 /** True when a presenter session is active, which unlocks owner-only fields. */
 export function isSignedIn(): boolean {
@@ -75,6 +88,7 @@ function toActivity(row: RayLiveSchema['Activity']): Activity {
     createdAt: new Date(row.createdAt),
     startedAt: row.startedAt ? new Date(row.startedAt) : undefined,
     quizQuestionId: row.quizQuestionId ?? undefined,
+    venuePlaceId: row.venuePlaceId ?? undefined,
   };
 }
 
@@ -131,6 +145,8 @@ export interface NewActivityInput {
   allowChangeAnswer?: boolean;
   maxRating?: number;
   timeLimitSeconds?: number;
+  /** Optional venue city (GeoNames id) for globe activities; ignored by other kinds. */
+  venuePlaceId?: string | null;
   showResults?: boolean;
 }
 
@@ -156,12 +172,15 @@ function normalizedInput(input: NewActivityInput) {
       (!Number.isInteger(timeLimitSeconds) || timeLimitSeconds < 0 || timeLimitSeconds > 300)) {
     throw new Error('The quiz time limit must be a whole number from 0 to 300 seconds.');
   }
+  const venuePlaceId = input.kind === 'globe' ? normalizePlaceId(input.venuePlaceId) : undefined;
   return {
     options,
+    venuePlaceId,
     configuration: {
       prompt,
       showResults: input.showResults ?? true,
-      allowMultiple: input.allowMultiple ?? false,
+      // A globe answer is one city per person.
+      allowMultiple: input.kind === 'globe' ? false : (input.allowMultiple ?? false),
       allowChangeAnswer: input.allowChangeAnswer ?? false,
       ...(input.kind === 'rating' ? { maxRating } : {}),
       ...(input.kind === 'quiz' ? { timeLimitSeconds } : {}),
@@ -181,7 +200,7 @@ export async function createActivity(
   if (input.kind === 'quiz' && last?.kind === 'quiz') {
     await requireInactiveQuiz(room.id, [last.id]);
   }
-  const { options, configuration } = normalizedInput(input);
+  const { options, venuePlaceId, configuration } = normalizedInput(input);
   const client = getRayfinClient();
   const id = input.id ?? crypto.randomUUID();
   const existing = await client.data.Activity.select([...ACTIVITY_FIELDS])
@@ -203,6 +222,8 @@ export async function createActivity(
     maxRating: input.kind === 'rating' ? (input.maxRating ?? 5) : undefined,
     timeLimitSeconds:
       input.kind === 'quiz' ? (input.timeLimitSeconds ?? 20) : undefined,
+    // Only globe activities carry the column, so other kinds never select it on create.
+    ...(venuePlaceId ? { venuePlaceId } : {}),
     startedAt: undefined,
     createdAt: new Date(),
     room_id: room.id,
@@ -239,7 +260,7 @@ export async function saveActivityConfiguration(
   activityId: string,
   input: NewActivityInput
 ): Promise<void> {
-  const { options, configuration } = normalizedInput(input);
+  const { options, venuePlaceId, configuration } = normalizedInput(input);
   const activity = await getActivity(activityId);
   await requireManageableRoom(activity.room_id);
   await requireInactiveQuiz(activity.room_id, [activity.id]);
@@ -286,7 +307,11 @@ export async function saveActivityConfiguration(
       await client.data.ActivityOption.delete({ id: option.id });
     }
   }
-  await updateActivity(activityId, configuration);
+  await updateActivity(activityId, {
+    ...configuration,
+    // null clears a venue the presenter removed.
+    ...(input.kind === 'globe' ? { venuePlaceId: venuePlaceId ?? null } : {}),
+  });
 }
 
 export async function updateActivity(
@@ -305,6 +330,7 @@ export async function updateActivity(
       | 'quizQuestionId'
       | 'maxRating'
       | 'timeLimitSeconds'
+      | 'venuePlaceId'
       | 'startedAt'
     >
   >
