@@ -121,7 +121,7 @@ export function PresentPage() {
       }`}
     >
       <header className="mb-6 flex flex-col items-start gap-4 sm:mb-8 sm:flex-row sm:justify-between sm:gap-8">
-        <div className="min-w-0">
+        <div className="min-w-0 max-w-full">
           {!embed && (
             <div className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--ia-accent)]">
               {room.brandTitle ? (
